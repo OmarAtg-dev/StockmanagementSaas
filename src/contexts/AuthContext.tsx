@@ -20,14 +20,14 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   signOut: async () => {},
-  isLoading: false, // Changed default to false
+  isLoading: false,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Changed default to false
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,6 +60,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, session);
+      
+      if (_event === 'SIGNED_OUT') {
+        // Clear all auth state on sign out
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        return;
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -81,7 +90,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    setIsLoading(true);
     try {
+      // First clear local state
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+
+      // Then sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) {
         toast({
@@ -92,17 +108,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
 
-      // Clear local state after successful sign out
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-
       toast({
         title: "Success",
         description: "You have been signed out successfully.",
       });
     } catch (error) {
       console.error("Error signing out:", error);
+      // Don't restore session on error - let the auth state listener handle it
+    } finally {
+      setIsLoading(false);
     }
   };
 
