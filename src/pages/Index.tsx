@@ -2,6 +2,7 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { Package, DollarSign, AlertTriangle, TrendingUp } from "lucide-react";
 
 const Index = () => {
@@ -41,6 +42,8 @@ const Index = () => {
             trend={{ value: 18, isPositive: true }}
           />
         </div>
+
+        <DashboardCharts />
 
         <div className="grid gap-6 md:grid-cols-2">
           <RecentActivity />
