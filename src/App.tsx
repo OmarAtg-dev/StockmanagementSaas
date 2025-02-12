@@ -20,12 +20,10 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
   
-  // Show loading spinner while checking auth state
   if (isLoading) {
     return <LoadingSpinner />;
   }
   
-  // If not loading and no session, redirect to auth page
   if (!session) {
     return <Navigate to="/auth" replace />;
   }
@@ -33,16 +31,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Auth Route component
+// Simplified Auth Route component
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, isLoading } = useAuth();
+  const { session } = useAuth();
   
-  // Don't show loading spinner for auth routes - let the auth page handle its own loading state
-  if (isLoading) {
-    return <>{children}</>;
-  }
-  
-  // If authenticated, redirect to home page
   if (session) {
     return <Navigate to="/" replace />;
   }
@@ -52,46 +44,11 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => (
   <Routes>
-    <Route
-      path="/"
-      element={
-        <ProtectedRoute>
-          <Index />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/companies"
-      element={
-        <ProtectedRoute>
-          <Companies />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/enterprise"
-      element={
-        <ProtectedRoute>
-          <Enterprise />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/products"
-      element={
-        <ProtectedRoute>
-          <Products />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/auth"
-      element={
-        <AuthRoute>
-          <Auth />
-        </AuthRoute>
-      }
-    />
+    <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/companies" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
+    <Route path="/enterprise" element={<ProtectedRoute><Enterprise /></ProtectedRoute>} />
+    <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

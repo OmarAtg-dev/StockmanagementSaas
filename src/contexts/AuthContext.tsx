@@ -62,22 +62,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [fetchProfile]);
 
   useEffect(() => {
-    let mounted = true;
-
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         console.log("Initial session check:", initialSession);
-        
-        if (mounted) {
-          await updateAuthState(initialSession);
-          setIsLoading(false);
-        }
+        await updateAuthState(initialSession);
       } catch (error) {
         console.error("Error during auth initialization:", error);
-        if (mounted) {
-          setIsLoading(false);
-        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -86,16 +79,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, currentSession) => {
         console.log("Auth state changed:", _event, currentSession);
-        if (mounted) {
-          await updateAuthState(currentSession);
-        }
+        await updateAuthState(currentSession);
       }
     );
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [updateAuthState]);
 
   const signOut = async () => {
