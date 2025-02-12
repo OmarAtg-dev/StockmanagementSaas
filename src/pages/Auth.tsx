@@ -18,6 +18,7 @@ const Auth = () => {
     password: "",
     username: "",
     fullName: "",
+    companyName: "", // New field for company name
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +59,8 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // First, create the user account
+      const { error: signUpError, data } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -69,7 +71,23 @@ const Auth = () => {
         },
       });
 
-      if (error) throw error;
+      if (signUpError) throw signUpError;
+
+      // If a company name is provided, create the company
+      if (formData.companyName) {
+        const { error: companyError } = await supabase
+          .from("companies")
+          .insert([{ name: formData.companyName }]);
+
+        if (companyError) {
+          console.error("Error creating company:", companyError);
+          toast({
+            variant: "destructive",
+            title: "Erreur lors de la création de l'entreprise",
+            description: companyError.message,
+          });
+        }
+      }
 
       toast({
         title: "Inscription réussie",
@@ -192,6 +210,18 @@ const Auth = () => {
                       type="text"
                       placeholder="John Doe"
                       value={formData.fullName}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Nom de l'entreprise</Label>
+                    <Input
+                      id="companyName"
+                      name="companyName"
+                      type="text"
+                      placeholder="Ma Société"
+                      value={formData.companyName}
                       onChange={handleInputChange}
                       required
                     />
