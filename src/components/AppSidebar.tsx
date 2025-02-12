@@ -25,9 +25,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
 const getMenuItems = (role: string | null) => {
-  console.log("Current user role:", role); // Added for debugging
+  console.log("Current user role:", role);
   
   const items = [
+    { title: "Entreprises", icon: Building2, path: "/companies" },
     { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
     { title: "Produits", icon: Package, path: "/products" },
     { title: "Inventaire", icon: Boxes, path: "/inventory" },
@@ -37,22 +38,15 @@ const getMenuItems = (role: string | null) => {
     { title: "Paramètres", icon: Settings, path: "/settings" },
   ];
 
-  if (role && role === "super_admin") {
-    return [
-      { title: "Entreprises", icon: Building2, path: "/companies" },
-      ...items
-    ];
-  }
-
   return items;
-};
+}
 
 export function AppSidebar() {
   const { signOut, profile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  console.log("Full profile data:", profile); // Added for debugging
+  console.log("Full profile data:", profile);
 
   const menuItems = getMenuItems(profile?.role);
 
