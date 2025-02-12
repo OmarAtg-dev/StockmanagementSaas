@@ -73,13 +73,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_info: {
+        Row: {
+          company_id: string | null
+          company_name: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       create_super_admin: {
         Args: {
           email: string
           password: string
+        }
+        Returns: undefined
+      }
+      promote_to_super_admin: {
+        Args: {
+          user_email: string
         }
         Returns: undefined
       }
