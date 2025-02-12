@@ -42,6 +42,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
     return <LoadingSpinner />;
   }
   
+  // If authenticated, redirect to home page
   if (session) {
     return <Navigate to="/" replace />;
   }
