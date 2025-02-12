@@ -95,6 +95,9 @@ const Enterprise = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  // Add console logs to debug
+  console.log("Profile in Enterprise:", profile);
+
   // Redirect super_admin to companies page
   if (profile?.role === "super_admin") {
     return <Navigate to="/companies" replace />;
@@ -180,14 +183,23 @@ const Enterprise = () => {
     },
   });
 
-  if (!profile) {
-    return null;
+  // Show loading state while profile is being fetched
+  if (profile === null) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-8">
+          <div className="animate-pulse">Chargement du profil...</div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="text-center py-8">Chargement...</div>
+        <div className="text-center py-8">
+          <div className="animate-pulse">Chargement des données...</div>
+        </div>
       </DashboardLayout>
     );
   }
@@ -239,7 +251,7 @@ const Enterprise = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
-          {profile.role === "company_admin" && (
+          {profile.role === "company_admin" && enterprise && (
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -261,54 +273,56 @@ const Enterprise = () => {
           )}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Nom de l'entreprise
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{enterprise.name}</div>
-              <p className="text-xs text-muted-foreground">
-                Statut: {enterprise.subscription_status === 'active' ? 'Actif' : 'Inactif'}
-              </p>
-            </CardContent>
-          </Card>
+        {enterprise && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Nom de l'entreprise
+                </CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{enterprise.name}</div>
+                <p className="text-xs text-muted-foreground">
+                  Statut: {enterprise.subscription_status === 'active' ? 'Actif' : 'Inactif'}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Nombre d'utilisateurs
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{enterprise.user_count}</div>
-              <p className="text-xs text-muted-foreground">
-                Utilisateurs actifs
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Nombre d'utilisateurs
+                </CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{enterprise.user_count}</div>
+                <p className="text-xs text-muted-foreground">
+                  Utilisateurs actifs
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Date de création
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {new Date(enterprise.created_at).toLocaleDateString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Membre depuis
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Date de création
+                </CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {new Date(enterprise.created_at).toLocaleDateString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Membre depuis
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
