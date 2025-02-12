@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import Companies from "./pages/Companies";
@@ -19,9 +20,9 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
   
-  // If still loading, show nothing (or a loading spinner if you prefer)
+  // Show loading spinner while checking auth state
   if (isLoading) {
-    return null;
+    return <LoadingSpinner />;
   }
   
   // If not loading and no session, redirect to auth page
@@ -36,9 +37,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
   
-  // If still loading, show nothing
+  // Show loading spinner while checking auth state
   if (isLoading) {
-    return null;
+    return <LoadingSpinner />;
   }
   
   if (session) {
