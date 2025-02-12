@@ -33,11 +33,32 @@ const Auth = () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message === "Invalid login credentials") {
+          toast({
+            variant: "destructive",
+            title: "Erreur de connexion",
+            description: "Email ou mot de passe incorrect. Veuillez réessayer.",
+          });
+        } else if (error.message.includes("Email not confirmed")) {
+          toast({
+            variant: "destructive",
+            title: "Email non confirmé",
+            description: "Veuillez confirmer votre email avant de vous connecter.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Erreur de connexion",
+            description: error.message,
+          });
+        }
+        return;
+      }
 
       toast({
         title: "Connexion réussie",
@@ -45,10 +66,11 @@ const Auth = () => {
       });
       navigate("/");
     } catch (error: any) {
+      console.error("Sign in error:", error);
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
-        description: error.message,
+        description: "Une erreur inattendue s'est produite. Veuillez réessayer.",
       });
     } finally {
       setIsLoading(false);
@@ -59,9 +81,8 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // First, create the user account
       const { error: signUpError, data } = await supabase.auth.signUp({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
         options: {
           data: {
@@ -71,7 +92,22 @@ const Auth = () => {
         },
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        if (signUpError.message.includes("User already registered")) {
+          toast({
+            variant: "destructive",
+            title: "Erreur d'inscription",
+            description: "Un compte existe déjà avec cet email.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Erreur d'inscription",
+            description: signUpError.message,
+          });
+        }
+        return;
+      }
 
       // If a company name is provided, create the company
       if (formData.companyName) {
@@ -91,14 +127,24 @@ const Auth = () => {
 
       toast({
         title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès",
+        description: "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
       });
-      navigate("/");
+      
+      // Reset form after successful signup
+      setFormData({
+        email: "",
+        password: "",
+        username: "",
+        fullName: "",
+        companyName: "",
+      });
+      
     } catch (error: any) {
+      console.error("Sign up error:", error);
       toast({
         variant: "destructive",
         title: "Erreur d'inscription",
-        description: error.message,
+        description: "Une erreur inattendue s'est produite. Veuillez réessayer.",
       });
     } finally {
       setIsLoading(false);
