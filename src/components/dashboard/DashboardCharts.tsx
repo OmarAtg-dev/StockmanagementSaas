@@ -18,26 +18,26 @@ import {
 
 const salesData = [
   { month: "Jan", sales: 4000 },
-  { month: "Feb", sales: 3000 },
+  { month: "Fév", sales: 3000 },
   { month: "Mar", sales: 5000 },
-  { month: "Apr", sales: 4600 },
-  { month: "May", sales: 6800 },
-  { month: "Jun", sales: 7000 },
+  { month: "Avr", sales: 4600 },
+  { month: "Mai", sales: 6800 },
+  { month: "Juin", sales: 7000 },
 ];
 
 const stockData = [
-  { category: "Electronics", stock: 145 },
-  { category: "Accessories", stock: 235 },
+  { category: "Électronique", stock: 145 },
+  { category: "Accessoires", stock: 235 },
   { category: "Gadgets", stock: 187 },
-  { category: "Phones", stock: 156 },
-  { category: "Laptops", stock: 112 },
+  { category: "Téléphones", stock: 156 },
+  { category: "Ordinateurs", stock: 112 },
 ];
 
 export function DashboardCharts() {
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card className="p-6">
-        <h3 className="font-semibold mb-4">Sales Trend</h3>
+        <h3 className="font-semibold mb-4">Tendance des Ventes</h3>
         <div className="h-[300px]">
           <ChartContainer
             config={{
@@ -57,7 +57,7 @@ export function DashboardCharts() {
               <Area
                 type="monotone"
                 dataKey="sales"
-                name="sales"
+                name="ventes"
                 stroke="#2DD4BF"
                 fill="#2DD4BF"
                 fillOpacity={0.2}
@@ -68,7 +68,7 @@ export function DashboardCharts() {
       </Card>
 
       <Card className="p-6">
-        <h3 className="font-semibold mb-4">Stock Distribution</h3>
+        <h3 className="font-semibold mb-4">Distribution des Stocks</h3>
         <div className="h-[300px]">
           <ChartContainer
             config={{

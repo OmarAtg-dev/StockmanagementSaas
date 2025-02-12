@@ -8,26 +8,26 @@ const activities = [
     type: "stock-in",
     product: "iPhone 14 Pro",
     quantity: 50,
-    date: "2 hours ago",
+    date: "il y a 2 heures",
   },
   {
     type: "stock-out",
     product: "MacBook Air M2",
     quantity: 10,
-    date: "5 hours ago",
+    date: "il y a 5 heures",
   },
   {
     type: "stock-in",
     product: "AirPods Pro",
     quantity: 100,
-    date: "1 day ago",
+    date: "il y a 1 jour",
   },
 ];
 
 export function RecentActivity() {
   return (
     <Card className="p-6 animate-fade-up">
-      <h3 className="font-semibold mb-4">Recent Activity</h3>
+      <h3 className="font-semibold mb-4">Activité Récente</h3>
       <div className="space-y-4">
         {activities.map((activity, index) => (
           <div key={index} className="flex items-center gap-4">
@@ -44,7 +44,7 @@ export function RecentActivity() {
             <div className="flex-1">
               <p className="text-sm font-medium">{activity.product}</p>
               <p className="text-sm text-muted-foreground">
-                {activity.type === "stock-in" ? "Added" : "Removed"} {activity.quantity} units
+                {activity.type === "stock-in" ? "Ajout de" : "Retrait de"} {activity.quantity} unités
               </p>
             </div>
             <span className="text-sm text-muted-foreground">{activity.date}</span>

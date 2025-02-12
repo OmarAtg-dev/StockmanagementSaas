@@ -20,13 +20,13 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { title: "Products", icon: Package, path: "/products" },
-  { title: "Inventory", icon: Boxes, path: "/inventory" },
-  { title: "Analytics", icon: BarChart, path: "/analytics" },
-  { title: "History", icon: History, path: "/history" },
-  { title: "Team", icon: Users, path: "/team" },
-  { title: "Settings", icon: Settings, path: "/settings" },
+  { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
+  { title: "Produits", icon: Package, path: "/products" },
+  { title: "Inventaire", icon: Boxes, path: "/inventory" },
+  { title: "Analytique", icon: BarChart, path: "/analytics" },
+  { title: "Historique", icon: History, path: "/history" },
+  { title: "Équipe", icon: Users, path: "/team" },
+  { title: "Paramètres", icon: Settings, path: "/settings" },
 ];
 
 export function AppSidebar() {
