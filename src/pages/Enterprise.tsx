@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Users, Calendar } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 type Enterprise = {
   id: string;
@@ -23,8 +24,9 @@ type Enterprise = {
 
 const Enterprise = () => {
   const { profile } = useAuth();
+  const { toast } = useToast();
 
-  const { data: enterprise, isLoading } = useQuery({
+  const { data: enterprise, isLoading, error } = useQuery({
     queryKey: ["enterprise", profile?.company_id],
     queryFn: async () => {
       if (!profile?.company_id) return null;
@@ -35,17 +37,56 @@ const Enterprise = () => {
         .eq("id", profile.company_id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching company:", error);
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger les informations de l'entreprise.",
+        });
+        throw error;
+      }
       return data as Enterprise;
     },
     enabled: !!profile?.company_id,
   });
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!profile?.company_id) {
     return (
       <DashboardLayout>
         <div className="text-center py-8">
-          Vous n'êtes pas associé à une entreprise.
+          <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
+          <p className="text-muted-foreground">
+            Vous n'êtes pas associé à une entreprise.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
+          <p className="text-red-500">
+            Une erreur est survenue lors du chargement des données.
+          </p>
         </div>
       </DashboardLayout>
     );
@@ -56,13 +97,7 @@ const Enterprise = () => {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
 
-        {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-          </div>
-        ) : enterprise ? (
+        {enterprise ? (
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -113,7 +148,9 @@ const Enterprise = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            Impossible de charger les informations de l'entreprise.
+            <p className="text-muted-foreground">
+              Impossible de charger les informations de l'entreprise.
+            </p>
           </div>
         )}
       </div>
