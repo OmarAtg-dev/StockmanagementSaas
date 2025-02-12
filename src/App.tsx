@@ -37,9 +37,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
   
-  // Show loading spinner while checking auth state
+  // Don't show loading spinner for auth routes - let the auth page handle its own loading state
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <>{children}</>;
   }
   
   // If authenticated, redirect to home page

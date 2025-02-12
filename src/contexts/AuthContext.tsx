@@ -20,14 +20,14 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   signOut: async () => {},
-  isLoading: false,
+  isLoading: true,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   // Fetch profile data helper function
@@ -62,30 +62,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [fetchProfile]);
 
   useEffect(() => {
-    // Initial session check
+    let mounted = true;
+
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         console.log("Initial session check:", initialSession);
-        await updateAuthState(initialSession);
+        
+        if (mounted) {
+          await updateAuthState(initialSession);
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error("Error during auth initialization:", error);
-      } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initializeAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, currentSession) => {
         console.log("Auth state changed:", _event, currentSession);
-        await updateAuthState(currentSession);
+        if (mounted) {
+          await updateAuthState(currentSession);
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [updateAuthState]);
 
   const signOut = async () => {
