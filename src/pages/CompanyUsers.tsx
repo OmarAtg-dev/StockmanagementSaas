@@ -117,9 +117,9 @@ const CompanyUsers = () => {
 
       // Update password if provided
       if (password) {
-        const { error: authError } = await supabase.rpc('update_user_password', {
-          user_id: editingUser?.user_id,
-          new_password: password
+        // Use raw POST request to call the RPC function since it's not in the generated types
+        const { error: authError } = await supabase.functions.invoke('update-user-password', {
+          body: { userId: editingUser?.user_id, password }
         });
         if (authError) throw authError;
       }

@@ -168,6 +168,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_user_password: {
+        Args: {
+          user_id: string
+          new_password: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       company_role: "admin" | "manager" | "staff"
