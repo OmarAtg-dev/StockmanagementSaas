@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Users, Calendar } from "lucide-react";
+import { Navigate } from "react-router-dom";
 
 type Enterprise = {
   id: string;
@@ -23,6 +24,11 @@ type Enterprise = {
 
 const Enterprise = () => {
   const { profile } = useAuth();
+
+  // Redirect super_admin to companies page
+  if (profile?.role === "super_admin") {
+    return <Navigate to="/companies" replace />;
+  }
 
   const { data: enterprise, isLoading } = useQuery({
     queryKey: ["enterprise", profile?.company_id],
