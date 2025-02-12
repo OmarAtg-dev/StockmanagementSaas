@@ -46,9 +46,17 @@ const stockData = [
 type ChartType = "area" | "line" | "bar";
 
 export function DashboardCharts() {
-  const [chartType, setChartType] = useState<ChartType>("area");
+  const [salesChartType, setSalesChartType] = useState<ChartType>("area");
+  const [stockChartType, setStockChartType] = useState<ChartType>("bar");
 
-  const renderSalesChart = () => {
+  const renderChart = (
+    data: typeof salesData | typeof stockData,
+    chartType: ChartType,
+    dataKey: string,
+    name: string,
+    color: string,
+    xAxisKey: string
+  ) => {
     const ChartComponent = {
       area: AreaChart,
       line: LineChart,
@@ -59,36 +67,36 @@ export function DashboardCharts() {
       area: (
         <Area
           type="monotone"
-          dataKey="sales"
-          name="ventes"
-          stroke="#2DD4BF"
-          fill="#2DD4BF"
+          dataKey={dataKey}
+          name={name}
+          stroke={color}
+          fill={color}
           fillOpacity={0.2}
         />
       ),
       line: (
         <Line
           type="monotone"
-          dataKey="sales"
-          name="ventes"
-          stroke="#2DD4BF"
+          dataKey={dataKey}
+          name={name}
+          stroke={color}
           strokeWidth={2}
         />
       ),
       bar: (
         <Bar
-          dataKey="sales"
-          name="ventes"
-          fill="#2DD4BF"
+          dataKey={dataKey}
+          name={name}
+          fill={color}
           radius={[4, 4, 0, 0]}
         />
       ),
     }[chartType];
 
     return (
-      <ChartComponent data={salesData}>
+      <ChartComponent data={data}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="month" />
+        <XAxis dataKey={xAxisKey} />
         <YAxis />
         <ChartTooltip content={<ChartTooltipContent />} />
         {DataComponent}
@@ -103,7 +111,7 @@ export function DashboardCharts() {
           <h3 className="font-semibold">Tendance des Ventes</h3>
           <Select
             defaultValue="area"
-            onValueChange={(value) => setChartType(value as ChartType)}
+            onValueChange={(value) => setSalesChartType(value as ChartType)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Type de graphique" />
@@ -126,13 +134,28 @@ export function DashboardCharts() {
               },
             }}
           >
-            {renderSalesChart()}
+            {renderChart(salesData, salesChartType, "sales", "ventes", "#2DD4BF", "month")}
           </ChartContainer>
         </div>
       </Card>
 
       <Card className="p-6">
-        <h3 className="font-semibold mb-4">Distribution des Stocks</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold">Distribution des Stocks</h3>
+          <Select
+            defaultValue="bar"
+            onValueChange={(value) => setStockChartType(value as ChartType)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Type de graphique" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="area">Graphique en aire</SelectItem>
+              <SelectItem value="line">Graphique en ligne</SelectItem>
+              <SelectItem value="bar">Graphique en barres</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="h-[300px]">
           <ChartContainer
             config={{
@@ -144,18 +167,7 @@ export function DashboardCharts() {
               },
             }}
           >
-            <BarChart data={stockData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar
-                dataKey="stock"
-                name="stock"
-                fill="#FB923C"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
+            {renderChart(stockData, stockChartType, "stock", "stock", "#FB923C", "category")}
           </ChartContainer>
         </div>
       </Card>
