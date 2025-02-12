@@ -18,7 +18,7 @@ const Auth = () => {
     password: "",
     username: "",
     fullName: "",
-    companyName: "", // New field for company name
+    companyName: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
