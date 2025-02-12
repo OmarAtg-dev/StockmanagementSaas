@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CompanyUser } from "@/types/company-user";
+import { Eye, EyeOff } from "lucide-react";
 
 interface UserFormProps {
   user?: CompanyUser;
@@ -26,6 +27,7 @@ interface UserFormProps {
 export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
   const [email, setEmail] = useState(user?.username || "");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name || "");
   const [role, setRole] = useState<"admin" | "manager" | "staff">(
     user?.role || "staff"
@@ -66,15 +68,30 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
         <label htmlFor="password" className="block text-sm font-medium">
           {user ? "Nouveau mot de passe (optionnel)" : "Mot de passe"}
         </label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required={!user} // Only required for new users
-          minLength={6}
-          placeholder={user ? "Laisser vide pour ne pas changer" : ""}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required={!user} // Only required for new users
+            minLength={6}
+            placeholder={user ? "Laisser vide pour ne pas changer" : ""}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4 text-gray-500" />
+            ) : (
+              <Eye className="h-4 w-4 text-gray-500" />
+            )}
+          </Button>
+        </div>
       </div>
       <div>
         <label htmlFor="fullName" className="block text-sm font-medium">
