@@ -28,11 +28,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // If we're still loading the profile, show a loading state
-  if (session && !profile) {
-    return <div>Loading...</div>;
-  }
-
+  // Allow access even if profile is not loaded yet
   return <>{children}</>;
 };
 
