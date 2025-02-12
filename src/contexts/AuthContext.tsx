@@ -61,52 +61,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, session);
       
-      if (_event === 'SIGNED_OUT') {
-        // Clear all auth state on sign out
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        return;
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
+      // Only update state if we're not actively signing out
+      if (!isLoading) {
+        setSession(session);
+        setUser(session?.user ?? null);
         
-        console.log("Updated profile data:", profileData);
-        setProfile(profileData);
-      } else {
-        setProfile(null);
+        if (session?.user) {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+          
+          console.log("Updated profile data:", profileData);
+          setProfile(profileData);
+        } else {
+          setProfile(null);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isLoading]); // Add isLoading to dependencies
 
   const signOut = async () => {
-    setIsLoading(true);
     try {
-      // First clear local state
+      setIsLoading(true);
+      
+      // Sign out from Supabase first
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      // Then clear local state
       setSession(null);
       setUser(null);
       setProfile(null);
-
-      // Then sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to sign out. Please try again.",
-        });
-        throw error;
-      }
 
       toast({
         title: "Success",
@@ -114,7 +103,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
     } catch (error) {
       console.error("Error signing out:", error);
-      // Don't restore session on error - let the auth state listener handle it
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
