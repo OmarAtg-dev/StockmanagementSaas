@@ -10,135 +10,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Pencil, Trash2, Plus, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
-
-type CompanyUser = {
-  id: string;
-  user_id: string;
-  company_id: string;
-  role: "admin" | "manager" | "staff";
-  full_name: string | null;
-  username: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-const UserForm = ({
-  user,
-  companyId,
-  onSubmit,
-  onClose,
-}: {
-  user?: CompanyUser;
-  companyId: string;
-  onSubmit: (data: {
-    email: string;
-    password?: string;
-    full_name: string;
-    role: "admin" | "manager" | "staff";
-  }) => void;
-  onClose: () => void;
-}) => {
-  const [email, setEmail] = useState(user?.username || "");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState(user?.full_name || "");
-  const [role, setRole] = useState<"admin" | "manager" | "staff">(
-    user?.role || "staff"
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({ email, password, full_name: fullName, role });
-    onClose();
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium">
-          Email de l'utilisateur
-        </label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required={!user}
-          disabled={!!user}
-        />
-      </div>
-      {!user && (
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium">
-            Mot de passe
-          </label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-        </div>
-      )}
-      <div>
-        <label htmlFor="fullName" className="block text-sm font-medium">
-          Nom complet
-        </label>
-        <Input
-          id="fullName"
-          type="text"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required={!user}
-          disabled={!!user}
-        />
-      </div>
-      <div>
-        <label htmlFor="role" className="block text-sm font-medium">
-          Rôle
-        </label>
-        <Select value={role} onValueChange={(value: "admin" | "manager" | "staff") => setRole(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un rôle" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="staff">Staff</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Annuler
-        </Button>
-        <Button type="submit">{user ? "Modifier" : "Ajouter"}</Button>
-      </div>
-    </form>
-  );
-};
+import { CompanyUser } from "@/types/company-user";
+import { UserForm } from "@/components/company-users/UserForm";
+import { UsersTable } from "@/components/company-users/UsersTable";
 
 const CompanyUsers = () => {
   const { toast } = useToast();
@@ -298,94 +177,33 @@ const CompanyUsers = () => {
         {isLoading ? (
           <div>Chargement...</div>
         ) : (
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rôle</TableHead>
-                  <TableHead>Date d'ajout</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.full_name}</TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          user.role === "admin"
-                            ? "bg-blue-100 text-blue-800"
-                            : user.role === "manager"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {user.role === "admin"
-                          ? "Admin"
-                          : user.role === "manager"
-                          ? "Manager"
-                          : "Staff"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Dialog
-                        open={editingUser?.id === user.id}
-                        onOpenChange={(open) =>
-                          setEditingUser(open ? user : null)
-                        }
-                      >
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Modifier l'utilisateur</DialogTitle>
-                          </DialogHeader>
-                          <UserForm
-                            user={user}
-                            companyId={companyId!}
-                            onSubmit={(data) =>
-                              updateUser.mutate({ id: user.id, role: data.role })
-                            }
-                            onClose={() => setEditingUser(null)}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-600"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Êtes-vous sûr de vouloir retirer cet utilisateur ?"
-                            )
-                          ) {
-                            deleteUser.mutate(user.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <>
+            <Dialog
+              open={!!editingUser}
+              onOpenChange={(open) => setEditingUser(open ? editingUser : null)}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Modifier l'utilisateur</DialogTitle>
+                </DialogHeader>
+                {editingUser && (
+                  <UserForm
+                    user={editingUser}
+                    companyId={companyId!}
+                    onSubmit={(data) =>
+                      updateUser.mutate({ id: editingUser.id, role: data.role })
+                    }
+                    onClose={() => setEditingUser(null)}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
+            <UsersTable
+              users={users || []}
+              onEdit={setEditingUser}
+              onDelete={(id) => deleteUser.mutate(id)}
+            />
+          </>
         )}
       </div>
     </DashboardLayout>
