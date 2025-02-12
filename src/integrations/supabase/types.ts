@@ -9,10 +9,70 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          subscription_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          subscription_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          subscription_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company_id: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      companies_with_users: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          subscription_status: string | null
+          updated_at: string | null
+          user_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
