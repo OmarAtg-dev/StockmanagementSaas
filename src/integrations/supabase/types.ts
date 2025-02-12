@@ -69,10 +69,28 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_with_users"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
+      companies_with_users: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          subscription_status: string | null
+          updated_at: string | null
+          user_count: number | null
+        }
+        Relationships: []
+      }
       user_info: {
         Row: {
           company_id: string | null
@@ -89,6 +107,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_with_users"
             referencedColumns: ["id"]
           },
         ]

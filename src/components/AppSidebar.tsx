@@ -17,26 +17,37 @@ import {
   Settings,
   Users,
   Boxes,
+  Building2,
   LogOut
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
-const menuItems = [
-  { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
-  { title: "Produits", icon: Package, path: "/products" },
-  { title: "Inventaire", icon: Boxes, path: "/inventory" },
-  { title: "Analytique", icon: BarChart, path: "/analytics" },
-  { title: "Historique", icon: History, path: "/history" },
-  { title: "Équipe", icon: Users, path: "/team" },
-  { title: "Paramètres", icon: Settings, path: "/settings" },
-];
+const getMenuItems = (role: string | null) => {
+  const items = [
+    { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
+    { title: "Produits", icon: Package, path: "/products" },
+    { title: "Inventaire", icon: Boxes, path: "/inventory" },
+    { title: "Analytique", icon: BarChart, path: "/analytics" },
+    { title: "Historique", icon: History, path: "/history" },
+    { title: "Équipe", icon: Users, path: "/team" },
+    { title: "Paramètres", icon: Settings, path: "/settings" },
+  ];
+
+  if (role === "super_admin") {
+    items.unshift({ title: "Entreprises", icon: Building2, path: "/companies" });
+  }
+
+  return items;
+};
 
 export function AppSidebar() {
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const menuItems = getMenuItems(profile?.role);
 
   const handleSignOut = async () => {
     try {
