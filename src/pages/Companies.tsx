@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,8 +20,9 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 type Company = {
   id: string;
@@ -94,6 +94,7 @@ const Companies = () => {
   const { profile } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const navigate = useNavigate();
 
   // Fetch companies
   const { data: companies, isLoading } = useQuery({
@@ -268,7 +269,15 @@ const Companies = () => {
                     <TableCell>
                       {new Date(company.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => navigate(`/companies/${company.id}/users`)}
+                      >
+                        <Users className="h-4 w-4" />
+                      </Button>
                       <Dialog
                         open={editingCompany?.id === company.id}
                         onOpenChange={(open) =>

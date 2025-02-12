@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Products from "./pages/Products";
 import Companies from "./pages/Companies";
 import Enterprise from "./pages/Enterprise";
+import CompanyUsers from "./pages/CompanyUsers";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -52,6 +53,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Companies />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/companies/:companyId/users"
+      element={
+        <ProtectedRoute>
+          <CompanyUsers />
         </ProtectedRoute>
       }
     />
