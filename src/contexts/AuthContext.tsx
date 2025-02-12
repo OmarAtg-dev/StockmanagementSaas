@@ -1,9 +1,8 @@
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
-import { useToast } from "@/components/ui/use-toast";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -12,7 +11,6 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   signOut: () => Promise<void>;
-  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -20,101 +18,65 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   signOut: async () => {},
-  isLoading: true,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
-  // Fetch profile data helper function
-  const fetchProfile = useCallback(async (userId: string) => {
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
     try {
-      const { data: profileData, error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .single();
 
-      if (error) throw error;
-      return profileData;
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      return null;
-    }
-  }, []);
-
-  // Update auth state helper function
-  const updateAuthState = useCallback(async (currentSession: Session | null) => {
-    setSession(currentSession);
-    const currentUser = currentSession?.user ?? null;
-    setUser(currentUser);
-
-    if (currentUser) {
-      const profileData = await fetchProfile(currentUser.id);
-      setProfile(profileData);
-    } else {
-      setProfile(null);
-    }
-  }, [fetchProfile]);
-
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        console.log("Initial session check:", initialSession);
-        await updateAuthState(initialSession);
-      } catch (error) {
-        console.error("Error during auth initialization:", error);
-      } finally {
-        setIsLoading(false);
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return;
       }
-    };
 
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, currentSession) => {
-        console.log("Auth state changed:", _event, currentSession);
-        await updateAuthState(currentSession);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [updateAuthState]);
-
-  const signOut = async () => {
-    try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
-      // Clear local state after successful signout
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-
-      toast({
-        title: "Success",
-        description: "You have been signed out successfully.",
-      });
+      setProfile(data);
     } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
+      console.error("Error in fetchProfile:", error);
     }
   };
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, signOut, isLoading }}>
+    <AuthContext.Provider value={{ session, user, profile, signOut }}>
       {children}
     </AuthContext.Provider>
   );
