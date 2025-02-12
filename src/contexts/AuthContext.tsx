@@ -20,32 +20,37 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   signOut: async () => {},
-  isLoading: true,
+  isLoading: false, // Changed default to false
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Changed default to false
   const { toast } = useToast();
 
   useEffect(() => {
     // Get initial session
     const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Initial session check:", session);
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
         
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-      } finally {
-        setIsLoading(false);
+        console.log("Initial profile data:", profileData);
+        setProfile(profileData);
       }
+      
+      setIsLoading(false);
     };
 
     initializeAuth();
@@ -59,44 +64,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        
+        console.log("Updated profile data:", profileData);
+        setProfile(profileData);
       } else {
         setProfile(null);
       }
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching profile:", error);
-        return;
-      }
-
-      console.log("Fetched profile:", data);
-      setProfile(data);
-    } catch (error) {
-      console.error("Error in fetchProfile:", error);
-    }
-  };
-
   const signOut = async () => {
     try {
-      // First clear local state
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-
-      // Then sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) {
         toast({
@@ -107,21 +92,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
 
+      // Clear local state after successful sign out
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+
       toast({
         title: "Success",
         description: "You have been signed out successfully.",
       });
-
     } catch (error) {
       console.error("Error signing out:", error);
-      // Restore session if sign out failed
-      if (session) {
-        setSession(session);
-        setUser(session.user);
-        if (session.user) {
-          await fetchProfile(session.user.id);
-        }
-      }
     }
   };
 
