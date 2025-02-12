@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import Companies from "./pages/Companies";
+import Enterprise from "./pages/Enterprise";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -51,6 +52,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Companies />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/enterprise"
+      element={
+        <ProtectedRoute>
+          <Enterprise />
         </ProtectedRoute>
       }
     />

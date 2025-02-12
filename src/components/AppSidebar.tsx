@@ -27,8 +27,7 @@ import { useNavigate } from "react-router-dom";
 const getMenuItems = (role: string | null) => {
   console.log("Current user role:", role);
   
-  const items = [
-    { title: "Entreprises", icon: Building2, path: "/companies" },
+  const baseItems = [
     { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
     { title: "Produits", icon: Package, path: "/products" },
     { title: "Inventaire", icon: Boxes, path: "/inventory" },
@@ -38,7 +37,17 @@ const getMenuItems = (role: string | null) => {
     { title: "Paramètres", icon: Settings, path: "/settings" },
   ];
 
-  return items;
+  if (role === "super_admin") {
+    return [
+      { title: "Entreprises", icon: Building2, path: "/companies" },
+      ...baseItems
+    ];
+  }
+
+  return [
+    { title: "Mon Entreprise", icon: Building2, path: "/enterprise" },
+    ...baseItems
+  ];
 }
 
 export function AppSidebar() {
