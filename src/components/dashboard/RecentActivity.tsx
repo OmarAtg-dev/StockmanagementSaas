@@ -1,6 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Package, ArrowUp, ArrowDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const activities = [
   {
