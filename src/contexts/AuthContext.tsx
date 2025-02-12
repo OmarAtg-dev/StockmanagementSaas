@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("Auth state changed:", _event, session);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -67,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      console.log("Fetched profile:", data);
       setProfile(data);
     } catch (error) {
       console.error("Error in fetchProfile:", error);
@@ -123,3 +125,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

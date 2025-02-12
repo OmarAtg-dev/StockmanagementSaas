@@ -17,10 +17,20 @@ const queryClient = new QueryClient();
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   
+  // Add console logs for debugging
+  console.log("Full profile data:", profile);
+  console.log("Current user role:", role);
+  
+  // If there's no session, redirect to auth page
   if (!session) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // If we're still loading the profile, show a loading state
+  if (session && !profile) {
+    return <div>Loading...</div>;
   }
 
   return <>{children}</>;
@@ -98,3 +108,4 @@ const App = () => (
 );
 
 export default App;
+
