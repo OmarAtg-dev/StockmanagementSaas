@@ -16,8 +16,12 @@ import {
   BarChart,
   Settings,
   Users,
-  Boxes
+  Boxes,
+  LogOut
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const menuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
@@ -30,6 +34,27 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Déconnexion réussie",
+        description: "À bientôt !",
+      });
+      navigate("/auth");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erreur de déconnexion",
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -49,6 +74,15 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 px-3 py-2 w-full text-red-600 hover:text-red-700"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span>Déconnexion</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
