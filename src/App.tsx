@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   // Add console logs for debugging
   console.log("Full profile data:", profile);
-  console.log("Current user role:", role);
+  console.log("Current user role:", profile?.role);
   
   // If there's no session, redirect to auth page
   if (!session) {
@@ -108,4 +108,3 @@ const App = () => (
 );
 
 export default App;
-
