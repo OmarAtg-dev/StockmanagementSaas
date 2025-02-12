@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -70,6 +71,7 @@ const CompanyUsers = () => {
         title: "Utilisateur ajouté",
         description: "L'utilisateur a été ajouté avec succès",
       });
+      setIsAddOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -83,27 +85,52 @@ const CompanyUsers = () => {
   const updateUser = useMutation({
     mutationFn: async ({
       id,
+      email,
+      password,
+      full_name,
       role,
     }: {
       id: string;
+      email: string;
+      password?: string;
+      full_name: string;
       role: "admin" | "manager" | "staff";
     }) => {
-      const { data, error } = await supabase
+      // Update user profile first
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ 
+          username: email,
+          full_name: full_name,
+        })
+        .eq("id", editingUser?.user_id);
+
+      if (profileError) throw profileError;
+
+      // Update role
+      const { error: roleError } = await supabase
         .from("company_user_roles")
         .update({ role })
-        .eq("id", id)
-        .select()
-        .single();
+        .eq("id", id);
 
-      if (error) throw error;
-      return data;
+      if (roleError) throw roleError;
+
+      // Update password if provided
+      if (password) {
+        const { error: authError } = await supabase.rpc('update_user_password', {
+          user_id: editingUser?.user_id,
+          new_password: password
+        });
+        if (authError) throw authError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-users"] });
       toast({
         title: "Utilisateur mis à jour",
-        description: "Le rôle de l'utilisateur a été mis à jour avec succès",
+        description: "Les informations de l'utilisateur ont été mises à jour avec succès",
       });
+      setEditingUser(null);
     },
     onError: (error: Error) => {
       toast({
@@ -189,7 +216,7 @@ const CompanyUsers = () => {
                     user={editingUser}
                     companyId={companyId!}
                     onSubmit={(data) =>
-                      updateUser.mutate({ id: editingUser.id, role: data.role })
+                      updateUser.mutate({ id: editingUser.id, ...data })
                     }
                     onClose={() => setEditingUser(null)}
                   />

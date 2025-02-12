@@ -33,7 +33,18 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ email, password, full_name: fullName, role });
+    const formData = {
+      email,
+      full_name: fullName,
+      role,
+    } as any;
+
+    // Only include password if it's provided (for editing) or if it's a new user
+    if (password || !user) {
+      formData.password = password;
+    }
+
+    onSubmit(formData);
     onClose();
   };
 
@@ -48,25 +59,23 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required={!user}
-          disabled={!!user}
+          required
         />
       </div>
-      {!user && (
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium">
-            Mot de passe
-          </label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-        </div>
-      )}
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium">
+          {user ? "Nouveau mot de passe (optionnel)" : "Mot de passe"}
+        </label>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required={!user} // Only required for new users
+          minLength={6}
+          placeholder={user ? "Laisser vide pour ne pas changer" : ""}
+        />
+      </div>
       <div>
         <label htmlFor="fullName" className="block text-sm font-medium">
           Nom complet
@@ -76,8 +85,7 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
           type="text"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          required={!user}
-          disabled={!!user}
+          required
         />
       </div>
       <div>
