@@ -51,17 +51,24 @@ const UserForm = ({
 }: {
   user?: CompanyUser;
   companyId: string;
-  onSubmit: (data: { email: string; role: "admin" | "manager" | "staff" }) => void;
+  onSubmit: (data: {
+    email: string;
+    password?: string;
+    full_name: string;
+    role: "admin" | "manager" | "staff";
+  }) => void;
   onClose: () => void;
 }) => {
   const [email, setEmail] = useState(user?.username || "");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState(user?.full_name || "");
   const [role, setRole] = useState<"admin" | "manager" | "staff">(
     user?.role || "staff"
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ email, role });
+    onSubmit({ email, password, full_name: fullName, role });
     onClose();
   };
 
@@ -76,6 +83,34 @@ const UserForm = ({
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required={!user}
+          disabled={!!user}
+        />
+      </div>
+      {!user && (
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium">
+            Mot de passe
+          </label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
+        </div>
+      )}
+      <div>
+        <label htmlFor="fullName" className="block text-sm font-medium">
+          Nom complet
+        </label>
+        <Input
+          id="fullName"
+          type="text"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
           required={!user}
           disabled={!!user}
         />
@@ -131,33 +166,22 @@ const CompanyUsers = () => {
   const addUser = useMutation({
     mutationFn: async ({
       email,
+      password,
+      full_name,
       role,
     }: {
       email: string;
+      password: string;
+      full_name: string;
       role: "admin" | "manager" | "staff";
     }) => {
-      // First, get the user ID from the profiles table
-      const { data: userData, error: userError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", email)
-        .single();
-
-      if (userError) {
-        throw new Error("Utilisateur non trouvé");
-      }
-
-      const { data, error } = await supabase
-        .from("company_user_roles")
-        .insert([
-          {
-            company_id: companyId,
-            user_id: userData.id,
-            role,
-          },
-        ])
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('create_company_user', {
+        p_email: email,
+        p_password: password,
+        p_full_name: full_name,
+        p_company_id: companyId,
+        p_role: role,
+      });
 
       if (error) throw error;
       return data;
@@ -264,7 +288,7 @@ const CompanyUsers = () => {
               </DialogHeader>
               <UserForm
                 companyId={companyId!}
-                onSubmit={(data) => addUser.mutate(data)}
+                onSubmit={(data) => addUser.mutate(data as any)}
                 onClose={() => setIsAddOpen(false)}
               />
             </DialogContent>

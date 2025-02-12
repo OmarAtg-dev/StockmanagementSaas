@@ -145,6 +145,16 @@ export type Database = {
       }
     }
     Functions: {
+      create_company_user: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_full_name: string
+          p_company_id: string
+          p_role: Database["public"]["Enums"]["company_role"]
+        }
+        Returns: Json
+      }
       has_company_role: {
         Args: {
           company_id: string
