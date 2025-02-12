@@ -9,133 +9,16 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      companies: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          subscription_status: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          subscription_status?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          subscription_status?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          company_id: string | null
-          full_name: string | null
-          id: string
-          role: Database["public"]["Enums"]["user_role"]
-          updated_at: string | null
-          username: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          company_id?: string | null
-          full_name?: string | null
-          id: string
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string | null
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          company_id?: string | null
-          full_name?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string | null
-          username?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies_with_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Views: {
-      companies_with_users: {
-        Row: {
-          created_at: string | null
-          id: string | null
-          name: string | null
-          subscription_status: string | null
-          updated_at: string | null
-          user_count: number | null
-        }
-        Relationships: []
-      }
-      user_info: {
-        Row: {
-          company_id: string | null
-          company_name: string | null
-          email: string | null
-          full_name: string | null
-          id: string | null
-          role: Database["public"]["Enums"]["user_role"] | null
-          username: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies_with_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
-      create_super_admin: {
-        Args: {
-          email: string
-          password: string
-        }
-        Returns: undefined
-      }
-      promote_to_super_admin: {
-        Args: {
-          user_email: string
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
-      user_role: "super_admin" | "company_admin" | "company_user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
