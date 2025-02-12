@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -27,72 +27,74 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const { toast } = useToast();
 
+  // Fetch profile data helper function
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+      return profileData;
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+  }, []);
+
+  // Update auth state helper function
+  const updateAuthState = useCallback(async (currentSession: Session | null) => {
+    setSession(currentSession);
+    const currentUser = currentSession?.user ?? null;
+    setUser(currentUser);
+
+    if (currentUser) {
+      const profileData = await fetchProfile(currentUser.id);
+      setProfile(profileData);
+    } else {
+      setProfile(null);
+    }
+  }, [fetchProfile]);
+
   useEffect(() => {
-    // Get initial session
+    // Initial session check
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Initial session check:", session);
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-        
-        console.log("Initial profile data:", profileData);
-        setProfile(profileData);
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log("Initial session check:", initialSession);
+        await updateAuthState(initialSession);
+      } catch (error) {
+        console.error("Error during auth initialization:", error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     initializeAuth();
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state changed:", _event, session);
-      
-      // Only update state if we're not actively signing out
-      if (!isLoading) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-          
-          console.log("Updated profile data:", profileData);
-          setProfile(profileData);
-        } else {
-          setProfile(null);
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, currentSession) => {
+        console.log("Auth state changed:", _event, currentSession);
+        await updateAuthState(currentSession);
       }
-    });
+    );
 
     return () => subscription.unsubscribe();
-  }, [isLoading]); // Add isLoading to dependencies
+  }, [updateAuthState]);
 
   const signOut = async () => {
     try {
       setIsLoading(true);
-      
-      // Sign out from Supabase first
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // Then clear local state
+      // Clear local state after successful signout
       setSession(null);
       setUser(null);
       setProfile(null);
