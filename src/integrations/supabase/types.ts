@@ -155,6 +155,12 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_company_user: {
+        Args: {
+          user_role_id: string
+        }
+        Returns: undefined
+      }
       has_company_role: {
         Args: {
           company_id: string

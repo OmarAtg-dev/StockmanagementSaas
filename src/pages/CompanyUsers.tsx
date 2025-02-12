@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -118,9 +117,7 @@ const CompanyUsers = () => {
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("company_user_roles")
-        .delete()
-        .eq("id", id);
+        .rpc('delete_company_user', { user_role_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -131,10 +128,11 @@ const CompanyUsers = () => {
       });
     },
     onError: (error: Error) => {
+      console.error("Error deleting user:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message,
+        description: "Une erreur est survenue lors de la suppression de l'utilisateur",
       });
     },
   });
