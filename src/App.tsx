@@ -17,24 +17,29 @@ const queryClient = new QueryClient();
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, profile } = useAuth();
+  const { session, isLoading } = useAuth();
   
-  // Add console logs for debugging
-  console.log("Full profile data:", profile);
-  console.log("Current user role:", profile?.role);
+  // If still loading, show nothing (or a loading spinner if you prefer)
+  if (isLoading) {
+    return null;
+  }
   
-  // If there's no session, redirect to auth page
+  // If not loading and no session, redirect to auth page
   if (!session) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Allow access even if profile is not loaded yet
   return <>{children}</>;
 };
 
 // Auth Route component
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session } = useAuth();
+  const { session, isLoading } = useAuth();
+  
+  // If still loading, show nothing
+  if (isLoading) {
+    return null;
+  }
   
   if (session) {
     return <Navigate to="/" replace />;

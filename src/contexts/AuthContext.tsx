@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   signOut: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,22 +20,25 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   signOut: async () => {},
+  isLoading: true,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSession(session);
-        setUser(session.user);
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
         fetchProfile(session.user.id);
       }
+      setIsLoading(false);
     });
 
     // Listen for auth changes
@@ -50,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setProfile(null);
       }
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -112,7 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, signOut, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -125,4 +130,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
