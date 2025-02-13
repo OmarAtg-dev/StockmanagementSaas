@@ -26,19 +26,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Simulate initial session
-    mockDataFunctions.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
+    mockDataFunctions.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
       setProfile(mockAuthContext.profile);
     });
   }, []);
 
   const signOut = async () => {
     try {
+      await mockDataFunctions.signOut();
       setSession(null);
       setUser(null);
       setProfile(null);
-      await mockDataFunctions.signOut();
     } catch (error) {
       console.error("Error in signOut:", error);
     }

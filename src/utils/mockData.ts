@@ -1,10 +1,9 @@
-
 import { UserRole } from "@/types/auth";
 
 export const mockProfiles = [
   {
     id: "1",
-    user_id: "1", // Added to match CompanyUser type
+    user_id: "1",
     username: "admin@example.com",
     full_name: "Admin User",
     company_id: "1",
@@ -14,7 +13,7 @@ export const mockProfiles = [
   },
   {
     id: "2",
-    user_id: "2", // Added to match CompanyUser type
+    user_id: "2",
     username: "manager@example.com",
     full_name: "Manager User",
     company_id: "1",
@@ -206,6 +205,16 @@ export const mockAuthContext = {
 
 export const mockDataFunctions = {
   // Auth functions
+  getSession: async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return {
+      data: {
+        session: mockAuthContext.session
+      }
+    };
+  },
+
   signIn: async (email: string, password: string) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -253,7 +262,7 @@ export const mockDataFunctions = {
       user_id: String(mockProfiles.length + 1),
       username: data.email,
       full_name: data.fullName,
-      company_id: "1", // Default company ID
+      company_id: "1",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       role: 'admin' as UserRole
@@ -271,6 +280,42 @@ export const mockDataFunctions = {
       },
       error: null
     };
+  },
+
+  signOut: async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return { error: null };
+  },
+
+  updateProfile: async (updates: Partial<typeof mockProfiles[0]>) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const userIndex = mockProfiles.findIndex(p => p.id === updates.id);
+    if (userIndex === -1) {
+      return {
+        data: null,
+        error: { message: "Utilisateur non trouvé" }
+      };
+    }
+
+    mockProfiles[userIndex] = {
+      ...mockProfiles[userIndex],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    return {
+      data: { user: mockProfiles[userIndex] },
+      error: null
+    };
+  },
+
+  updatePassword: async (newPassword: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return { error: null };
   },
 
   // Company functions
