@@ -1,5 +1,6 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
@@ -20,6 +21,35 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InvoiceDialog } from "@/components/invoices/InvoiceDialog";
 import { mockDataFunctions } from "@/utils/mockData";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Client {
   id: string;
@@ -30,12 +60,35 @@ interface Client {
   created_at: string;
 }
 
+const clientFormSchema = z.object({
+  name: z.string().min(1, "Le nom est requis"),
+  email: z.string().email("Email invalide").nullable(),
+  phone: z.string().nullable(),
+  address: z.string().nullable(),
+});
+
+type ClientFormData = z.infer<typeof clientFormSchema>;
+
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { profile } = useAuth();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
+  const queryClient = useQueryClient();
+
+  const form = useForm<ClientFormData>({
+    resolver: zodResolver(clientFormSchema),
+    defaultValues: {
+      name: "",
+      email: null,
+      phone: null,
+      address: null,
+    },
+  });
 
   const { data: clients, isLoading, error } = useQuery({
     queryKey: ['clients', profile?.company_id],
@@ -54,15 +107,68 @@ const Clients = () => {
       return data;
     },
     enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
-    meta: {
-      onError: (error: Error) => {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: error.message,
-        });
-      }
-    }
+  });
+
+  const createClientMutation = useMutation({
+    mutationFn: async (data: ClientFormData) => {
+      const { error } = await mockDataFunctions.createClient({
+        ...data,
+        company_id: profile?.company_id!,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({ title: "Client créé avec succès" });
+      setIsClientDialogOpen(false);
+      form.reset();
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
+      });
+    },
+  });
+
+  const updateClientMutation = useMutation({
+    mutationFn: async (data: ClientFormData & { id: string }) => {
+      const { error } = await mockDataFunctions.updateClient(data.id, data);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({ title: "Client mis à jour avec succès" });
+      setIsClientDialogOpen(false);
+      form.reset();
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
+      });
+    },
+  });
+
+  const deleteClientMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await mockDataFunctions.deleteClient(id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({ title: "Client supprimé avec succès" });
+      setIsDeleteDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
+      });
+    },
   });
 
   const filteredClients = clients?.filter(client =>
@@ -82,6 +188,30 @@ const Clients = () => {
     }
     setSelectedClientId(clientId);
     setIsInvoiceDialogOpen(true);
+  };
+
+  const handleEditClient = (client: Client) => {
+    setClientToEdit(client);
+    form.reset({
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      address: client.address,
+    });
+    setIsClientDialogOpen(true);
+  };
+
+  const handleDeleteClient = (client: Client) => {
+    setClientToEdit(client);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const onSubmit = async (data: ClientFormData) => {
+    if (clientToEdit) {
+      await updateClientMutation.mutateAsync({ ...data, id: clientToEdit.id });
+    } else {
+      await createClientMutation.mutateAsync(data);
+    }
   };
 
   if (error) {
@@ -110,7 +240,14 @@ const Clients = () => {
               Gérez vos clients et leurs informations
             </p>
           </div>
-          <Button className="gap-2">
+          <Button 
+            className="gap-2"
+            onClick={() => {
+              setClientToEdit(null);
+              form.reset();
+              setIsClientDialogOpen(true);
+            }}
+          >
             <Plus className="h-5 w-5" />
             Ajouter un client
           </Button>
@@ -176,10 +313,18 @@ const Clients = () => {
                       >
                         <Receipt className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEditClient(client)}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDeleteClient(client)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -190,6 +335,118 @@ const Clients = () => {
           </Table>
         </Card>
       </div>
+
+      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{clientToEdit ? "Modifier le client" : "Ajouter un client"}</DialogTitle>
+            <DialogDescription>
+              {clientToEdit 
+                ? "Modifiez les informations du client ci-dessous." 
+                : "Remplissez les informations du nouveau client ci-dessous."}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom*</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nom du client" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Email du client"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Téléphone</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Téléphone du client"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Adresse du client"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">
+                  {clientToEdit ? "Mettre à jour" : "Ajouter"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer ce client ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action ne peut pas être annulée. Cela supprimera définitivement le client et toutes ses données associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (clientToEdit) {
+                  deleteClientMutation.mutate(clientToEdit.id);
+                }
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {selectedClientId && profile?.company_id && (
         <InvoiceDialog
