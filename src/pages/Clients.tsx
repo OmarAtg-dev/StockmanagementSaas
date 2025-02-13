@@ -111,9 +111,16 @@ const Clients = () => {
 
   const createClientMutation = useMutation({
     mutationFn: async (data: ClientFormData) => {
+      if (!profile?.company_id) {
+        throw new Error("No company ID found");
+      }
+      
       const { error } = await mockDataFunctions.createClient({
-        ...data,
-        company_id: profile?.company_id!,
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        company_id: profile.company_id
       });
       if (error) throw error;
     },
@@ -134,7 +141,12 @@ const Clients = () => {
 
   const updateClientMutation = useMutation({
     mutationFn: async (data: ClientFormData & { id: string }) => {
-      const { error } = await mockDataFunctions.updateClient(data.id, data);
+      const { error } = await mockDataFunctions.updateClient(data.id, {
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null
+      });
       if (error) throw error;
     },
     onSuccess: () => {

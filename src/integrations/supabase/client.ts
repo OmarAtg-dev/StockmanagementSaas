@@ -19,19 +19,7 @@ const mockSupabase = {
           default:
             throw new Error(`Table ${table} not implemented in mock`);
         }
-      },
-      single: () => ({
-        select: async () => {
-          switch (table) {
-            case 'invoices':
-              return mockDataFunctions.createInvoice(data[0]);
-            case 'invoice_items':
-              return mockDataFunctions.createInvoiceItems(data);
-            default:
-              throw new Error(`Table ${table} not implemented in mock`);
-          }
-        }
-      })
+      }
     }),
     select: () => ({
       single: async () => {
