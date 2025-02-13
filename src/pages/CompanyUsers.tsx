@@ -96,6 +96,10 @@ const CompanyUsers = () => {
       full_name: string;
       role: "admin" | "manager" | "staff";
     }) => {
+      if (!editingUser?.user_id) {
+        throw new Error("User ID is missing");
+      }
+
       // Update user profile first
       const { error: profileError } = await supabase
         .from("profiles")
@@ -103,7 +107,7 @@ const CompanyUsers = () => {
           username: email,
           full_name: full_name,
         })
-        .eq("id", editingUser?.user_id);
+        .eq("id", editingUser.user_id);
 
       if (profileError) throw profileError;
 
@@ -117,9 +121,8 @@ const CompanyUsers = () => {
 
       // Update password if provided
       if (password) {
-        // Use raw POST request to call the RPC function since it's not in the generated types
         const { error: authError } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: editingUser?.user_id, password }
+          body: { userId: editingUser.user_id, password }
         });
         if (authError) throw authError;
       }
