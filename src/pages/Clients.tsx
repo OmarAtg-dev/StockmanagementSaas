@@ -1,7 +1,6 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
@@ -21,6 +20,7 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InvoiceDialog } from "@/components/invoices/InvoiceDialog";
+import { mockDataFunctions } from "@/utils/mockData";
 
 interface Client {
   id: string;
@@ -45,24 +45,14 @@ const Clients = () => {
         throw new Error("Aucune entreprise associée à cet utilisateur");
       }
 
-      let query = supabase
-        .from('clients')
-        .select('*')
-        .order('name');
-
-      // If not super_admin, filter by company_id
-      if (profile?.role !== 'super_admin' && profile?.company_id) {
-        query = query.eq('company_id', profile.company_id);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await mockDataFunctions.getClients();
 
       if (error) {
         console.error("Error fetching clients:", error);
         throw error;
       }
 
-      return data as Client[];
+      return data;
     },
     enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
     meta: {
