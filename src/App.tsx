@@ -17,6 +17,7 @@ import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
 import History from "./pages/History";
 import Team from "./pages/Team";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -113,6 +114,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Team />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/settings"
+      element={
+        <ProtectedRoute>
+          <Settings />
         </ProtectedRoute>
       }
     />
