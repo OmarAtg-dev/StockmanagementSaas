@@ -16,6 +16,7 @@ import { UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
 import { CompanyUser } from "@/types/company-user";
+import { UserRole } from "@/types/auth";
 import { UserForm } from "@/components/company-users/UserForm";
 import { UsersTable } from "@/components/company-users/UsersTable";
 
@@ -56,7 +57,7 @@ const CompanyUsers = () => {
       email: string;
       password: string;
       full_name: string;
-      role: "admin" | "manager" | "staff";
+      role: UserRole;
     }) => {
       const { data, error } = await supabase.rpc('create_company_user', {
         p_email: email,
@@ -98,7 +99,7 @@ const CompanyUsers = () => {
       email: string;
       password?: string;
       full_name: string;
-      role: "admin" | "manager" | "staff";
+      role: UserRole;
     }) => {
       console.log("Starting user update for ID:", id);
 
@@ -122,6 +123,7 @@ const CompanyUsers = () => {
         .update({ 
           username: email,
           full_name: full_name,
+          role: role,
         })
         .eq("id", userData.user_id);
 

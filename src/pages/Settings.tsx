@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, UserCircle } from "lucide-react";
+import { UserRole } from "@/types/auth";
 
 const Settings = () => {
   const { profile, session } = useAuth();
@@ -28,7 +29,10 @@ const Settings = () => {
 
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: formData.fullName })
+        .update({ 
+          full_name: formData.fullName,
+          role: (profile?.role || 'user') as UserRole 
+        })
         .eq('id', session?.user.id);
 
       if (error) throw error;
