@@ -18,7 +18,8 @@ import {
   Users,
   Boxes,
   Building2,
-  LogOut
+  LogOut,
+  UserCircle
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -30,6 +31,7 @@ const getMenuItems = (role: string | null) => {
   const baseItems = [
     { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
     { title: "Entreprises", icon: Building2, path: "/enterprise" },
+    { title: "Clients", icon: UserCircle, path: "/clients" },
     { title: "Produits", icon: Package, path: "/products" },
     { title: "Inventaire", icon: Boxes, path: "/inventory" },
     { title: "Analytique", icon: BarChart, path: "/analytics" },
