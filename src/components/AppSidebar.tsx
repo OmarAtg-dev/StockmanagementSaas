@@ -70,7 +70,7 @@ const getSidebarSections = () => [
 ];
 
 export function AppSidebar() {
-  const { signOut, profile } = useAuth();
+  const { signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -92,10 +92,6 @@ export function AppSidebar() {
       });
     }
   };
-
-  if (!profile?.company_id) {
-    return null;
-  }
 
   return (
     <Sidebar className="border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
