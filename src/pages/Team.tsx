@@ -32,13 +32,19 @@ const Team = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<CompanyUser | null>(null);
 
+  if (!profile?.company_id) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-8">
+          Vous n'avez pas accès à cette page.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['team-members'],
     queryFn: async () => {
-      if (!profile?.company_id) {
-        return [];
-      }
-
       const { data, error } = await supabase
         .from('company_users_with_roles')
         .select('*')
@@ -57,22 +63,25 @@ const Team = () => {
 
       return data as CompanyUser[];
     },
-    enabled: !!profile?.company_id
+    enabled: !!profile.company_id
   });
 
   const addUser = useMutation({
     mutationFn: async (data: UserFormData) => {
-      if (!profile?.company_id) throw new Error("Company ID is required");
+      console.log("Adding user with company_id:", profile.company_id);
       
       const { data: result, error } = await supabase.rpc('create_company_user', {
         p_email: data.email,
-        p_password: data.password,
+        p_password: data.password!,
         p_full_name: data.full_name,
         p_company_id: profile.company_id,
         p_role: data.role,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating user:", error);
+        throw error;
+      }
       return result;
     },
     onSuccess: () => {
@@ -84,6 +93,7 @@ const Team = () => {
       setIsAddOpen(false);
     },
     onError: (error: Error) => {
+      console.error("Error in addUser mutation:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -213,7 +223,10 @@ const Team = () => {
                 <DialogTitle>Ajouter un membre</DialogTitle>
               </DialogHeader>
               <UserForm
-                onSubmit={addUser.mutate}
+                onSubmit={(data) => {
+                  console.log("Form submitted with data:", data);
+                  addUser.mutate(data);
+                }}
                 onClose={() => setIsAddOpen(false)}
               />
             </DialogContent>
