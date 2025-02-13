@@ -34,7 +34,7 @@ export default {
           foreground: "#FFFFFF",
         },
         accent: {
-          DEFAULT: "#F59E0B", // Warm amber
+          DEFAULT: "#8B5CF6", // Vibrant purple instead of orange
           foreground: "#FFFFFF",
         },
         destructive: {
