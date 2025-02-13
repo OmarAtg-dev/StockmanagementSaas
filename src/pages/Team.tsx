@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -12,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, UserPlus } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { CompanyUser, UserFormData } from "@/types/company-user";
@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UserForm } from "@/components/company-users/UserForm";
+import { mockDataFunctions } from "@/utils/mockData";
 
 const Team = () => {
   const { toast } = useToast();
@@ -45,12 +46,12 @@ const Team = () => {
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['team-members'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('company_users_with_roles')
-        .select('*')
-        .eq('company_id', profile.company_id)
-        .order('role', { ascending: false });
+      console.log("Fetching team members with company_id:", profile.company_id);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
+      const { data, error } = await mockDataFunctions.getCompanies();
       if (error) {
         console.error("Error fetching team members:", error);
         toast({
@@ -61,7 +62,8 @@ const Team = () => {
         throw error;
       }
 
-      return data as CompanyUser[];
+      // For now, we'll return mock profiles as team members
+      return mockDataFunctions.mockProfiles as CompanyUser[];
     },
     enabled: !!profile.company_id
   });
@@ -70,19 +72,10 @@ const Team = () => {
     mutationFn: async (data: UserFormData) => {
       console.log("Adding user with company_id:", profile.company_id);
       
-      const { data: result, error } = await supabase.rpc('create_company_user', {
-        p_email: data.email,
-        p_password: data.password!,
-        p_full_name: data.full_name,
-        p_company_id: profile.company_id,
-        p_role: data.role,
-      });
-
-      if (error) {
-        console.error("Error creating user:", error);
-        throw error;
-      }
-      return result;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("Mock adding user:", data);
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
@@ -114,24 +107,10 @@ const Team = () => {
       full_name: string;
       role: string;
     }) => {
-      // Update the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          username: email,
-          full_name: full_name,
-        })
-        .eq('id', id);
-
-      if (profileError) throw profileError;
-
-      // Update the role
-      const { error: roleError } = await supabase
-        .from('company_user_roles')
-        .update({ role })
-        .eq('id', id);
-
-      if (roleError) throw roleError;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("Mock updating user:", { id, email, full_name, role });
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
@@ -152,12 +131,10 @@ const Team = () => {
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from('company_user_roles')
-        .delete()
-        .eq('id', userId);
-
-      if (error) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("Mock deleting user:", userId);
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
