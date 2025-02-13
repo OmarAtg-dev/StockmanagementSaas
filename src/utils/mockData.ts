@@ -308,33 +308,26 @@ export const mockDataFunctions = {
 
   getInvoices: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Map the mock invoices to include client information
+    const invoicesWithClients = mockInvoices.map(invoice => {
+      const client = mockClients.find(c => c.id === invoice.client_id);
+      return {
+        id: invoice.id,
+        number: invoice.number,
+        date: invoice.date,
+        due_date: invoice.due_date,
+        total_amount: invoice.total_amount,
+        status: invoice.status,
+        client: client ? {
+          name: client.name,
+          email: client.email
+        } : null
+      };
+    });
+
     return {
-      data: [
-        { 
-          id: 'INV001', 
-          number: 'INV001', 
-          date: new Date().toISOString(), 
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          total_amount: 150,
-          status: 'paid',
-          client: {
-            name: 'Client A',
-            email: 'clienta@example.com'
-          }
-        },
-        { 
-          id: 'INV002', 
-          number: 'INV002', 
-          date: new Date().toISOString(),
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          total_amount: 200,
-          status: 'pending',
-          client: {
-            name: 'Client B',
-            email: 'clientb@example.com'
-          }
-        }
-      ],
+      data: invoicesWithClients,
       error: null
     };
   },

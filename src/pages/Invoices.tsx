@@ -1,5 +1,6 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
@@ -39,6 +40,7 @@ const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { profile } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['invoices', profile?.company_id],
@@ -57,15 +59,6 @@ const Invoices = () => {
       return data as Invoice[];
     },
     enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
-    meta: {
-      onError: (error: Error) => {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: error.message,
-        });
-      }
-    }
   });
 
   const filteredInvoices = invoices?.filter(invoice =>
