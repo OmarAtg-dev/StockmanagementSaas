@@ -26,12 +26,10 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Initialize with mock data directly instead of null
-  const [session, setSession] = useState<typeof mockAuthContext.session | null>(mockAuthContext.session);
-  const [user, setUser] = useState<typeof mockAuthContext.user | null>(mockAuthContext.user);
-  const [profile, setProfile] = useState<Profile | null>(mockAuthContext.profile as Profile);
-
-  // Remove useEffect since we're using mock data directly
+  // Initialize with null values instead of mock data
+  const [session, setSession] = useState<typeof mockAuthContext.session | null>(null);
+  const [user, setUser] = useState<typeof mockAuthContext.user | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const signOut = async () => {
     try {
