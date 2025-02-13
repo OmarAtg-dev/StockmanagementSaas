@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, MapPin, Phone, Mail, Globe, Building, Warehouse, Package, Scale, AlertTriangle, Users2 } from "lucide-react";
+import { Building2, Users, MapPin, Phone, Mail, Globe, Building, Warehouse, Package, AlertTriangle, Users2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Enterprise {
@@ -312,27 +311,6 @@ const Enterprise = () => {
                       <div className="text-sm text-muted-foreground">{warehouse.address}</div>
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Méthode de Valorisation
-                </CardTitle>
-                <Scale className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="text-xl font-semibold">
-                    {enterprise?.inventory?.valuation_method === 'FIFO' && 'FIFO'}
-                    {enterprise?.inventory?.valuation_method === 'LIFO' && 'LIFO'}
-                    {enterprise?.inventory?.valuation_method === 'WEIGHTED_AVERAGE' && 'Moyenne pondérée'}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Méthode de valorisation des stocks actuelle
-                  </div>
                 </div>
               </CardContent>
             </Card>
