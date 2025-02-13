@@ -1,3 +1,4 @@
+
 import { UserRole } from "@/types/auth";
 
 export const mockProfiles = [
@@ -41,7 +42,7 @@ export const mockAuthContext = {
 
 export const mockDataFunctions = {
   getSession: async () => {
-    await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to simulate API call
+    await new Promise(resolve => setTimeout(resolve, 100));
     return {
       data: {
         session: mockAuthContext.session
@@ -119,39 +120,177 @@ export const mockDataFunctions = {
     return { error: null };
   },
 
+  updateProfile: async (updates: any) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return { data: { user: updates }, error: null };
+  },
+
+  updatePassword: async (password: string) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return { error: null };
+  },
+
   getClients: async () => {
-    // Simulate fetching clients
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
       data: [
-        { id: '1', name: 'Client A', email: 'clienta@example.com' },
-        { id: '2', name: 'Client B', email: 'clientb@example.com' }
+        { 
+          id: '1', 
+          name: 'Client A', 
+          email: 'clienta@example.com',
+          phone: '+33 1 23 45 67 89',
+          address: '123 Rue de Paris',
+          created_at: new Date().toISOString()
+        },
+        { 
+          id: '2', 
+          name: 'Client B', 
+          email: 'clientb@example.com',
+          phone: '+33 9 87 65 43 21',
+          address: '456 Avenue des Champs-Élysées',
+          created_at: new Date().toISOString()
+        }
       ],
       error: null
     };
   },
 
   getProducts: async () => {
-    // Simulate fetching products
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
       data: [
-        { id: '101', name: 'Product X', price: 25 },
-        { id: '102', name: 'Product Y', price: 50 }
+        { 
+          id: '101', 
+          name: 'Product X', 
+          price: 25,
+          category: 'Electronics',
+          stock: 100,
+          status: 'En stock'
+        },
+        { 
+          id: '102', 
+          name: 'Product Y', 
+          price: 50,
+          category: 'Office',
+          stock: 75,
+          status: 'En stock'
+        }
+      ],
+      error: null
+    };
+  },
+
+  getInventory: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: [
+        {
+          id: '1',
+          product: { name: 'Product X', category: 'Electronics' },
+          quantity: 100,
+          location: 'Warehouse A',
+          last_updated: new Date().toISOString()
+        },
+        {
+          id: '2',
+          product: { name: 'Product Y', category: 'Office' },
+          quantity: 75,
+          location: 'Warehouse B',
+          last_updated: new Date().toISOString()
+        }
+      ],
+      error: null
+    };
+  },
+
+  getSuppliers: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: [
+        {
+          id: '1',
+          name: 'Supplier A',
+          email: 'suppliera@example.com',
+          phone: '+33 1 11 11 11 11',
+          address: '789 Boulevard Haussmann',
+          contact_person: 'John Doe',
+          status: 'active'
+        },
+        {
+          id: '2',
+          name: 'Supplier B',
+          email: 'supplierb@example.com',
+          phone: '+33 2 22 22 22 22',
+          address: '321 Rue de Rivoli',
+          contact_person: 'Jane Smith',
+          status: 'active'
+        }
       ],
       error: null
     };
   },
 
   getInvoices: async () => {
-    // Simulate fetching invoices
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
       data: [
-        { id: 'INV001', number: 'INV001', date: '2024-01-20', total_amount: 150 },
-        { id: 'INV002', number: 'INV002', date: '2024-01-25', total_amount: 200 }
+        { 
+          id: 'INV001', 
+          number: 'INV001', 
+          date: new Date().toISOString(), 
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          total_amount: 150,
+          status: 'paid',
+          client: {
+            name: 'Client A',
+            email: 'clienta@example.com'
+          }
+        },
+        { 
+          id: 'INV002', 
+          number: 'INV002', 
+          date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          total_amount: 200,
+          status: 'pending',
+          client: {
+            name: 'Client B',
+            email: 'clientb@example.com'
+          }
+        }
       ],
       error: null
     };
   },
+
+  getSupplierInvoices: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: [
+        {
+          id: 'SINV001',
+          number: 'SINV001',
+          date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          total_amount: 1500,
+          status: 'paid',
+          supplier: {
+            name: 'Supplier A'
+          }
+        },
+        {
+          id: 'SINV002',
+          number: 'SINV002',
+          date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          total_amount: 2000,
+          status: 'pending',
+          supplier: {
+            name: 'Supplier B'
+          }
+        }
+      ],
+      error: null
+    };
+  }
 };
