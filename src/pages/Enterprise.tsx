@@ -93,7 +93,7 @@ const Enterprise = () => {
         </div>
         
         <div>
-          <h2 className="text-xl font-semibold mb-4">1. Informations Générales</h2>
+          <h2 className="text-xl font-semibold mb-4">Informations Générales</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -155,7 +155,7 @@ const Enterprise = () => {
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold mb-4">2. Contact & Coordonnées</h2>
+          <h2 className="text-xl font-semibold mb-4">Contact & Coordonnées</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
