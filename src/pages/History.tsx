@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -58,6 +57,40 @@ const getEventDescription = (entry: HistoryEntry) => {
   }
 };
 
+// Mock history data
+const mockHistory: HistoryEntry[] = [
+  {
+    id: "1",
+    event_type: 'stock_in',
+    product_name: 'Product 1',
+    quantity: 50,
+    old_value: null,
+    new_value: null,
+    created_at: new Date().toISOString(),
+    created_by_name: 'John Doe'
+  },
+  {
+    id: "2",
+    event_type: 'price_change',
+    product_name: 'Product 2',
+    quantity: null,
+    old_value: '99.99',
+    new_value: '149.99',
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    created_by_name: 'Jane Smith'
+  },
+  {
+    id: "3",
+    event_type: 'new_product',
+    product_name: 'Product 3',
+    quantity: null,
+    old_value: null,
+    new_value: null,
+    created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+    created_by_name: 'John Doe'
+  }
+];
+
 const History = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
@@ -70,22 +103,11 @@ const History = () => {
         return [];
       }
 
-      const { data, error } = await supabase
-        .from('history_with_details')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error("Error fetching history:", error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de charger l'historique",
-        });
-        throw error;
-      }
-
-      return data as HistoryEntry[];
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Return mock data
+      return mockHistory;
     },
     enabled: !!profile?.company_id
   });
