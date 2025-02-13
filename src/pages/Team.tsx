@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -24,7 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UserForm } from "@/components/company-users/UserForm";
-import { mockDataFunctions } from "@/utils/mockData";
+import { mockProfiles } from "@/utils/mockData";
 
 const Team = () => {
   const { toast } = useToast();
@@ -51,19 +50,8 @@ const Team = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const { data, error } = await mockDataFunctions.getCompanies();
-      if (error) {
-        console.error("Error fetching team members:", error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de charger l'équipe",
-        });
-        throw error;
-      }
-
-      // For now, we'll return mock profiles as team members
-      return mockDataFunctions.mockProfiles as CompanyUser[];
+      // Return mock profiles directly
+      return mockProfiles as CompanyUser[];
     },
     enabled: !!profile.company_id
   });
