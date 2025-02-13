@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -138,7 +139,7 @@ const Enterprise = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{enterprise?.name}</div>
                 <p className="text-xs text-muted-foreground">
-                  Créée le {new Date(enterprise?.created_at).toLocaleDateString()}
+                  Créée le {new Date(enterprise?.created_at || "").toLocaleDateString()}
                 </p>
               </CardContent>
             </Card>
@@ -288,9 +289,9 @@ const Enterprise = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="font-medium">{enterprise?.inventory.primary_warehouse.name}</div>
+                  <div className="font-medium">{enterprise?.inventory?.primary_warehouse.name}</div>
                   <div className="text-sm text-muted-foreground">
-                    {enterprise?.inventory.primary_warehouse.address}
+                    {enterprise?.inventory?.primary_warehouse.address}
                   </div>
                 </div>
               </CardContent>
@@ -305,7 +306,7 @@ const Enterprise = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {enterprise?.inventory.additional_warehouses.map((warehouse, index) => (
+                  {enterprise?.inventory?.additional_warehouses.map((warehouse, index) => (
                     <div key={index} className="border-b last:border-0 pb-2 last:pb-0">
                       <div className="font-medium">{warehouse.name}</div>
                       <div className="text-sm text-muted-foreground">{warehouse.address}</div>
@@ -325,9 +326,9 @@ const Enterprise = () => {
               <CardContent>
                 <div className="space-y-2">
                   <div className="text-xl font-semibold">
-                    {enterprise?.inventory.valuation_method === 'FIFO' && 'FIFO'}
-                    {enterprise?.inventory.valuation_method === 'LIFO' && 'LIFO'}
-                    {enterprise?.inventory.valuation_method === 'WEIGHTED_AVERAGE' && 'Moyenne pondérée'}
+                    {enterprise?.inventory?.valuation_method === 'FIFO' && 'FIFO'}
+                    {enterprise?.inventory?.valuation_method === 'LIFO' && 'LIFO'}
+                    {enterprise?.inventory?.valuation_method === 'WEIGHTED_AVERAGE' && 'Moyenne pondérée'}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Méthode de valorisation des stocks actuelle
@@ -348,13 +349,13 @@ const Enterprise = () => {
                   <div>
                     <div className="text-sm font-medium">Niveau d'alerte</div>
                     <div className="text-lg text-yellow-600">
-                      {enterprise?.inventory.stock_thresholds.alert_level} unités
+                      {enterprise?.inventory?.stock_thresholds.alert_level} unités
                     </div>
                   </div>
                   <div>
                     <div className="text-sm font-medium">Niveau de réapprovisionnement</div>
                     <div className="text-lg text-red-600">
-                      {enterprise?.inventory.stock_thresholds.reorder_level} unités
+                      {enterprise?.inventory?.stock_thresholds.reorder_level} unités
                     </div>
                   </div>
                 </div>
@@ -372,7 +373,7 @@ const Enterprise = () => {
                 <Users2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{enterprise?.inventory.active_suppliers}</div>
+                <div className="text-2xl font-bold">{enterprise?.inventory?.active_suppliers}</div>
                 <p className="text-sm text-muted-foreground">
                   Fournisseurs actifs
                 </p>
