@@ -100,26 +100,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // First check if we have a valid session
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
       // Clear all local state immediately
       setSession(null);
       setUser(null);
       setProfile(null);
 
-      // Only attempt to sign out if we have a valid session
-      if (currentSession?.access_token) {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error("Error signing out:", error);
-        }
-      }
-
       // Clear any stored auth data from localStorage
+      window.localStorage.removeItem('sb-ewtecjzneuiwcoxnhktg-auth-token');
       window.localStorage.removeItem('supabase.auth.token');
       window.localStorage.removeItem('supabase.auth.expires_at');
+      window.localStorage.removeItem('supabase.auth.expires_in');
       window.localStorage.removeItem('supabase.auth.refresh_token');
+
+      // Finally, attempt to sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+      }
     } catch (error) {
       console.error("Error in signOut:", error);
     }
