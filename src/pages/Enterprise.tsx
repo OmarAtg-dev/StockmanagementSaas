@@ -1,7 +1,6 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Card,
@@ -17,7 +16,6 @@ import {
   BadgeCheck,
   AlertCircle 
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Enterprise {
@@ -25,102 +23,32 @@ interface Enterprise {
   name: string;
   subscription_status: string;
   created_at: string;
-  user_count?: number;
+  user_count: number;
 }
 
+// Mock data for enterprise
+const mockEnterprise: Enterprise = {
+  id: "1",
+  name: "Acme Corporation",
+  subscription_status: "active",
+  created_at: "2024-01-01T00:00:00.000Z",
+  user_count: 25
+};
+
 const Enterprise = () => {
-  const { user, profile } = useAuth();
-  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const { data: enterprise, isLoading, error } = useQuery({
-    queryKey: ["enterprise", user?.id, profile],
+  const { data: enterprise, isLoading } = useQuery({
+    queryKey: ["enterprise", user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      if (!profile) throw new Error("Profil utilisateur non chargé");
-
-      console.log("Fetching enterprise data for user:", user.id);
-      console.log("User profile:", profile);
-      console.log("User role:", profile.role);
-
-      // If user is super_admin and no company_id is set, fetch the first company
-      if (profile.role === 'super_admin') {
-        const { data: companies, error: companiesError } = await supabase
-          .from("companies")
-          .select(`
-            *,
-            company_user_roles (
-              count
-            )
-          `)
-          .limit(1)
-          .single();
-
-        if (companiesError) {
-          console.error("Error fetching companies:", companiesError);
-          throw companiesError;
-        }
-
-        if (!companies) {
-          throw new Error("Aucune entreprise trouvée");
-        }
-
-        return {
-          id: companies.id,
-          name: companies.name,
-          subscription_status: companies.subscription_status,
-          created_at: companies.created_at,
-          user_count: companies.company_user_roles?.[0]?.count || 0
-        };
-      }
-
-      // For regular users, fetch their associated company
-      const companyId = profile.company_id;
-      if (!companyId) {
-        throw new Error("Aucune entreprise associée à cet utilisateur");
-      }
-
-      const { data: company, error: companyError } = await supabase
-        .from("companies")
-        .select(`
-          *,
-          company_user_roles (
-            count
-          )
-        `)
-        .eq("id", companyId)
-        .single();
-
-      if (companyError) {
-        console.error("Error fetching company:", companyError);
-        throw companyError;
-      }
-
-      if (!company) {
-        throw new Error("Entreprise non trouvée");
-      }
-
-      return {
-        id: company.id,
-        name: company.name,
-        subscription_status: company.subscription_status,
-        created_at: company.created_at,
-        user_count: company.company_user_roles?.[0]?.count || 0
-      };
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return mockEnterprise;
     },
-    enabled: !!user?.id && !!profile,
-    meta: {
-      onError: (error: Error) => {
-        console.error("Query error:", error);
-        toast({
-          title: "Erreur",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    }
+    enabled: !!user?.id,
   });
 
-  if (isLoading || !profile) {
+  if (isLoading) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
@@ -130,22 +58,6 @@ const Enterprise = () => {
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error instanceof Error ? error.message : "Une erreur est survenue"}
-            </AlertDescription>
-          </Alert>
         </div>
       </DashboardLayout>
     );
