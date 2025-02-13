@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
 import History from "./pages/History";
+import Team from "./pages/Team";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <History />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/team"
+      element={
+        <ProtectedRoute>
+          <Team />
         </ProtectedRoute>
       }
     />
