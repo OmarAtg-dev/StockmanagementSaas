@@ -14,13 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Receipt } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
 
 interface Supplier {
   id: string;
@@ -34,6 +35,7 @@ interface Supplier {
 
 const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const { profile } = useAuth();
   const { toast } = useToast();
 
@@ -192,6 +194,14 @@ const Suppliers = () => {
                       {getStatusBadge(supplier.status)}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedSupplierId(supplier.id)}
+                        title="Créer une facture"
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon">
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -205,6 +215,15 @@ const Suppliers = () => {
             </TableBody>
           </Table>
         </Card>
+
+        {selectedSupplierId && profile?.company_id && (
+          <SupplierInvoiceDialog
+            open={!!selectedSupplierId}
+            onOpenChange={(open) => !open && setSelectedSupplierId(null)}
+            supplierId={selectedSupplierId}
+            companyId={profile.company_id}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
