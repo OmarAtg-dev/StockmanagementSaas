@@ -17,7 +17,6 @@ type Enterprise = {
   id: string;
   name: string;
   subscription_status: string;
-  user_count: number;
   created_at: string;
 };
 
@@ -53,36 +52,15 @@ const Enterprise = () => {
         // Use the first company for now
         const company = companies[0];
 
-        // Get user count for this company
-        const { count: userCount } = await supabase
-          .from("company_user_roles")
-          .select("*", { count: 'exact', head: true })
-          .eq("company_id", company.id);
-
         return {
           id: company.id,
           name: company.name,
           subscription_status: company.subscription_status,
-          user_count: userCount || 0,
           created_at: company.created_at,
         };
       } else {
-        // Regular user flow - get their company from roles
-        console.log("Fetching as regular user");
-        const { data: roleData, error: roleError } = await supabase
-          .from("company_user_roles")
-          .select("company_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (roleError) {
-          console.error("Role error:", roleError);
-          throw roleError;
-        }
-
-        console.log("Role data:", roleData);
-
-        if (!roleData?.company_id) {
+        // Regular user flow - get their company from profile
+        if (!profile?.company_id) {
           throw new Error("No company associated with user");
         }
 
@@ -90,7 +68,7 @@ const Enterprise = () => {
         const { data: companyData, error: companyError } = await supabase
           .from("companies")
           .select("*")
-          .eq("id", roleData.company_id)
+          .eq("id", profile.company_id)
           .maybeSingle();
 
         if (companyError) {
@@ -104,17 +82,10 @@ const Enterprise = () => {
           throw new Error("Company not found");
         }
 
-        // Get user count
-        const { count: userCount } = await supabase
-          .from("company_user_roles")
-          .select("*", { count: 'exact', head: true })
-          .eq("company_id", roleData.company_id);
-
         return {
           id: companyData.id,
           name: companyData.name,
           subscription_status: companyData.subscription_status,
-          user_count: userCount || 0,
           created_at: companyData.created_at,
         };
       }
@@ -166,7 +137,7 @@ const Enterprise = () => {
         <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
 
         {enterprise ? (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -178,21 +149,6 @@ const Enterprise = () => {
                 <div className="text-2xl font-bold">{enterprise.name}</div>
                 <p className="text-xs text-muted-foreground">
                   Statut: {enterprise.subscription_status === 'active' ? 'Actif' : 'Inactif'}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Nombre d'utilisateurs
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{enterprise.user_count}</div>
-                <p className="text-xs text-muted-foreground">
-                  Utilisateurs actifs
                 </p>
               </CardContent>
             </Card>
