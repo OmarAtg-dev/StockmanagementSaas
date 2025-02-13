@@ -48,7 +48,7 @@ const Enterprise = () => {
         <div className="space-y-6">
           <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
           <div className="grid gap-4 md:grid-cols-2">
-            {[...Array(4)].map((_, i) => (
+            {[...Array(3)].map((_, i) => (
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
@@ -117,20 +117,6 @@ const Enterprise = () => {
               <p className="text-xs text-muted-foreground">
                 Utilisateurs actifs
               </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                ID de l'entreprise
-              </CardTitle>
-              <div className="h-4 w-4 text-muted-foreground">#</div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm font-mono bg-muted p-2 rounded">
-                {enterprise?.id}
-              </div>
             </CardContent>
           </Card>
         </div>
