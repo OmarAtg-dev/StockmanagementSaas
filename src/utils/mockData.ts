@@ -1,3 +1,4 @@
+
 import { UserRole } from "@/types/auth";
 
 export const mockProfiles = [
@@ -20,6 +21,26 @@ export const mockProfiles = [
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     role: 'manager' as UserRole
+  }
+];
+
+// Mock clients data store
+let mockClients = [
+  { 
+    id: '1', 
+    name: 'Client A', 
+    email: 'clienta@example.com',
+    phone: '+33 1 23 45 67 89',
+    address: '123 Rue de Paris',
+    created_at: new Date().toISOString()
+  },
+  { 
+    id: '2', 
+    name: 'Client B', 
+    email: 'clientb@example.com',
+    phone: '+33 9 87 65 43 21',
+    address: '456 Avenue des Champs-Élysées',
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -53,9 +74,8 @@ export const mockDataFunctions = {
   signIn: async (email: string, password: string) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Check for the specific credentials
     if (email === "aitogram.omar1@gmail.com" && password === "StockManagement@123") {
-      const user = mockProfiles[0]; // Use the first profile (Omar)
+      const user = mockProfiles[0];
       return {
         data: {
           session: {
@@ -133,26 +153,51 @@ export const mockDataFunctions = {
   getClients: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
-      data: [
-        { 
-          id: '1', 
-          name: 'Client A', 
-          email: 'clienta@example.com',
-          phone: '+33 1 23 45 67 89',
-          address: '123 Rue de Paris',
-          created_at: new Date().toISOString()
-        },
-        { 
-          id: '2', 
-          name: 'Client B', 
-          email: 'clientb@example.com',
-          phone: '+33 9 87 65 43 21',
-          address: '456 Avenue des Champs-Élysées',
-          created_at: new Date().toISOString()
-        }
-      ],
+      data: mockClients,
       error: null
     };
+  },
+
+  createClient: async (data: { 
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    company_id: string;
+  }) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const newClient = {
+      id: String(mockClients.length + 1),
+      ...data,
+      created_at: new Date().toISOString()
+    };
+    mockClients.push(newClient);
+    return { error: null };
+  },
+
+  updateClient: async (id: string, data: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+  }) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const index = mockClients.findIndex(client => client.id === id);
+    if (index === -1) {
+      return { error: { message: "Client non trouvé" } };
+    }
+    mockClients[index] = { ...mockClients[index], ...data };
+    return { error: null };
+  },
+
+  deleteClient: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const index = mockClients.findIndex(client => client.id === id);
+    if (index === -1) {
+      return { error: { message: "Client non trouvé" } };
+    }
+    mockClients = mockClients.filter(client => client.id !== id);
+    return { error: null };
   },
 
   getProducts: async () => {
