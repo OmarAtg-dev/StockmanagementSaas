@@ -94,11 +94,8 @@ const Enterprise = () => {
   const { data: enterprise, isLoading } = useQuery({
     queryKey: ["enterprise", user?.id],
     queryFn: async () => {
-      const response = await mockDataFunctions.getEnterpriseInfo();
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-      return response.data;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return mockEnterpriseInfo;
     },
     enabled: !!user?.id,
   });
@@ -113,17 +110,6 @@ const Enterprise = () => {
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!enterprise) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
-          <p className="text-red-600">Une erreur s'est produite lors du chargement des données.</p>
         </div>
       </DashboardLayout>
     );
