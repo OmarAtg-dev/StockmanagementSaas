@@ -152,6 +152,7 @@ const Auth = () => {
               username: formData.username,
               full_name: formData.fullName,
               company_id: companyData.id,
+              role: 'admin', // First user is admin
             },
           ]);
 
@@ -160,7 +161,7 @@ const Auth = () => {
           throw new Error("Erreur lors de la création du profil");
         }
 
-        // 4. Create company user role
+        // 4. Create company user role for backwards compatibility
         console.log("Creating company user role");
         const { error: roleError } = await supabase
           .from("company_user_roles")
