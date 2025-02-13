@@ -19,7 +19,10 @@ export const MADIcon = React.forwardRef<SVGSVGElement, LucideProps>(
         {...props}
       >
         <text x="2" y="16" fontSize="12" fontFamily="sans-serif" fontWeight="bold">
-          MAD
+          MA
+        </text>
+        <text x="16" y="16" fontSize="12" fontFamily="sans-serif" fontWeight="bold">
+          D
         </text>
       </svg>
     );
