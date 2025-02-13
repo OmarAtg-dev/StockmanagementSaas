@@ -1,12 +1,11 @@
-
 import { UserRole } from "@/types/auth";
 
 export const mockProfiles = [
   {
     id: "1",
     user_id: "1",
-    username: "admin@example.com",
-    full_name: "Admin User",
+    username: "aitogram.omar1@gmail.com",
+    full_name: "Omar",
     company_id: "1",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -30,12 +29,12 @@ export const mockAuthContext = {
     refresh_token: "mock_refresh_token",
     user: {
       id: "1",
-      email: "admin@example.com"
+      email: "aitogram.omar1@gmail.com"
     }
   },
   user: {
     id: "1",
-    email: "admin@example.com"
+    email: "aitogram.omar1@gmail.com"
   },
   profile: mockProfiles[0]
 };
@@ -54,23 +53,24 @@ export const mockDataFunctions = {
   signIn: async (email: string, password: string) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const user = mockProfiles.find(p => p.username === email);
-    if (!user) {
+    // Check for the specific credentials
+    if (email === "aitogram.omar1@gmail.com" && password === "StockManagement@123") {
+      const user = mockProfiles[0]; // Use the first profile (Omar)
       return {
-        data: null,
-        error: { message: "Email ou mot de passe incorrect" }
+        data: {
+          session: {
+            access_token: "mock_token",
+            user: { id: user.id, email: user.username }
+          },
+          user
+        },
+        error: null
       };
     }
-
+    
     return {
-      data: {
-        session: {
-          access_token: "mock_token",
-          user: { id: user.id, email: user.username }
-        },
-        user
-      },
-      error: null
+      data: null,
+      error: { message: "Email ou mot de passe incorrect" }
     };
   },
 
