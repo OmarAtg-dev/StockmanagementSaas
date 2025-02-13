@@ -102,21 +102,35 @@ const CompanyUsers = () => {
     }) => {
       console.log("Starting user update for ID:", id);
 
-      // First update the profile
+      // First, get the user data to ensure we have the correct user_id
+      const { data: userData, error: userError } = await supabase
+        .from("company_users_with_roles")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (userError || !userData?.user_id) {
+        console.error("Error fetching user data:", userError);
+        throw new Error("Failed to get user data");
+      }
+
+      console.log("Updating profile for user_id:", userData.user_id);
+
+      // Update the profile
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
           username: email,
           full_name: full_name,
         })
-        .eq("id", editingUser?.user_id);
+        .eq("id", userData.user_id);
 
       if (profileError) {
         console.error("Profile update error:", profileError);
         throw profileError;
       }
 
-      // Then update the role
+      // Update the role
       const { error: roleError } = await supabase
         .from("company_user_roles")
         .update({ role })
@@ -130,7 +144,7 @@ const CompanyUsers = () => {
       // Update password if provided
       if (password) {
         const { error: authError } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: editingUser?.user_id, password }
+          body: { userId: userData.user_id, password }
         });
         if (authError) {
           console.error("Password update error:", authError);
