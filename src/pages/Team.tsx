@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import {
@@ -221,7 +222,7 @@ const Team = () => {
                 <DialogTitle>Ajouter un membre</DialogTitle>
               </DialogHeader>
               <UserForm
-                onSubmit={(data) => addUser.mutate(data)}
+                onSubmit={(data) => addUser.mutate(data as { email: string; password: string; full_name: string; role: string })}
                 onClose={() => setIsAddOpen(false)}
               />
             </DialogContent>
