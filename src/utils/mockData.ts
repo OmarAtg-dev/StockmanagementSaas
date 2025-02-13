@@ -384,6 +384,7 @@ export const mockDataFunctions = {
       id: `INV${Date.now()}`,
       ...data,
       status: 'pending',
+      notes: data.notes || null, // Ensure notes is never undefined
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -406,11 +407,13 @@ export const mockDataFunctions = {
     const newItems = items.map(item => ({
       id: `ITEM${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       ...item,
+      product_id: item.product_id || null, // Ensure product_id is never undefined
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
     mockInvoiceItems.push(...newItems);
     return {
+      data: newItems,
       error: null
     };
   }

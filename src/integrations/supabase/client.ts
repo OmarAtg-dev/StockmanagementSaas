@@ -9,16 +9,30 @@ const SUPABASE_PUBLISHABLE_KEY = "mock_key";
 
 const mockSupabase = {
   from: (table: string) => ({
-    insert: async (data: any) => {
-      switch (table) {
-        case 'invoices':
-          return mockDataFunctions.createInvoice(data[0]);
-        case 'invoice_items':
-          return mockDataFunctions.createInvoiceItems(data);
-        default:
-          throw new Error(`Table ${table} not implemented in mock`);
-      }
-    },
+    insert: (data: any) => ({
+      select: async () => {
+        switch (table) {
+          case 'invoices':
+            return mockDataFunctions.createInvoice(data[0]);
+          case 'invoice_items':
+            return mockDataFunctions.createInvoiceItems(data);
+          default:
+            throw new Error(`Table ${table} not implemented in mock`);
+        }
+      },
+      single: () => ({
+        select: async () => {
+          switch (table) {
+            case 'invoices':
+              return mockDataFunctions.createInvoice(data[0]);
+            case 'invoice_items':
+              return mockDataFunctions.createInvoiceItems(data);
+            default:
+              throw new Error(`Table ${table} not implemented in mock`);
+          }
+        }
+      })
+    }),
     select: () => ({
       single: async () => {
         return { data: null, error: null };
