@@ -259,7 +259,7 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
               <div className="space-y-4">
                 {items.map((item, index) => (
                   <div key={index} className="grid grid-cols-12 gap-3 items-start">
-                    <div className="col-span-4">
+                    <div className="col-span-6">
                       <Label className="text-sm mb-2">Produit</Label>
                       <Select
                         value={item.product_id}
@@ -277,14 +277,6 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="col-span-3">
-                      <Label className="text-sm mb-2">Description</Label>
-                      <Input
-                        placeholder="Description"
-                        value={item.description}
-                        onChange={(e) => updateItem(index, "description", e.target.value)}
-                      />
-                    </div>
                     <div className="col-span-2">
                       <Label className="text-sm mb-2">Quantité</Label>
                       <Input
@@ -295,7 +287,7 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
                         onChange={(e) => updateItem(index, "quantity", e.target.value)}
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-3">
                       <Label className="text-sm mb-2">Prix unitaire</Label>
                       <Input
                         type="number"
@@ -303,7 +295,8 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
                         step="0.01"
                         placeholder="Prix unitaire"
                         value={item.unit_price}
-                        onChange={(e) => updateItem(index, "unit_price", e.target.value)}
+                        readOnly
+                        className="bg-muted"
                       />
                     </div>
                     <div className="col-span-1 pt-7">
