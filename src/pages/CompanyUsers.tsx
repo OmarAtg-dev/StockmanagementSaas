@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -100,6 +99,8 @@ const CompanyUsers = () => {
       full_name: string;
       role: "admin" | "manager" | "staff";
     }) => {
+      console.log("Starting user update for ID:", id);
+
       // First retrieve the current user data
       const { data: userData, error: userError } = await supabase
         .from("company_users_with_roles")
@@ -115,32 +116,39 @@ const CompanyUsers = () => {
       console.log("Updating user with ID:", userData.user_id);
 
       // Update user profile
-      const { error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .update({ 
           username: email,
           full_name: full_name,
         })
-        .eq("id", userData.user_id);
+        .eq("id", userData.user_id)
+        .select();
 
       if (profileError) {
         console.error("Profile update error:", profileError);
         throw profileError;
       }
 
+      console.log("Profile updated successfully:", profileData);
+
       // Update role
-      const { error: roleError } = await supabase
+      const { data: roleData, error: roleError } = await supabase
         .from("company_user_roles")
         .update({ role })
-        .eq("id", id);
+        .eq("id", id)
+        .select();
 
       if (roleError) {
         console.error("Role update error:", roleError);
         throw roleError;
       }
 
+      console.log("Role updated successfully:", roleData);
+
       // Update password if provided
       if (password) {
+        console.log("Updating password for user:", userData.user_id);
         const { error: authError } = await supabase.functions.invoke('update-user-password', {
           body: { userId: userData.user_id, password }
         });
@@ -148,10 +156,13 @@ const CompanyUsers = () => {
           console.error("Password update error:", authError);
           throw authError;
         }
+        console.log("Password updated successfully");
       }
+
+      return { profileData, roleData };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company-users"] });
+      queryClient.invalidateQueries({ queryKey: ["company-users", companyId] });
       toast({
         title: "Utilisateur mis à jour",
         description: "Les informations de l'utilisateur ont été mises à jour avec succès",
@@ -159,6 +170,7 @@ const CompanyUsers = () => {
       setEditingUser(null);
     },
     onError: (error: Error) => {
+      console.error("Update error:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
