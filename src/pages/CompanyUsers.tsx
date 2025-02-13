@@ -100,21 +100,28 @@ const CompanyUsers = () => {
       full_name: string;
       role: "admin" | "manager" | "staff";
     }) => {
-      if (!editingUser?.user_id) {
-        console.error("Editing user data:", editingUser);
+      // First retrieve the current user data
+      const { data: userData, error: userError } = await supabase
+        .from("company_users_with_roles")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (userError || !userData?.user_id) {
+        console.error("Error fetching user data:", userError);
         throw new Error("User ID is missing");
       }
 
-      console.log("Updating user with ID:", editingUser.user_id);
+      console.log("Updating user with ID:", userData.user_id);
 
-      // Update user profile first
+      // Update user profile
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
           username: email,
           full_name: full_name,
         })
-        .eq("id", editingUser.user_id);
+        .eq("id", userData.user_id);
 
       if (profileError) {
         console.error("Profile update error:", profileError);
@@ -135,7 +142,7 @@ const CompanyUsers = () => {
       // Update password if provided
       if (password) {
         const { error: authError } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: editingUser.user_id, password }
+          body: { userId: userData.user_id, password }
         });
         if (authError) {
           console.error("Password update error:", authError);
