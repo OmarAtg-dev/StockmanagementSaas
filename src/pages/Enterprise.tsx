@@ -29,8 +29,43 @@ const Enterprise = () => {
   const { data: enterprise, isLoading, error } = useQuery({
     queryKey: ["enterprise", profile?.company_id],
     queryFn: async () => {
-      if (!profile?.company_id) return null;
+      console.log("Fetching enterprise data with profile:", profile);
       
+      // First, get the company_id from company_user_roles if not in profile
+      if (!profile?.company_id) {
+        const { data: roleData, error: roleError } = await supabase
+          .from("company_user_roles")
+          .select("company_id")
+          .eq("user_id", profile?.id)
+          .single();
+
+        if (roleError) {
+          console.error("Error fetching company role:", roleError);
+          throw roleError;
+        }
+
+        console.log("Found company_id from roles:", roleData?.company_id);
+        
+        if (!roleData?.company_id) {
+          throw new Error("No company associated with user");
+        }
+
+        // Now fetch the company data
+        const { data, error } = await supabase
+          .from("companies_with_users")
+          .select("*")
+          .eq("id", roleData.company_id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching company:", error);
+          throw error;
+        }
+
+        return data as Enterprise;
+      }
+      
+      // If we have company_id in profile, use it directly
       const { data, error } = await supabase
         .from("companies_with_users")
         .select("*")
@@ -48,7 +83,7 @@ const Enterprise = () => {
       }
       return data as Enterprise;
     },
-    enabled: !!profile?.company_id,
+    enabled: !!profile?.id,
   });
 
   if (isLoading) {
@@ -66,13 +101,13 @@ const Enterprise = () => {
     );
   }
 
-  if (!profile?.company_id) {
+  if (!profile?.id) {
     return (
       <DashboardLayout>
         <div className="text-center py-8">
           <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
           <p className="text-muted-foreground">
-            Vous n'êtes pas associé à une entreprise.
+            Vous n'êtes pas connecté.
           </p>
         </div>
       </DashboardLayout>
