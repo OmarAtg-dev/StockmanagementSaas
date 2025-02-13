@@ -22,7 +22,7 @@ type Enterprise = {
 };
 
 const Enterprise = () => {
-  const { profile, user } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const { data: enterprise, isLoading, error } = useQuery({
@@ -30,40 +30,32 @@ const Enterprise = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      // Get the user's company role to fetch the company data
+      // Get the user's company role and company data in one query
       const { data: roleData, error: roleError } = await supabase
         .from("company_user_roles")
-        .select("company_id")
+        .select(`
+          company_id,
+          companies:companies_with_users!inner(
+            id,
+            name,
+            subscription_status,
+            user_count,
+            created_at
+          )
+        `)
         .eq("user_id", user.id)
         .single();
 
       if (roleError) {
-        console.error("Error fetching company role:", roleError);
+        console.error("Error fetching company data:", roleError);
         throw roleError;
       }
 
-      if (!roleData?.company_id) {
+      if (!roleData?.companies) {
         throw new Error("No company associated with user");
       }
 
-      // Fetch company data using the company_id
-      const { data, error } = await supabase
-        .from("companies_with_users")
-        .select("*")
-        .eq("id", roleData.company_id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching company:", error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de charger les informations de l'entreprise.",
-        });
-        throw error;
-      }
-
-      return data as Enterprise;
+      return roleData.companies as Enterprise;
     },
     enabled: !!user?.id,
   });
