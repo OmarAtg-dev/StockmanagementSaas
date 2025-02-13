@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -69,7 +70,7 @@ const CompanyUsers = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company-users"] });
+      queryClient.invalidateQueries({ queryKey: ["company-users", companyId] });
       toast({
         title: "Utilisateur ajouté",
         description: "L'utilisateur a été ajouté avec succès",
@@ -104,7 +105,7 @@ const CompanyUsers = () => {
       // First retrieve the current user data
       const { data: userData, error: userError } = await supabase
         .from("company_users_with_roles")
-        .select("user_id")
+        .select("user_id, company_id")
         .eq("id", id)
         .single();
 
@@ -115,36 +116,38 @@ const CompanyUsers = () => {
 
       console.log("Updating user with ID:", userData.user_id);
 
-      // Update user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .update({ 
-          username: email,
-          full_name: full_name,
-        })
-        .eq("id", userData.user_id)
-        .select();
+      // Update user profile in a transaction-like sequence
+      const updates = [];
 
-      if (profileError) {
-        console.error("Profile update error:", profileError);
-        throw profileError;
-      }
+      // 1. Update profile
+      updates.push(
+        supabase
+          .from("profiles")
+          .update({ 
+            username: email,
+            full_name: full_name,
+          })
+          .eq("id", userData.user_id)
+      );
 
-      console.log("Profile updated successfully:", profileData);
+      // 2. Update role
+      updates.push(
+        supabase
+          .from("company_user_roles")
+          .update({ role })
+          .eq("id", id)
+      );
 
-      // Update role
-      const { data: roleData, error: roleError } = await supabase
-        .from("company_user_roles")
-        .update({ role })
-        .eq("id", id)
-        .select();
-
-      if (roleError) {
-        console.error("Role update error:", roleError);
-        throw roleError;
-      }
-
-      console.log("Role updated successfully:", roleData);
+      // Execute all updates
+      const results = await Promise.all(updates);
+      
+      // Check for errors
+      results.forEach((result, index) => {
+        if (result.error) {
+          console.error(`Error in update ${index}:`, result.error);
+          throw result.error;
+        }
+      });
 
       // Update password if provided
       if (password) {
@@ -159,7 +162,20 @@ const CompanyUsers = () => {
         console.log("Password updated successfully");
       }
 
-      return { profileData, roleData };
+      // Fetch the updated user to confirm changes
+      const { data: updatedUser, error: fetchError } = await supabase
+        .from("company_users_with_roles")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching updated user:", fetchError);
+        throw fetchError;
+      }
+
+      console.log("User updated successfully:", updatedUser);
+      return updatedUser;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-users", companyId] });
@@ -186,7 +202,7 @@ const CompanyUsers = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company-users"] });
+      queryClient.invalidateQueries({ queryKey: ["company-users", companyId] });
       toast({
         title: "Utilisateur supprimé",
         description: "L'utilisateur a été retiré de l'entreprise avec succès",
