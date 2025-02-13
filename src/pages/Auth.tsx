@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,25 +85,7 @@ const Auth = () => {
     try {
       console.log("Starting signup process for:", formData.email);
       
-      // 1. Create company first
-      console.log("Creating company:", formData.companyName);
-      const { data: companyData, error: companyError } = await supabase
-        .from("companies")
-        .insert([{ 
-          name: formData.companyName,
-          subscription_status: 'active'
-        }])
-        .select()
-        .single();
-
-      if (companyError) {
-        console.error("Error creating company:", companyError);
-        throw new Error("Erreur lors de la création de l'entreprise");
-      }
-
-      console.log("Company created successfully:", companyData);
-
-      // 2. Create user
+      // 1. Create user first
       console.log("Creating user account");
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email.trim(),
@@ -119,12 +100,6 @@ const Auth = () => {
 
       if (signUpError) {
         console.error("Error creating user:", signUpError);
-        // If user creation fails, delete the company
-        await supabase
-          .from("companies")
-          .delete()
-          .eq("id", companyData.id);
-          
         if (signUpError.message.includes("User already registered")) {
           toast({
             variant: "destructive",
@@ -141,58 +116,79 @@ const Auth = () => {
         return;
       }
 
-      // 3. Create profile and link to company
-      if (userData.user) {
-        console.log("Creating user profile");
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert([
-            {
-              id: userData.user.id,
-              username: formData.username,
-              full_name: formData.fullName,
-              company_id: companyData.id,
-              role: 'admin', // First user is admin
-            },
-          ]);
+      if (!userData.user) {
+        throw new Error("User creation failed");
+      }
 
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          throw new Error("Erreur lors de la création du profil");
-        }
+      // 2. Sign in immediately after signup
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim(),
+        password: formData.password,
+      });
 
-        // 4. Create company user role for backwards compatibility
-        console.log("Creating company user role");
-        const { error: roleError } = await supabase
-          .from("company_user_roles")
-          .insert([
-            {
-              user_id: userData.user.id,
-              company_id: companyData.id,
-              role: 'admin', // First user is admin
-            },
-          ]);
+      if (signInError) {
+        throw new Error("Failed to sign in after registration");
+      }
 
-        if (roleError) {
-          console.error("Error creating role:", roleError);
-          throw new Error("Erreur lors de la création du rôle");
-        }
+      // 3. Create company (now that we're authenticated)
+      console.log("Creating company:", formData.companyName);
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .insert([{ 
+          name: formData.companyName,
+          subscription_status: 'active'
+        }])
+        .select()
+        .single();
+
+      if (companyError) {
+        console.error("Error creating company:", companyError);
+        throw new Error("Erreur lors de la création de l'entreprise");
+      }
+
+      // 4. Create profile and link to company
+      console.log("Creating user profile");
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert([
+          {
+            id: userData.user.id,
+            username: formData.username,
+            full_name: formData.fullName,
+            company_id: companyData.id,
+            role: 'admin', // First user is admin
+          },
+        ]);
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        throw new Error("Erreur lors de la création du profil");
+      }
+
+      // 5. Create company user role for backwards compatibility
+      console.log("Creating company user role");
+      const { error: roleError } = await supabase
+        .from("company_user_roles")
+        .insert([
+          {
+            user_id: userData.user.id,
+            company_id: companyData.id,
+            role: 'admin', // First user is admin
+          },
+        ]);
+
+      if (roleError) {
+        console.error("Error creating role:", roleError);
+        throw new Error("Erreur lors de la création du rôle");
       }
 
       console.log("Signup process completed successfully");
       toast({
         title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+        description: "Votre compte a été créé avec succès. Vous êtes maintenant connecté.",
       });
       
-      // Reset form after successful signup
-      setFormData({
-        email: "",
-        password: "",
-        username: "",
-        fullName: "",
-        companyName: "",
-      });
+      navigate("/");
       
     } catch (error: any) {
       console.error("Signup process error:", error);
