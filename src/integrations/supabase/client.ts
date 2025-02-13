@@ -1,20 +1,30 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { mockDataFunctions } from '@/utils/mockData';
 
 // Using mock values to prevent actual API calls
 const SUPABASE_URL = "mock://supabase";
 const SUPABASE_PUBLISHABLE_KEY = "mock_key";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-    storage: {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {}
-    }
-  }
-});
+const mockSupabase = {
+  from: (table: string) => ({
+    insert: async (data: any) => {
+      switch (table) {
+        case 'invoices':
+          return mockDataFunctions.createInvoice(data[0]);
+        case 'invoice_items':
+          return mockDataFunctions.createInvoiceItems(data);
+        default:
+          throw new Error(`Table ${table} not implemented in mock`);
+      }
+    },
+    select: () => ({
+      single: async () => {
+        return { data: null, error: null };
+      }
+    })
+  })
+};
+
+export const supabase = mockSupabase as unknown as ReturnType<typeof createClient<Database>>;

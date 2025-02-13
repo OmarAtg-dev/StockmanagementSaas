@@ -1,4 +1,3 @@
-
 import { UserRole } from "@/types/auth";
 
 export const mockProfiles = [
@@ -41,6 +40,38 @@ let mockClients = [
     phone: '+33 9 87 65 43 21',
     address: '456 Avenue des Champs-Élysées',
     created_at: new Date().toISOString()
+  }
+];
+
+// Mock invoices data store
+let mockInvoices = [
+  { 
+    id: 'INV001',
+    number: 'INV001',
+    date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    total_amount: 150,
+    status: 'pending',
+    client_id: '1',
+    company_id: '1',
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+// Mock invoice items data store
+let mockInvoiceItems = [
+  {
+    id: '1',
+    invoice_id: 'INV001',
+    product_id: '101',
+    description: 'Product X',
+    quantity: 1,
+    unit_price: 150,
+    amount: 150,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
 ];
 
@@ -335,6 +366,51 @@ export const mockDataFunctions = {
           }
         }
       ],
+      error: null
+    };
+  },
+
+  createInvoice: async (data: {
+    client_id: string;
+    company_id: string;
+    number: string;
+    date: string;
+    due_date: string;
+    total_amount: number;
+    notes?: string;
+  }) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const newInvoice = {
+      id: `INV${Date.now()}`,
+      ...data,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    mockInvoices.push(newInvoice);
+    return {
+      data: newInvoice,
+      error: null
+    };
+  },
+
+  createInvoiceItems: async (items: {
+    invoice_id: string;
+    product_id?: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    amount: number;
+  }[]) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const newItems = items.map(item => ({
+      id: `ITEM${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      ...item,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    mockInvoiceItems.push(...newItems);
+    return {
       error: null
     };
   }
