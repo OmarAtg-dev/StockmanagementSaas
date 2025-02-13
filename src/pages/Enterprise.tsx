@@ -31,20 +31,20 @@ const Enterprise = () => {
       if (!user?.id) throw new Error("User not authenticated");
       
       console.log("Current user role:", profile?.role);
+      console.log("Current user id:", user.id);
       
       // For super_admin, get all companies first
       if (profile?.role === 'super_admin') {
-        console.log("Fetching as super admin");
         const { data: companies, error: companiesError } = await supabase
           .from("companies")
           .select("*");
 
         if (companiesError) {
-          console.error("Error fetching companies:", companiesError);
+          console.error("Companies error:", companiesError);
           throw companiesError;
         }
 
-        console.log("Found companies:", companies);
+        console.log("Found companies for super_admin:", companies);
 
         if (!companies || companies.length === 0) {
           throw new Error("No companies found");
@@ -54,15 +54,10 @@ const Enterprise = () => {
         const company = companies[0];
 
         // Get user count for this company
-        const { count: userCount, error: countError } = await supabase
+        const { count: userCount } = await supabase
           .from("company_user_roles")
           .select("*", { count: 'exact', head: true })
           .eq("company_id", company.id);
-
-        if (countError) {
-          console.error("Error fetching user count:", countError);
-          throw countError;
-        }
 
         return {
           id: company.id,
@@ -81,7 +76,7 @@ const Enterprise = () => {
           .maybeSingle();
 
         if (roleError) {
-          console.error("Error fetching role:", roleError);
+          console.error("Role error:", roleError);
           throw roleError;
         }
 
@@ -98,23 +93,22 @@ const Enterprise = () => {
           .eq("id", roleData.company_id)
           .maybeSingle();
 
-        if (companyError || !companyData) {
-          console.error("Error fetching company:", companyError);
-          throw companyError || new Error("Company not found");
+        if (companyError) {
+          console.error("Company error:", companyError);
+          throw companyError;
         }
 
         console.log("Company data:", companyData);
 
+        if (!companyData) {
+          throw new Error("Company not found");
+        }
+
         // Get user count
-        const { count: userCount, error: countError } = await supabase
+        const { count: userCount } = await supabase
           .from("company_user_roles")
           .select("*", { count: 'exact', head: true })
           .eq("company_id", roleData.company_id);
-
-        if (countError) {
-          console.error("Error fetching user count:", countError);
-          throw countError;
-        }
 
         return {
           id: companyData.id,
@@ -128,6 +122,7 @@ const Enterprise = () => {
     enabled: !!user?.id,
     meta: {
       onError: (error: Error) => {
+        console.error("Query error:", error);
         toast({
           title: "Erreur",
           description: error.message,
@@ -232,4 +227,3 @@ const Enterprise = () => {
 };
 
 export default Enterprise;
-
