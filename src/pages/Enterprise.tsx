@@ -26,14 +26,54 @@ const Enterprise = () => {
   const { toast } = useToast();
 
   const { data: enterprise, isLoading, error } = useQuery({
-    queryKey: ["enterprise", user?.id],
+    queryKey: ["enterprise", user?.id, profile?.role],
     queryFn: async () => {
       if (!user?.id) throw new Error("User not authenticated");
       
-      let companyId: string | null = null;
+      console.log("Current user role:", profile?.role);
+      
+      // For super_admin, get all companies first
+      if (profile?.role === 'super_admin') {
+        console.log("Fetching as super admin");
+        const { data: companies, error: companiesError } = await supabase
+          .from("companies")
+          .select("*");
 
-      // If user is not a super_admin, get their company_id from roles
-      if (profile?.role !== 'super_admin') {
+        if (companiesError) {
+          console.error("Error fetching companies:", companiesError);
+          throw companiesError;
+        }
+
+        console.log("Found companies:", companies);
+
+        if (!companies || companies.length === 0) {
+          throw new Error("No companies found");
+        }
+
+        // Use the first company for now
+        const company = companies[0];
+
+        // Get user count for this company
+        const { count: userCount, error: countError } = await supabase
+          .from("company_user_roles")
+          .select("*", { count: 'exact', head: true })
+          .eq("company_id", company.id);
+
+        if (countError) {
+          console.error("Error fetching user count:", countError);
+          throw countError;
+        }
+
+        return {
+          id: company.id,
+          name: company.name,
+          subscription_status: company.subscription_status,
+          user_count: userCount || 0,
+          created_at: company.created_at,
+        };
+      } else {
+        // Regular user flow - get their company from roles
+        console.log("Fetching as regular user");
         const { data: roleData, error: roleError } = await supabase
           .from("company_user_roles")
           .select("company_id")
@@ -45,60 +85,57 @@ const Enterprise = () => {
           throw roleError;
         }
 
+        console.log("Role data:", roleData);
+
         if (!roleData?.company_id) {
           throw new Error("No company associated with user");
         }
 
-        companyId = roleData.company_id;
-      } else {
-        // For super_admin, get the first company (or you could add company selection logic)
-        const { data: companies, error: companiesError } = await supabase
+        // Fetch the company details
+        const { data: companyData, error: companyError } = await supabase
           .from("companies")
-          .select("id")
-          .limit(1)
-          .single();
+          .select("*")
+          .eq("id", roleData.company_id)
+          .maybeSingle();
 
-        if (companiesError) {
-          console.error("Error fetching companies:", companiesError);
-          throw companiesError;
+        if (companyError || !companyData) {
+          console.error("Error fetching company:", companyError);
+          throw companyError || new Error("Company not found");
         }
 
-        companyId = companies.id;
+        console.log("Company data:", companyData);
+
+        // Get user count
+        const { count: userCount, error: countError } = await supabase
+          .from("company_user_roles")
+          .select("*", { count: 'exact', head: true })
+          .eq("company_id", roleData.company_id);
+
+        if (countError) {
+          console.error("Error fetching user count:", countError);
+          throw countError;
+        }
+
+        return {
+          id: companyData.id,
+          name: companyData.name,
+          subscription_status: companyData.subscription_status,
+          user_count: userCount || 0,
+          created_at: companyData.created_at,
+        };
       }
-
-      // Fetch the company details
-      const { data: companyData, error: companyError } = await supabase
-        .from("companies")
-        .select("*")
-        .eq("id", companyId)
-        .maybeSingle();
-
-      if (companyError || !companyData) {
-        console.error("Error fetching company:", companyError);
-        throw companyError || new Error("Company not found");
-      }
-
-      // Get user count
-      const { count: userCount, error: countError } = await supabase
-        .from("company_user_roles")
-        .select("*", { count: 'exact', head: true })
-        .eq("company_id", companyId);
-
-      if (countError) {
-        console.error("Error fetching user count:", countError);
-        throw countError;
-      }
-
-      return {
-        id: companyData.id,
-        name: companyData.name,
-        subscription_status: companyData.subscription_status,
-        user_count: userCount || 0,
-        created_at: companyData.created_at,
-      } as Enterprise;
     },
     enabled: !!user?.id,
   });
+
+  if (error) {
+    console.error("Query error:", error);
+    toast({
+      title: "Erreur",
+      description: error.message,
+      variant: "destructive",
+    });
+  }
 
   if (isLoading) {
     return (
@@ -122,22 +159,6 @@ const Enterprise = () => {
           <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
           <p className="text-muted-foreground">
             Vous n'êtes pas connecté.
-          </p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="text-center py-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
-          <p className="text-red-500">
-            Une erreur est survenue lors du chargement des données.
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {error.message}
           </p>
         </div>
       </DashboardLayout>
@@ -197,6 +218,15 @@ const Enterprise = () => {
                 </p>
               </CardContent>
             </Card>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-500">
+              Une erreur est survenue lors du chargement des données.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {error.message}
+            </p>
           </div>
         ) : (
           <div className="text-center py-8">
