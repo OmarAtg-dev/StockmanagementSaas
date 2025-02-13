@@ -27,9 +27,10 @@ const queryClient = new QueryClient();
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   
-  if (!session) {
+  if (!session || !profile) {
+    // Redirect to auth page if not authenticated
     return <Navigate to="/auth" replace />;
   }
 
@@ -41,6 +42,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { session } = useAuth();
   
   if (session) {
+    // Redirect to dashboard if already authenticated
     return <Navigate to="/" replace />;
   }
 
