@@ -19,7 +19,10 @@ const Analytics = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Chiffre d'affaires"
-            value="45 230 €"
+            value={new Intl.NumberFormat('fr-FR', { 
+              style: 'currency', 
+              currency: 'MAD'
+            }).format(45230)}
             icon={<DollarSign className="h-6 w-6" />}
             trend={{ value: 12, isPositive: true }}
           />
