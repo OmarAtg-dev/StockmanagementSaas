@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -327,10 +326,12 @@ const Enterprise = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{enterprise?.user_count}</div>
-                <p className="text-sm text-muted-foreground">
-                  Membres dans l'équipe
-                </p>
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold">{enterprise?.user_count}</div>
+                  <div className="text-sm text-muted-foreground">
+                    Membres dans l'équipe
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
