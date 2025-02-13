@@ -11,24 +11,26 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, UserPlus } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-
-interface TeamMember {
-  id: string;
-  username: string;
-  full_name: string;
-  role: string;
-  created_at: string;
-}
+import { CompanyUser } from "@/types/company-user";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { UserForm } from "@/components/company-users/UserForm";
 
 const Team = () => {
   const { toast } = useToast();
   const { profile } = useAuth();
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<CompanyUser | null>(null);
 
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['team-members'],
@@ -53,9 +55,122 @@ const Team = () => {
         throw error;
       }
 
-      return data as TeamMember[];
+      return data as CompanyUser[];
     },
     enabled: !!profile?.company_id
+  });
+
+  const addUser = useMutation({
+    mutationFn: async ({
+      email,
+      password,
+      full_name,
+      role,
+    }: {
+      email: string;
+      password: string;
+      full_name: string;
+      role: string;
+    }) => {
+      const { data, error } = await supabase.rpc('create_company_user', {
+        p_email: email,
+        p_password: password,
+        p_full_name: full_name,
+        p_company_id: profile?.company_id,
+        p_role: role,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      toast({
+        title: "Utilisateur ajouté",
+        description: "L'utilisateur a été ajouté avec succès",
+      });
+      setIsAddOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message,
+      });
+    },
+  });
+
+  const updateUser = useMutation({
+    mutationFn: async ({
+      id,
+      email,
+      full_name,
+      role,
+    }: {
+      id: string;
+      email: string;
+      full_name: string;
+      role: string;
+    }) => {
+      // Update the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          username: email,
+          full_name: full_name,
+        })
+        .eq('id', id);
+
+      if (profileError) throw profileError;
+
+      // Update the role
+      const { error: roleError } = await supabase
+        .from('company_user_roles')
+        .update({ role })
+        .eq('id', id);
+
+      if (roleError) throw roleError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      toast({
+        title: "Utilisateur mis à jour",
+        description: "Les informations de l'utilisateur ont été mises à jour avec succès",
+      });
+      setEditingUser(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message,
+      });
+    },
+  });
+
+  const deleteUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('company_user_roles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      toast({
+        title: "Utilisateur supprimé",
+        description: "L'utilisateur a été retiré de l'équipe avec succès",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression de l'utilisateur",
+      });
+    },
   });
 
   const getRoleLabel = (role: string) => {
@@ -78,6 +193,12 @@ const Team = () => {
     }
   };
 
+  const handleDelete = (userId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+      deleteUser.mutate(userId);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -88,10 +209,23 @@ const Team = () => {
               Gérez les membres de votre équipe et leurs rôles
             </p>
           </div>
-          <Button onClick={() => navigate(`/companies/${profile?.company_id}/users`)}>
-            <UserPlus className="w-4 h-4 mr-2" />
-            Ajouter un membre
-          </Button>
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Ajouter un membre
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Ajouter un membre</DialogTitle>
+              </DialogHeader>
+              <UserForm
+                onSubmit={(data) => addUser.mutate(data)}
+                onClose={() => setIsAddOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Card>
@@ -135,7 +269,7 @@ const Team = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate(`/companies/${profile?.company_id}/users`)}
+                        onClick={() => setEditingUser(member)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -143,7 +277,7 @@ const Team = () => {
                         variant="ghost"
                         size="icon"
                         className="text-red-600"
-                        onClick={() => navigate(`/companies/${profile?.company_id}/users`)}
+                        onClick={() => handleDelete(member.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -154,6 +288,31 @@ const Team = () => {
             </TableBody>
           </Table>
         </Card>
+
+        <Dialog
+          open={!!editingUser}
+          onOpenChange={(open) => {
+            if (!open) setEditingUser(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifier le membre</DialogTitle>
+            </DialogHeader>
+            {editingUser && (
+              <UserForm
+                user={editingUser}
+                onSubmit={(data) =>
+                  updateUser.mutate({
+                    id: editingUser.id,
+                    ...data,
+                  })
+                }
+                onClose={() => setEditingUser(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

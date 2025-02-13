@@ -86,6 +86,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           id: string
+          role: string
           updated_at: string
           user_id: string | null
         }
@@ -93,6 +94,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          role?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -100,6 +102,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          role?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -675,6 +678,7 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string | null
+          role: string | null
           user_id: string | null
           username: string | null
         }
@@ -735,7 +739,16 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      create_company_user: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_full_name: string
+          p_company_id: string
+          p_role: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

@@ -5,6 +5,6 @@ export type CompanyUser = {
   company_id: string;
   full_name: string | null;
   username: string | null;
+  role: string;
   created_at: string;
-  updated_at: string;
 };
