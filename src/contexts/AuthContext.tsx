@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,16 +100,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // First clear all local state
+      // First check if we have a valid session
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      // Clear all local state immediately
       setSession(null);
       setUser(null);
       setProfile(null);
 
-      // Then attempt to sign out from Supabase
-      // If this fails due to invalid session, we've already cleared local state
-      await supabase.auth.signOut();
+      // Only attempt to sign out if we have a valid session
+      if (currentSession?.access_token) {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error("Error signing out:", error);
+        }
+      }
+
+      // Clear any stored auth data from localStorage
+      window.localStorage.removeItem('supabase.auth.token');
+      window.localStorage.removeItem('supabase.auth.expires_at');
+      window.localStorage.removeItem('supabase.auth.refresh_token');
     } catch (error) {
-      // Even if sign out fails, we keep the local state cleared
       console.error("Error in signOut:", error);
     }
   };
