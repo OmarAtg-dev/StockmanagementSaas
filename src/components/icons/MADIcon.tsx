@@ -18,7 +18,7 @@ export const MADIcon = React.forwardRef<SVGSVGElement, LucideProps>(
         strokeLinejoin="round"
         {...props}
       >
-        <text x="1" y="17" fontSize="14" fontFamily="sans-serif" fontWeight="bold">
+        <text x="2" y="16" fontSize="12" fontFamily="sans-serif" fontWeight="bold">
           MAD
         </text>
       </svg>
