@@ -13,13 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { mockDataFunctions } from "@/utils/mockData";
 
 interface InventoryItem {
   id: string;
@@ -56,19 +56,7 @@ const Inventory = () => {
         return [];
       }
 
-      const { data, error } = await supabase
-        .from('inventory')
-        .select(`
-          id,
-          quantity,
-          location,
-          last_updated,
-          product:products (
-            name,
-            category
-          )
-        `)
-        .eq('company_id', profile.company_id);
+      const { data, error } = await mockDataFunctions.getInventory();
 
       if (error) {
         console.error("Error fetching inventory:", error);
@@ -92,33 +80,9 @@ const Inventory = () => {
         return [];
       }
 
-      const { data, error } = await supabase
-        .from('expected_inventory')
-        .select(`
-          id,
-          quantity,
-          expected_date,
-          status,
-          notes,
-          product:products (
-            name,
-            category
-          )
-        `)
-        .eq('company_id', profile.company_id)
-        .order('expected_date', { ascending: true });
+      // For now, we'll return an empty array as we don't have mock data for expected inventory
+      return [];
 
-      if (error) {
-        console.error("Error fetching expected inventory:", error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de charger l'inventaire attendu",
-        });
-        throw error;
-      }
-
-      return data as ExpectedInventoryItem[];
     },
     enabled: !!profile?.company_id
   });
@@ -213,7 +177,7 @@ const Inventory = () => {
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell>{item.location || '-'}</TableCell>
                           <TableCell>
-                            {new Date(item.last_updated).toLocaleDateString()}
+                            {format(new Date(item.last_updated), "dd/MM/yyyy", { locale: fr })}
                           </TableCell>
                         </TableRow>
                       ))
