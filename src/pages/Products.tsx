@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import {
@@ -115,7 +114,12 @@ const Products = () => {
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{product.category}</TableCell>
-                    <TableCell>{product.price} €</TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('fr-FR', { 
+                        style: 'currency', 
+                        currency: 'MAD'
+                      }).format(product.price)}
+                    </TableCell>
                     <TableCell>{product.stock}</TableCell>
                     <TableCell>
                       <span

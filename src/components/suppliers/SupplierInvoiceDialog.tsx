@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -261,7 +260,7 @@ export function SupplierInvoiceDialog({ open, onOpenChange, supplierId, companyI
                 <div className="w-[200px]">
                   <Label>Total</Label>
                   <Input
-                    value={calculateTotal().toFixed(2) + " €"}
+                    value={calculateTotal().toFixed(2) + " MAD"}
                     readOnly
                     className="bg-muted"
                   />

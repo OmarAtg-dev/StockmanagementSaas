@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -183,7 +182,10 @@ const Invoices = () => {
                       {format(new Date(invoice.due_date), "PP", { locale: fr })}
                     </TableCell>
                     <TableCell>
-                      {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(invoice.total_amount)}
+                      {new Intl.NumberFormat('fr-FR', { 
+                        style: 'currency', 
+                        currency: 'MAD'
+                      }).format(invoice.total_amount)}
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(invoice.status)}
