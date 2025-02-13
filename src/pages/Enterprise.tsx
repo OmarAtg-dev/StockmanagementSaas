@@ -30,32 +30,48 @@ const Enterprise = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      // Get the user's company role and company data in one query
+      // First get the company_id from user roles
       const { data: roleData, error: roleError } = await supabase
         .from("company_user_roles")
-        .select(`
-          company_id,
-          companies:companies_with_users!inner(
-            id,
-            name,
-            subscription_status,
-            user_count,
-            created_at
-          )
-        `)
+        .select("company_id")
         .eq("user_id", user.id)
         .single();
 
       if (roleError) {
-        console.error("Error fetching company data:", roleError);
+        console.error("Error fetching role:", roleError);
         throw roleError;
       }
 
-      if (!roleData?.companies) {
+      if (!roleData?.company_id) {
         throw new Error("No company associated with user");
       }
 
-      return roleData.companies as Enterprise;
+      // Then fetch the company details
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .select(`
+          id,
+          name,
+          subscription_status,
+          created_at,
+          user_count:company_user_roles(count)
+        `)
+        .eq("id", roleData.company_id)
+        .single();
+
+      if (companyError) {
+        console.error("Error fetching company:", companyError);
+        throw companyError;
+      }
+
+      // Transform the data to match our Enterprise type
+      return {
+        id: companyData.id,
+        name: companyData.name,
+        subscription_status: companyData.subscription_status,
+        user_count: companyData.user_count[0].count,
+        created_at: companyData.created_at,
+      } as Enterprise;
     },
     enabled: !!user?.id,
   });
