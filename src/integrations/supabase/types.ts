@@ -123,6 +123,64 @@ export type Database = {
           },
         ]
       }
+      expected_inventory: {
+        Row: {
+          company_id: string
+          created_at: string
+          expected_date: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          expected_date: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          expected_date?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expected_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_with_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       history: {
         Row: {
           company_id: string
