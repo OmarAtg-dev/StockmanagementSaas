@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CompanyUser } from "@/types/company-user";
+import { CompanyUser, UserFormData } from "@/types/company-user";
 import { Eye, EyeOff } from "lucide-react";
 import {
   Select,
@@ -15,12 +15,7 @@ import {
 
 interface UserFormProps {
   user?: CompanyUser;
-  onSubmit: (data: {
-    email: string;
-    password?: string;
-    full_name: string;
-    role: string;
-  }) => void;
+  onSubmit: (data: UserFormData) => void;
   onClose: () => void;
 }
 
@@ -33,11 +28,12 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = {
+
+    const formData: UserFormData = {
       email,
       full_name: fullName,
       role,
-    } as any;
+    };
 
     // Only include password if it's provided (for editing) or if it's a new user
     if (password || !user) {

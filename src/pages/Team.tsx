@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -16,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { CompanyUser } from "@/types/company-user";
+import { CompanyUser, UserFormData } from "@/types/company-user";
 import {
   Dialog,
   DialogContent,
@@ -62,27 +61,19 @@ const Team = () => {
   });
 
   const addUser = useMutation({
-    mutationFn: async ({
-      email,
-      password,
-      full_name,
-      role,
-    }: {
-      email: string;
-      password: string;
-      full_name: string;
-      role: string;
-    }) => {
-      const { data, error } = await supabase.rpc('create_company_user', {
-        p_email: email,
-        p_password: password,
-        p_full_name: full_name,
-        p_company_id: profile?.company_id,
-        p_role: role,
+    mutationFn: async (data: UserFormData) => {
+      if (!profile?.company_id) throw new Error("Company ID is required");
+      
+      const { data: result, error } = await supabase.rpc('create_company_user', {
+        p_email: data.email,
+        p_password: data.password,
+        p_full_name: data.full_name,
+        p_company_id: profile.company_id,
+        p_role: data.role,
       });
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
@@ -222,7 +213,7 @@ const Team = () => {
                 <DialogTitle>Ajouter un membre</DialogTitle>
               </DialogHeader>
               <UserForm
-                onSubmit={(data) => addUser.mutate(data as { email: string; password: string; full_name: string; role: string })}
+                onSubmit={addUser.mutate}
                 onClose={() => setIsAddOpen(false)}
               />
             </DialogContent>

@@ -8,3 +8,10 @@ export type CompanyUser = {
   role: string;
   created_at: string;
 };
+
+export type UserFormData = {
+  email: string;
+  password?: string;
+  full_name: string;
+  role: string;
+};
