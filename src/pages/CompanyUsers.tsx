@@ -102,67 +102,43 @@ const CompanyUsers = () => {
     }) => {
       console.log("Starting user update for ID:", id);
 
-      // First retrieve the current user data
-      const { data: userData, error: userError } = await supabase
-        .from("company_users_with_roles")
-        .select("user_id, company_id")
-        .eq("id", id)
-        .single();
+      // First update the profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ 
+          username: email,
+          full_name: full_name,
+        })
+        .eq("id", editingUser?.user_id);
 
-      if (userError || !userData?.user_id) {
-        console.error("Error fetching user data:", userError);
-        throw new Error("User ID is missing");
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        throw profileError;
       }
 
-      console.log("Updating user with ID:", userData.user_id);
+      // Then update the role
+      const { error: roleError } = await supabase
+        .from("company_user_roles")
+        .update({ role })
+        .eq("id", id);
 
-      // Update user profile in a transaction-like sequence
-      const updates = [];
-
-      // 1. Update profile
-      updates.push(
-        supabase
-          .from("profiles")
-          .update({ 
-            username: email,
-            full_name: full_name,
-          })
-          .eq("id", userData.user_id)
-      );
-
-      // 2. Update role
-      updates.push(
-        supabase
-          .from("company_user_roles")
-          .update({ role })
-          .eq("id", id)
-      );
-
-      // Execute all updates
-      const results = await Promise.all(updates);
-      
-      // Check for errors
-      results.forEach((result, index) => {
-        if (result.error) {
-          console.error(`Error in update ${index}:`, result.error);
-          throw result.error;
-        }
-      });
+      if (roleError) {
+        console.error("Role update error:", roleError);
+        throw roleError;
+      }
 
       // Update password if provided
       if (password) {
-        console.log("Updating password for user:", userData.user_id);
         const { error: authError } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: userData.user_id, password }
+          body: { userId: editingUser?.user_id, password }
         });
         if (authError) {
           console.error("Password update error:", authError);
           throw authError;
         }
-        console.log("Password updated successfully");
       }
 
-      // Fetch the updated user to confirm changes
+      // Fetch and return the updated user
       const { data: updatedUser, error: fetchError } = await supabase
         .from("company_users_with_roles")
         .select("*")
@@ -170,11 +146,9 @@ const CompanyUsers = () => {
         .single();
 
       if (fetchError) {
-        console.error("Error fetching updated user:", fetchError);
         throw fetchError;
       }
 
-      console.log("User updated successfully:", updatedUser);
       return updatedUser;
     },
     onSuccess: () => {
