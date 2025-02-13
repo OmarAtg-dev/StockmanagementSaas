@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate, Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 const getMenuItems = (role: string | null) => {
   console.log("Current user role:", role);
@@ -83,19 +84,28 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar className="border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>
-            <span className="text-lg font-semibold text-primary">StockSy</span>
+          <SidebarGroupLabel className="px-2">
+            <div className="flex items-center gap-2 py-4">
+              <span className="text-xl font-bold text-primary">StockSy</span>
+            </div>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link to={item.path} className="flex items-center gap-3 px-3 py-2">
-                      <item.icon className="h-5 w-5" />
+                    <Link 
+                      to={item.path} 
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
+                        "text-sm font-medium",
+                        location.pathname === item.path && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -104,9 +114,12 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleSignOut}
-                  className="flex items-center gap-3 px-3 py-2 w-full text-red-600 hover:text-red-700"
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 w-full rounded-md transition-colors",
+                    "text-sm font-medium text-destructive hover:bg-destructive/10"
+                  )}
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4" />
                   <span>Déconnexion</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
