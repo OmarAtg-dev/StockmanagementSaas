@@ -27,21 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      // Only try to fetch profile if we have a valid session
-      if (!session?.access_token) return;
-
       console.log("Fetching profile for user:", userId);
-
-      // First, check if the user has a super_admin role
-      const { data: roleData, error: roleError } = await supabase
-        .from("company_user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .single();
-
-      if (!roleError && roleData) {
-        console.log("Role data found:", roleData);
-      }
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -54,39 +40,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // Update profile with role information if it exists
-      const updatedProfile = {
-        ...profileData,
-        role: roleData?.role || 'user'
-      };
-
-      console.log("Updated profile with role:", updatedProfile);
-
-      // Set the initial profile data
-      setProfile(updatedProfile);
+      console.log("Profile data fetched:", profileData);
+      setProfile(profileData);
 
       // If we don't have a company_id in profile, try to get it from company_user_roles
-      if (!updatedProfile.company_id) {
+      if (!profileData.company_id) {
         const { data: companyRoleData, error: companyRoleError } = await supabase
           .from("company_user_roles")
-          .select("company_id")
+          .select("company_id, role")
           .eq("user_id", userId)
           .single();
 
         if (!companyRoleError && companyRoleData?.company_id) {
           // Update the profile with the company_id
-          const { data: finalProfile, error: updateError } = await supabase
+          const { data: updatedProfile, error: updateError } = await supabase
             .from("profiles")
-            .update({ company_id: companyRoleData.company_id })
+            .update({ 
+              company_id: companyRoleData.company_id,
+              role: companyRoleData.role 
+            })
             .eq("id", userId)
             .select()
             .single();
 
-          if (!updateError && finalProfile) {
-            setProfile({
-              ...finalProfile,
-              role: roleData?.role || 'user'
-            });
+          if (!updateError && updatedProfile) {
+            console.log("Updated profile with company data:", updatedProfile);
+            setProfile(updatedProfile);
           }
         }
       }
@@ -98,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      console.log("Initial session:", initialSession);
       setSession(initialSession);
       setUser(initialSession?.user ?? null);
       if (initialSession?.user) {
@@ -109,6 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      console.log("Auth state change:", _event, newSession);
       setSession(newSession);
       setUser(newSession?.user ?? null);
       
@@ -128,13 +109,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(null);
       setUser(null);
       setProfile(null);
-
-      // Clear any stored auth data from localStorage
-      window.localStorage.removeItem('sb-ewtecjzneuiwcoxnhktg-auth-token');
-      window.localStorage.removeItem('supabase.auth.token');
-      window.localStorage.removeItem('supabase.auth.expires_at');
-      window.localStorage.removeItem('supabase.auth.expires_in');
-      window.localStorage.removeItem('supabase.auth.refresh_token');
 
       // Finally, attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
