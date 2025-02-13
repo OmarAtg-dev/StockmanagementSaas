@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,61 +26,32 @@ const Enterprise = () => {
   const { toast } = useToast();
 
   const { data: enterprise, isLoading, error } = useQuery({
-    queryKey: ["enterprise", profile?.company_id],
+    queryKey: ["enterprise", user?.id],
     queryFn: async () => {
-      console.log("Current user ID:", user?.id);
-      console.log("Current profile:", profile);
-      
-      // First, get the company_id from company_user_roles if not in profile
-      if (!profile?.company_id) {
-        console.log("No company_id in profile, checking company_user_roles...");
-        const { data: roleData, error: roleError } = await supabase
-          .from("company_user_roles")
-          .select("*")
-          .eq("user_id", user?.id);
+      if (!user?.id) throw new Error("User not authenticated");
 
-        console.log("Role data:", roleData);
-        console.log("Role error:", roleError);
+      // Get the user's company role to fetch the company data
+      const { data: roleData, error: roleError } = await supabase
+        .from("company_user_roles")
+        .select("company_id")
+        .eq("user_id", user.id)
+        .single();
 
-        if (roleError) {
-          console.error("Error fetching company role:", roleError);
-          throw roleError;
-        }
-
-        if (!roleData?.[0]?.company_id) {
-          throw new Error("No company associated with user");
-        }
-
-        console.log("Found company_id from roles:", roleData[0].company_id);
-        
-        // Now fetch the company data
-        const { data, error } = await supabase
-          .from("companies_with_users")
-          .select("*")
-          .eq("id", roleData[0].company_id)
-          .single();
-
-        console.log("Company data:", data);
-        console.log("Company error:", error);
-
-        if (error) {
-          console.error("Error fetching company:", error);
-          throw error;
-        }
-
-        return data as Enterprise;
+      if (roleError) {
+        console.error("Error fetching company role:", roleError);
+        throw roleError;
       }
-      
-      // If we have company_id in profile, use it directly
-      console.log("Using company_id from profile:", profile.company_id);
+
+      if (!roleData?.company_id) {
+        throw new Error("No company associated with user");
+      }
+
+      // Fetch company data using the company_id
       const { data, error } = await supabase
         .from("companies_with_users")
         .select("*")
-        .eq("id", profile.company_id)
+        .eq("id", roleData.company_id)
         .single();
-
-      console.log("Company data:", data);
-      console.log("Company error:", error);
 
       if (error) {
         console.error("Error fetching company:", error);
@@ -92,6 +62,7 @@ const Enterprise = () => {
         });
         throw error;
       }
+
       return data as Enterprise;
     },
     enabled: !!user?.id,
