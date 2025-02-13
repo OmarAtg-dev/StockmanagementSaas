@@ -42,8 +42,8 @@ const SupplierInvoices = () => {
         throw new Error("Aucune entreprise associée à cet utilisateur");
       }
 
-      // Use mock data instead of Supabase query
-      const { data, error } = await mockDataFunctions.getInvoices();
+      // Use the specific supplier invoices mock data
+      const { data, error } = await mockDataFunctions.getSupplierInvoices();
 
       if (error) {
         console.error("Error fetching supplier invoices:", error);

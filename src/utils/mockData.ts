@@ -1,4 +1,3 @@
-
 import { UserRole } from "@/types/auth";
 
 export const mockProfiles = [
@@ -158,7 +157,33 @@ export const mockInventory = [
   }
 ];
 
-// Mock authentication context
+export const mockSupplierInvoices = [
+  {
+    id: "1",
+    number: "SINV-2024-001",
+    date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    total_amount: 1499.99,
+    status: "pending",
+    supplier: {
+      name: "Supplier A"
+    },
+    company_id: "1"
+  },
+  {
+    id: "2",
+    number: "SINV-2024-002",
+    date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    total_amount: 2499.99,
+    status: "paid",
+    supplier: {
+      name: "Supplier B"
+    },
+    company_id: "1"
+  }
+];
+
 export const mockAuthContext = {
   session: {
     user: {
@@ -176,7 +201,6 @@ export const mockAuthContext = {
   }
 };
 
-// Mock data management functions
 export const mockDataFunctions = {
   // Auth functions
   getSession: async () => ({ data: { session: mockAuthContext.session } }),
@@ -234,5 +258,8 @@ export const mockDataFunctions = {
   updateInventory: async (data: Partial<typeof mockInventory[0]>) => {
     console.log("Mock update inventory:", data);
     return { data: { ...mockInventory[0], ...data }, error: null };
-  }
+  },
+  
+  // Add new function for supplier invoices
+  getSupplierInvoices: async () => ({ data: mockSupplierInvoices, error: null })
 };
