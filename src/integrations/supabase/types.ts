@@ -75,6 +75,64 @@ export type Database = {
           },
         ]
       }
+      history: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          event_type: Database["public"]["Enums"]["history_event_type"]
+          id: string
+          new_value: string | null
+          old_value: string | null
+          product_id: string | null
+          quantity: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          event_type: Database["public"]["Enums"]["history_event_type"]
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          event_type?: Database["public"]["Enums"]["history_event_type"]
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_with_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory: {
         Row: {
           company_id: string
@@ -249,6 +307,44 @@ export type Database = {
           },
         ]
       }
+      history_with_details: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          event_type: Database["public"]["Enums"]["history_event_type"] | null
+          id: string | null
+          new_value: string | null
+          old_value: string | null
+          product_id: string | null
+          product_name: string | null
+          quantity: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_with_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_user_role: {
@@ -292,6 +388,12 @@ export type Database = {
     }
     Enums: {
       company_role: "admin" | "manager" | "staff"
+      history_event_type:
+        | "stock_in"
+        | "stock_out"
+        | "price_change"
+        | "new_product"
+        | "deleted_product"
     }
     CompositeTypes: {
       [_ in never]: never

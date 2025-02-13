@@ -15,6 +15,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
+import History from "./pages/History";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Analytics />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/history"
+      element={
+        <ProtectedRoute>
+          <History />
         </ProtectedRoute>
       }
     />
