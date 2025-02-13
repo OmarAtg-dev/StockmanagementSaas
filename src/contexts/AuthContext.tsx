@@ -30,6 +30,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Only try to fetch profile if we have a valid session
       if (!session?.access_token) return;
 
+      console.log("Fetching profile for user:", userId);
+
+      // First, check if the user has a super_admin role
+      const { data: roleData, error: roleError } = await supabase
+        .from("company_user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+
+      if (!roleError && roleData) {
+        console.log("Role data found:", roleData);
+      }
+
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -41,28 +54,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      // Update profile with role information if it exists
+      const updatedProfile = {
+        ...profileData,
+        role: roleData?.role || 'user'
+      };
+
+      console.log("Updated profile with role:", updatedProfile);
+
       // Set the initial profile data
-      setProfile(profileData);
+      setProfile(updatedProfile);
 
       // If we don't have a company_id in profile, try to get it from company_user_roles
-      if (!profileData.company_id) {
-        const { data: roleData, error: roleError } = await supabase
+      if (!updatedProfile.company_id) {
+        const { data: companyRoleData, error: companyRoleError } = await supabase
           .from("company_user_roles")
           .select("company_id")
           .eq("user_id", userId)
           .single();
 
-        if (!roleError && roleData?.company_id) {
+        if (!companyRoleError && companyRoleData?.company_id) {
           // Update the profile with the company_id
-          const { data: updatedProfile, error: updateError } = await supabase
+          const { data: finalProfile, error: updateError } = await supabase
             .from("profiles")
-            .update({ company_id: roleData.company_id })
+            .update({ company_id: companyRoleData.company_id })
             .eq("id", userId)
             .select()
             .single();
 
-          if (!updateError && updatedProfile) {
-            setProfile(updatedProfile);
+          if (!updateError && finalProfile) {
+            setProfile({
+              ...finalProfile,
+              role: roleData?.role || 'user'
+            });
           }
         }
       }
