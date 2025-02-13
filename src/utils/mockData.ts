@@ -1,8 +1,10 @@
+
 import { UserRole } from "@/types/auth";
 
 export const mockProfiles = [
   {
     id: "1",
+    user_id: "1", // Added to match CompanyUser type
     username: "admin@example.com",
     full_name: "Admin User",
     company_id: "1",
@@ -12,6 +14,7 @@ export const mockProfiles = [
   },
   {
     id: "2",
+    user_id: "2", // Added to match CompanyUser type
     username: "manager@example.com",
     full_name: "Manager User",
     company_id: "1",
@@ -203,19 +206,71 @@ export const mockAuthContext = {
 
 export const mockDataFunctions = {
   // Auth functions
-  getSession: async () => ({ data: { session: mockAuthContext.session } }),
-  signOut: async () => ({ error: null }),
-  
-  // Profile functions
-  updateProfile: async (updates: Partial<typeof mockProfiles[0]>) => {
-    console.log("Mock update profile:", updates);
-    return { data: { ...mockProfiles[0], ...updates }, error: null };
+  signIn: async (email: string, password: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const user = mockProfiles.find(p => p.username === email);
+    if (!user) {
+      return {
+        data: null,
+        error: { message: "Email ou mot de passe incorrect" }
+      };
+    }
+
+    return {
+      data: {
+        user,
+        session: {
+          access_token: "mock_token",
+          user: { id: user.id, email: user.username }
+        }
+      },
+      error: null
+    };
   },
-  
-  // Password update
-  updatePassword: async (password: string) => {
-    console.log("Mock update password:", password);
-    return { error: null };
+
+  signUp: async (data: {
+    email: string;
+    password: string;
+    username: string;
+    fullName: string;
+    companyName: string;
+  }) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Check if user already exists
+    if (mockProfiles.some(p => p.username === data.email)) {
+      return {
+        data: null,
+        error: { message: "Un utilisateur avec cet email existe déjà" }
+      };
+    }
+
+    const newUser = {
+      id: String(mockProfiles.length + 1),
+      user_id: String(mockProfiles.length + 1),
+      username: data.email,
+      full_name: data.fullName,
+      company_id: "1", // Default company ID
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      role: 'admin' as UserRole
+    };
+
+    mockProfiles.push(newUser);
+
+    return {
+      data: {
+        user: newUser,
+        session: {
+          access_token: "mock_token",
+          user: { id: newUser.id, email: newUser.username }
+        }
+      },
+      error: null
+    };
   },
 
   // Company functions

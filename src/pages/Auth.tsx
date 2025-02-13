@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { mockDataFunctions } from "@/utils/mockData";
 
 const Auth = () => {
@@ -31,29 +30,28 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
       console.log("Attempting to sign in with:", formData.email);
-
-      // Use mock sign in function
-      const { data, error } = await mockDataFunctions.signIn(formData.email, formData.password);
+      const response = await mockDataFunctions.signIn(formData.email, formData.password);
       
-      if (error) {
-        console.error("Sign in error:", error);
+      if (response.error) {
         toast({
           variant: "destructive",
           title: "Erreur de connexion",
-          description: error.message,
+          description: response.error.message,
         });
         return;
       }
 
-      console.log("Sign in successful:", data);
-      toast({
-        title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté",
-      });
-      navigate("/");
-    } catch (error: any) {
+      if (response.data) {
+        toast({
+          title: "Connexion réussie",
+          description: "Vous êtes maintenant connecté",
+        });
+        navigate("/");
+      }
+    } catch (error) {
       console.error("Sign in error:", error);
       toast({
         variant: "destructive",
@@ -68,36 +66,34 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
       console.log("Starting signup process for:", formData.email);
-      
-      // Use mock sign up function
-      const { data, error } = await mockDataFunctions.signUp({
+      const response = await mockDataFunctions.signUp({
         email: formData.email,
         password: formData.password,
         username: formData.username,
         fullName: formData.fullName,
         companyName: formData.companyName,
       });
-
-      if (error) {
-        console.error("Signup error:", error);
+      
+      if (response.error) {
         toast({
           variant: "destructive",
           title: "Erreur d'inscription",
-          description: error.message,
+          description: response.error.message,
         });
         return;
       }
 
-      console.log("Signup successful:", data);
-      toast({
-        title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès. Vous êtes maintenant connecté.",
-      });
-      
-      navigate("/");
-    } catch (error: any) {
+      if (response.data) {
+        toast({
+          title: "Inscription réussie",
+          description: "Votre compte a été créé avec succès. Vous êtes maintenant connecté.",
+        });
+        navigate("/");
+      }
+    } catch (error) {
       console.error("Signup process error:", error);
       toast({
         variant: "destructive",
