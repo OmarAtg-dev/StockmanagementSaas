@@ -29,6 +29,7 @@ const getMenuItems = (role: string | null) => {
   
   const baseItems = [
     { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
+    { title: "Entreprises", icon: Building2, path: "/enterprise" },
     { title: "Produits", icon: Package, path: "/products" },
     { title: "Inventaire", icon: Boxes, path: "/inventory" },
     { title: "Analytique", icon: BarChart, path: "/analytics" },
@@ -40,14 +41,11 @@ const getMenuItems = (role: string | null) => {
   if (role === "super_admin") {
     return [
       { title: "Entreprises", icon: Building2, path: "/companies" },
-      ...baseItems
+      ...baseItems.filter(item => item.title !== "Entreprises")
     ];
   }
 
-  return [
-    { title: "Mon Entreprise", icon: Building2, path: "/enterprise" },
-    ...baseItems
-  ];
+  return baseItems;
 }
 
 export function AppSidebar() {
