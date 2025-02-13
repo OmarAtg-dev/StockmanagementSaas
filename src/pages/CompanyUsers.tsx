@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
-import { CompanyUser } from "@/types/company-user";
+import { CompanyUser, UserFormData } from "@/types/company-user";
 import { UserRole } from "@/types/auth";
 import { UserForm } from "@/components/company-users/UserForm";
 import { UsersTable } from "@/components/company-users/UsersTable";
@@ -48,23 +48,17 @@ const CompanyUsers = () => {
   });
 
   const addUser = useMutation({
-    mutationFn: async ({
-      email,
-      password,
-      full_name,
-      role,
-    }: {
-      email: string;
-      password: string;
-      full_name: string;
-      role: UserRole;
-    }) => {
+    mutationFn: async (formData: UserFormData) => {
+      if (!formData.password) {
+        throw new Error("Password is required when creating a new user");
+      }
+
       const { data, error } = await supabase.rpc('create_company_user', {
-        p_email: email,
-        p_password: password,
-        p_full_name: full_name,
+        p_email: formData.email,
+        p_password: formData.password,
+        p_full_name: formData.full_name,
         p_company_id: companyId,
-        p_role: role,
+        p_role: formData.role as UserRole,
       });
 
       if (error) throw error;
@@ -90,17 +84,8 @@ const CompanyUsers = () => {
   const updateUser = useMutation({
     mutationFn: async ({
       id,
-      email,
-      password,
-      full_name,
-      role,
-    }: {
-      id: string;
-      email: string;
-      password?: string;
-      full_name: string;
-      role: UserRole;
-    }) => {
+      ...formData
+    }: UserFormData & { id: string }) => {
       console.log("Starting user update for ID:", id);
 
       // First, get the user data to ensure we have the correct user_id
@@ -121,9 +106,9 @@ const CompanyUsers = () => {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
-          username: email,
-          full_name: full_name,
-          role: role,
+          username: formData.email,
+          full_name: formData.full_name,
+          role: formData.role as UserRole,
         })
         .eq("id", userData.user_id);
 
@@ -135,7 +120,7 @@ const CompanyUsers = () => {
       // Update the role
       const { error: roleError } = await supabase
         .from("company_user_roles")
-        .update({ role })
+        .update({ role: formData.role })
         .eq("id", id);
 
       if (roleError) {
@@ -144,9 +129,9 @@ const CompanyUsers = () => {
       }
 
       // Update password if provided
-      if (password) {
+      if (formData.password) {
         const { error: authError } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: userData.user_id, password }
+          body: { userId: userData.user_id, password: formData.password }
         });
         if (authError) {
           console.error("Password update error:", authError);
@@ -209,6 +194,16 @@ const CompanyUsers = () => {
       });
     },
   });
+
+  if (!profile?.company_id && profile?.role !== "super_admin") {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-8">
+          Vous n'avez pas accès à cette page.
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

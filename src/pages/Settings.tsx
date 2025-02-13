@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,6 @@ const Settings = () => {
         .from('profiles')
         .update({ 
           full_name: formData.fullName,
-          role: (profile?.role || 'user') as UserRole 
         })
         .eq('id', session?.user.id);
 
@@ -66,8 +64,8 @@ const Settings = () => {
       setIsLoading(true);
 
       const { error } = await supabase.rpc('update_user_password', {
-        user_id: session?.user.id,
-        new_password: formData.newPassword
+        p_user_id: session?.user.id,
+        p_new_password: formData.newPassword
       });
 
       if (error) throw error;
