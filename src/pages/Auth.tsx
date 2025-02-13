@@ -32,12 +32,14 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Attempting to sign in with:", formData.email);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
         password: formData.password,
       });
 
       if (error) {
+        console.error("Sign in error:", error);
         if (error.message === "Invalid login credentials") {
           toast({
             variant: "destructive",
@@ -60,6 +62,7 @@ const Auth = () => {
         return;
       }
 
+      console.log("Sign in successful:", data);
       toast({
         title: "Connexion réussie",
         description: "Vous êtes maintenant connecté",
@@ -81,7 +84,29 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error: signUpError, data } = await supabase.auth.signUp({
+      console.log("Starting signup process for:", formData.email);
+      
+      // 1. Create company first
+      console.log("Creating company:", formData.companyName);
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .insert([{ 
+          name: formData.companyName,
+          subscription_status: 'active'
+        }])
+        .select()
+        .single();
+
+      if (companyError) {
+        console.error("Error creating company:", companyError);
+        throw new Error("Erreur lors de la création de l'entreprise");
+      }
+
+      console.log("Company created successfully:", companyData);
+
+      // 2. Create user
+      console.log("Creating user account");
+      const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
         options: {
@@ -93,6 +118,13 @@ const Auth = () => {
       });
 
       if (signUpError) {
+        console.error("Error creating user:", signUpError);
+        // If user creation fails, delete the company
+        await supabase
+          .from("companies")
+          .delete()
+          .eq("id", companyData.id);
+          
         if (signUpError.message.includes("User already registered")) {
           toast({
             variant: "destructive",
@@ -109,22 +141,44 @@ const Auth = () => {
         return;
       }
 
-      // If a company name is provided, create the company
-      if (formData.companyName) {
-        const { error: companyError } = await supabase
-          .from("companies")
-          .insert([{ name: formData.companyName }]);
+      // 3. Create profile and link to company
+      if (userData.user) {
+        console.log("Creating user profile");
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert([
+            {
+              id: userData.user.id,
+              username: formData.username,
+              full_name: formData.fullName,
+              company_id: companyData.id,
+            },
+          ]);
 
-        if (companyError) {
-          console.error("Error creating company:", companyError);
-          toast({
-            variant: "destructive",
-            title: "Erreur lors de la création de l'entreprise",
-            description: companyError.message,
-          });
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          throw new Error("Erreur lors de la création du profil");
+        }
+
+        // 4. Create company user role
+        console.log("Creating company user role");
+        const { error: roleError } = await supabase
+          .from("company_user_roles")
+          .insert([
+            {
+              user_id: userData.user.id,
+              company_id: companyData.id,
+              role: 'admin', // First user is admin
+            },
+          ]);
+
+        if (roleError) {
+          console.error("Error creating role:", roleError);
+          throw new Error("Erreur lors de la création du rôle");
         }
       }
 
+      console.log("Signup process completed successfully");
       toast({
         title: "Inscription réussie",
         description: "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
@@ -140,11 +194,11 @@ const Auth = () => {
       });
       
     } catch (error: any) {
-      console.error("Sign up error:", error);
+      console.error("Signup process error:", error);
       toast({
         variant: "destructive",
         title: "Erreur d'inscription",
-        description: "Une erreur inattendue s'est produite. Veuillez réessayer.",
+        description: error.message || "Une erreur inattendue s'est produite. Veuillez réessayer.",
       });
     } finally {
       setIsLoading(false);
