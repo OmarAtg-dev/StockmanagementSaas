@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Shield, UserCircle } from "lucide-react";
-import { UserRole } from "@/types/auth";
+import { mockDataFunctions } from "@/utils/mockData";
 
 const Settings = () => {
   const { profile, session } = useAuth();
@@ -25,16 +25,8 @@ const Settings = () => {
   const updateProfile = async () => {
     try {
       setIsLoading(true);
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          full_name: formData.fullName,
-        })
-        .eq('id', session?.user.id);
-
-      if (error) throw error;
-
+      await mockDataFunctions.updateProfile({ full_name: formData.fullName });
+      
       toast({
         title: "Profil mis à jour",
         description: "Vos informations ont été mises à jour avec succès.",
@@ -62,13 +54,7 @@ const Settings = () => {
 
     try {
       setIsLoading(true);
-
-      const { error } = await supabase.rpc('update_user_password', {
-        p_user_id: session?.user.id,
-        p_new_password: formData.newPassword
-      });
-
-      if (error) throw error;
+      await mockDataFunctions.updatePassword(formData.newPassword);
 
       toast({
         title: "Mot de passe mis à jour",
