@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Enterprise {
   id: string;
@@ -30,6 +31,7 @@ const mockEnterpriseInfo: Enterprise = {
 
 const Enterprise = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { data: enterprise, isLoading } = useQuery({
     queryKey: ["enterprise", user?.id],
@@ -100,7 +102,10 @@ const Enterprise = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer transition-colors hover:bg-accent"
+            onClick={() => navigate('/team')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Nombre d'utilisateurs
