@@ -33,16 +33,17 @@ const Enterprise = () => {
   const { toast } = useToast();
 
   const { data: enterprise, isLoading, error } = useQuery({
-    queryKey: ["enterprise", user?.id],
+    queryKey: ["enterprise", user?.id, profile],
     queryFn: async () => {
       if (!user?.id) throw new Error("Utilisateur non authentifié");
+      if (!profile) throw new Error("Profil utilisateur non chargé");
 
       console.log("Fetching enterprise data for user:", user.id);
       console.log("User profile:", profile);
-      console.log("User profile >> ", profile?.role);
+      console.log("User role:", profile.role);
 
       // If user is super_admin and no company_id is set, fetch the first company
-      if (profile?.role === 'super_admin') {
+      if (profile.role === 'super_admin') {
         const { data: companies, error: companiesError } = await supabase
           .from("companies")
           .select(`
@@ -58,7 +59,7 @@ const Enterprise = () => {
           console.error("Error fetching companies:", companiesError);
           throw companiesError;
         }
-        console.log('companies >> ', companies);
+
         if (!companies) {
           throw new Error("Aucune entreprise trouvée");
         }
@@ -73,7 +74,7 @@ const Enterprise = () => {
       }
 
       // For regular users, fetch their associated company
-      const companyId = profile?.company_id;
+      const companyId = profile.company_id;
       if (!companyId) {
         throw new Error("Aucune entreprise associée à cet utilisateur");
       }
@@ -106,7 +107,7 @@ const Enterprise = () => {
         user_count: company.company_user_roles?.[0]?.count || 0
       };
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!profile,
     meta: {
       onError: (error: Error) => {
         console.error("Query error:", error);
@@ -119,23 +120,7 @@ const Enterprise = () => {
     }
   });
 
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">Mes Entreprise</h1>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error instanceof Error ? error.message : "Une erreur est survenue"}
-            </AlertDescription>
-          </Alert>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (isLoading) {
+  if (isLoading || !profile) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
@@ -145,6 +130,22 @@ const Enterprise = () => {
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error instanceof Error ? error.message : "Une erreur est survenue"}
+            </AlertDescription>
+          </Alert>
         </div>
       </DashboardLayout>
     );
