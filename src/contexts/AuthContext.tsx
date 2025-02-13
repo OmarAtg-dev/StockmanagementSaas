@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 import { mockAuthContext, mockDataFunctions } from "@/utils/mockData";
 import { Database } from "@/integrations/supabase/types";
 
@@ -26,32 +26,12 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  // Initialize with mock data directly instead of null
   const [session, setSession] = useState<typeof mockAuthContext.session | null>(mockAuthContext.session);
   const [user, setUser] = useState<typeof mockAuthContext.user | null>(mockAuthContext.user);
   const [profile, setProfile] = useState<Profile | null>(mockAuthContext.profile as Profile);
 
-  useEffect(() => {
-    // Simulate initial session with mock data only
-    const initializeSession = async () => {
-      try {
-        const { data } = await mockDataFunctions.getSession();
-        if (data?.session) {
-          setSession(data.session);
-          setUser(data.session.user ?? null);
-          // Use the mock profile directly to avoid type issues
-          setProfile(mockAuthContext.profile as Profile);
-        }
-      } catch (error) {
-        console.error("Failed to initialize session:", error);
-        // Reset state on error
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-      }
-    };
-
-    initializeSession();
-  }, []);
+  // Remove useEffect since we're using mock data directly
 
   const signOut = async () => {
     try {
