@@ -27,7 +27,8 @@ const Index = () => {
           <StatsCard
             title="Valeur Totale"
             value={new Intl.NumberFormat('fr-FR', { 
-              style: 'decimal'
+              style: 'currency', 
+              currency: 'MAD'
             }).format(142040)}
             icon={<MADIcon className="h-6 w-6" />}
             trend={{ value: 8, isPositive: true }}
