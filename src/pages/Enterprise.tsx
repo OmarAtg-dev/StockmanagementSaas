@@ -40,12 +40,43 @@ const Enterprise = () => {
       console.log("Fetching enterprise data for user:", user.id);
       console.log("User profile:", profile);
 
+      // If user is super_admin and no company_id is set, fetch the first company
+      if (profile?.role === 'super_admin') {
+        const { data: companies, error: companiesError } = await supabase
+          .from("companies")
+          .select(`
+            *,
+            company_user_roles (
+              count
+            )
+          `)
+          .limit(1)
+          .single();
+
+        if (companiesError) {
+          console.error("Error fetching companies:", companiesError);
+          throw companiesError;
+        }
+
+        if (!companies) {
+          throw new Error("Aucune entreprise trouvée");
+        }
+
+        return {
+          id: companies.id,
+          name: companies.name,
+          subscription_status: companies.subscription_status,
+          created_at: companies.created_at,
+          user_count: companies.company_user_roles?.[0]?.count || 0
+        };
+      }
+
+      // For regular users, fetch their associated company
       const companyId = profile?.company_id;
       if (!companyId) {
         throw new Error("Aucune entreprise associée à cet utilisateur");
       }
 
-      // Fetch the company details
       const { data: company, error: companyError } = await supabase
         .from("companies")
         .select(`
