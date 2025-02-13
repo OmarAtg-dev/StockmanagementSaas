@@ -122,7 +122,7 @@ const Enterprise = () => {
     return (
       <DashboardLayout>
         <div className="space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">Mon Entreprissxxxe</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Mes Entreprise</h1>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
