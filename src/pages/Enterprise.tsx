@@ -10,85 +10,69 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, Calendar } from "lucide-react";
+import { 
+  Building2, 
+  Users, 
+  CalendarDays, 
+  BadgeCheck,
+  AlertCircle 
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type Enterprise = {
+interface Enterprise {
   id: string;
   name: string;
   subscription_status: string;
   created_at: string;
-};
+  user_count?: number;
+}
 
 const Enterprise = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
-  const { data: enterprise, isLoading } = useQuery({
-    queryKey: ["enterprise", user?.id, profile?.role],
+  const { data: enterprise, isLoading, error } = useQuery({
+    queryKey: ["enterprise", user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error("User not authenticated");
-      
-      console.log("Current user role:", profile?.role);
-      console.log("Current user id:", user.id);
-      
-      // For super_admin, get all companies first
-      if (profile?.role === 'super_admin') {
-        const { data: companies, error: companiesError } = await supabase
-          .from("companies")
-          .select("*");
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
 
-        if (companiesError) {
-          console.error("Companies error:", companiesError);
-          throw companiesError;
-        }
+      console.log("Fetching enterprise data for user:", user.id);
+      console.log("User profile:", profile);
 
-        console.log("Found companies for super_admin:", companies);
-
-        if (!companies || companies.length === 0) {
-          throw new Error("No companies found");
-        }
-
-        // Use the first company for now
-        const company = companies[0];
-
-        return {
-          id: company.id,
-          name: company.name,
-          subscription_status: company.subscription_status,
-          created_at: company.created_at,
-        };
-      } else {
-        // Regular user flow - get their company from profile
-        if (!profile?.company_id) {
-          throw new Error("No company associated with user");
-        }
-
-        // Fetch the company details
-        const { data: companyData, error: companyError } = await supabase
-          .from("companies")
-          .select("*")
-          .eq("id", profile.company_id)
-          .maybeSingle();
-
-        if (companyError) {
-          console.error("Company error:", companyError);
-          throw companyError;
-        }
-
-        console.log("Company data:", companyData);
-
-        if (!companyData) {
-          throw new Error("Company not found");
-        }
-
-        return {
-          id: companyData.id,
-          name: companyData.name,
-          subscription_status: companyData.subscription_status,
-          created_at: companyData.created_at,
-        };
+      const companyId = profile?.company_id;
+      if (!companyId) {
+        throw new Error("Aucune entreprise associée à cet utilisateur");
       }
+
+      // Fetch the company details
+      const { data: company, error: companyError } = await supabase
+        .from("companies")
+        .select(`
+          *,
+          company_user_roles (
+            count
+          )
+        `)
+        .eq("id", companyId)
+        .single();
+
+      if (companyError) {
+        console.error("Error fetching company:", companyError);
+        throw companyError;
+      }
+
+      if (!company) {
+        throw new Error("Entreprise non trouvée");
+      }
+
+      return {
+        id: company.id,
+        name: company.name,
+        subscription_status: company.subscription_status,
+        created_at: company.created_at,
+        user_count: company.company_user_roles?.[0]?.count || 0
+      };
     },
     enabled: !!user?.id,
     meta: {
@@ -103,14 +87,17 @@ const Enterprise = () => {
     }
   });
 
-  if (!user?.id) {
+  if (error) {
     return (
       <DashboardLayout>
-        <div className="text-center py-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
-          <p className="text-muted-foreground">
-            Vous n'êtes pas connecté.
-          </p>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error instanceof Error ? error.message : "Une erreur est survenue"}
+            </AlertDescription>
+          </Alert>
         </div>
       </DashboardLayout>
     );
@@ -121,11 +108,27 @@ const Enterprise = () => {
       <DashboardLayout>
         <div className="space-y-6">
           <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!enterprise) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Aucune information d'entreprise disponible
+            </AlertDescription>
+          </Alert>
         </div>
       </DashboardLayout>
     );
@@ -136,47 +139,68 @@ const Enterprise = () => {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Mon Entreprise</h1>
 
-        {enterprise ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Nom de l'entreprise
-                </CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{enterprise.name}</div>
-                <p className="text-xs text-muted-foreground">
-                  Statut: {enterprise.subscription_status === 'active' ? 'Actif' : 'Inactif'}
-                </p>
-              </CardContent>
-            </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Nom de l'entreprise
+              </CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{enterprise.name}</div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Date de création
-                </CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {new Date(enterprise.created_at).toLocaleDateString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Membre depuis
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              Impossible de charger les informations de l'entreprise.
-            </p>
-          </div>
-        )}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Membres
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{enterprise.user_count}</div>
+              <p className="text-xs text-muted-foreground">
+                Utilisateurs actifs
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Statut
+              </CardTitle>
+              <BadgeCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold capitalize">
+                {enterprise.subscription_status === 'active' ? 'Actif' : 'Inactif'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Statut de l'abonnement
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Date de création
+              </CardTitle>
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {new Date(enterprise.created_at).toLocaleDateString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Membre depuis
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   );
