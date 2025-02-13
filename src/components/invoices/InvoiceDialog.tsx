@@ -125,11 +125,11 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
     e.preventDefault();
 
     try {
-      // Generate invoice number (you might want to implement a more sophisticated system)
+      // Generate invoice number
       const number = `INV-${Date.now()}`;
 
       // Create invoice
-      const { data: invoice, error: invoiceError } = await supabase
+      const { data: invoices, error: invoiceError } = await supabase
         .from("invoices")
         .insert([{
           client_id: clientId,
@@ -143,13 +143,14 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
         .select();
 
       if (invoiceError) throw invoiceError;
+      if (!invoices || !invoices[0]) throw new Error("Failed to create invoice");
 
       // Create invoice items
       const { error: itemsError } = await supabase
         .from("invoice_items")
         .insert(
           items.map(item => ({
-            invoice_id: invoice[0].id,
+            invoice_id: invoices[0].id,
             product_id: item.product_id || null,
             description: item.description,
             quantity: item.quantity,
