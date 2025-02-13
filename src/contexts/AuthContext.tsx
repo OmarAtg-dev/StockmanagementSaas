@@ -27,7 +27,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      // First get the profile
+      // Only try to fetch profile if we have a valid session
+      if (!session?.access_token) return;
+
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -39,6 +41,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      // Set the initial profile data
+      setProfile(profileData);
+
       // If we don't have a company_id in profile, try to get it from company_user_roles
       if (!profileData.company_id) {
         const { data: roleData, error: roleError } = await supabase
@@ -47,7 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq("user_id", userId)
           .single();
 
-        if (!roleError && roleData) {
+        if (!roleError && roleData?.company_id) {
           // Update the profile with the company_id
           const { data: updatedProfile, error: updateError } = await supabase
             .from("profiles")
@@ -56,14 +61,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .select()
             .single();
 
-          if (!updateError) {
+          if (!updateError && updatedProfile) {
             setProfile(updatedProfile);
-            return;
           }
         }
       }
-
-      setProfile(profileData);
     } catch (error) {
       console.error("Error in fetchProfile:", error);
     }
@@ -71,22 +73,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
+      if (initialSession?.user) {
+        fetchProfile(initialSession.user.id);
       }
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      
+      if (newSession?.user) {
+        await fetchProfile(newSession.user.id);
       } else {
         setProfile(null);
       }
@@ -96,8 +99,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+      }
+      // Clear state regardless of signOut success
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+    } catch (error) {
+      console.error("Error in signOut:", error);
+      // Still clear state even if there's an error
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+    }
   };
 
   return (
