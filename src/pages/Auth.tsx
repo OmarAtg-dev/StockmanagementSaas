@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { mockDataFunctions } from "@/utils/mockData";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { setSession, setUser, setProfile } = useAuth(); // Add this line to get the context functions
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -45,6 +48,11 @@ const Auth = () => {
       }
 
       if (response.data) {
+        // Update the auth context with the new session data
+        setSession(response.data.session);
+        setUser(response.data.session.user);
+        setProfile(response.data.user);
+
         toast({
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté",
@@ -87,6 +95,11 @@ const Auth = () => {
       }
 
       if (response.data) {
+        // Update the auth context with the new session data
+        setSession(response.data.session);
+        setUser(response.data.session.user);
+        setProfile(response.data.user);
+
         toast({
           title: "Inscription réussie",
           description: "Votre compte a été créé avec succès. Vous êtes maintenant connecté.",

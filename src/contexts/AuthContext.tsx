@@ -10,6 +10,9 @@ interface AuthContextType {
   user: typeof mockAuthContext.user | null;
   profile: Profile | null;
   signOut: () => Promise<void>;
+  setSession: (session: typeof mockAuthContext.session | null) => void;
+  setUser: (user: typeof mockAuthContext.user | null) => void;
+  setProfile: (profile: Profile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,6 +20,9 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   signOut: async () => {},
+  setSession: () => {},
+  setUser: () => {},
+  setProfile: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -45,7 +51,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, signOut }}>
+    <AuthContext.Provider 
+      value={{ 
+        session, 
+        user, 
+        profile, 
+        signOut,
+        setSession,
+        setUser,
+        setProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
