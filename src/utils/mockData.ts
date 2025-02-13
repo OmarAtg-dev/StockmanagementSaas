@@ -23,171 +23,10 @@ export const mockProfiles = [
   }
 ];
 
-export const mockCompanies = [
-  {
-    id: "1",
-    name: "Example Company",
-    subscription_status: "active",
-    user_count: 5,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: "2",
-    name: "Test Corp",
-    subscription_status: "inactive",
-    user_count: 3,
-    created_at: new Date().toISOString()
-  }
-];
-
-export const mockProducts = [
-  {
-    id: "1",
-    name: "Product 1",
-    category: "Category A",
-    price: 99.99,
-    stock: 100,
-    status: "En stock",
-    company_id: "1"
-  },
-  {
-    id: "2",
-    name: "Product 2",
-    category: "Category B",
-    price: 149.99,
-    stock: 50,
-    status: "En stock",
-    company_id: "1"
-  }
-];
-
-export const mockClients = [
-  {
-    id: "1",
-    name: "Client Company A",
-    email: "contact@clienta.com",
-    phone: "+33123456789",
-    address: "123 Street, City",
-    company_id: "1",
-    created_at: new Date().toISOString()
-  },
-  {
-    id: "2",
-    name: "Client Company B",
-    email: "contact@clientb.com",
-    phone: "+33987654321",
-    address: "456 Avenue, City",
-    company_id: "1",
-    created_at: new Date().toISOString()
-  }
-];
-
-export const mockSuppliers = [
-  {
-    id: "1",
-    name: "Supplier A",
-    email: "contact@suppliera.com",
-    phone: "+33123456789",
-    address: "789 Road, City",
-    contact_person: "John Doe",
-    status: "active",
-    company_id: "1"
-  },
-  {
-    id: "2",
-    name: "Supplier B",
-    email: "contact@supplierb.com",
-    phone: "+33987654321",
-    address: "321 Boulevard, City",
-    contact_person: "Jane Smith",
-    status: "active",
-    company_id: "1"
-  }
-];
-
-export const mockInvoices = [
-  {
-    id: "1",
-    number: "INV-2024-001",
-    date: new Date().toISOString(),
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    total_amount: 1499.99,
-    status: "pending",
-    client: {
-      name: "Client Company A",
-      email: "contact@clienta.com"
-    },
-    company_id: "1"
-  },
-  {
-    id: "2",
-    number: "INV-2024-002",
-    date: new Date().toISOString(),
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    total_amount: 2499.99,
-    status: "paid",
-    client: {
-      name: "Client Company B",
-      email: "contact@clientb.com"
-    },
-    company_id: "1"
-  }
-];
-
-export const mockInventory = [
-  {
-    id: "1",
-    quantity: 100,
-    location: "Warehouse A",
-    last_updated: new Date().toISOString(),
-    product: {
-      name: "Product 1",
-      category: "Category A"
-    },
-    company_id: "1"
-  },
-  {
-    id: "2",
-    quantity: 50,
-    location: "Warehouse B",
-    last_updated: new Date().toISOString(),
-    product: {
-      name: "Product 2",
-      category: "Category B"
-    },
-    company_id: "1"
-  }
-];
-
-export const mockSupplierInvoices = [
-  {
-    id: "1",
-    number: "SINV-2024-001",
-    date: new Date().toISOString(),
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    total_amount: 1499.99,
-    status: "pending",
-    supplier: {
-      name: "Supplier A"
-    },
-    company_id: "1"
-  },
-  {
-    id: "2",
-    number: "SINV-2024-002",
-    date: new Date().toISOString(),
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    total_amount: 2499.99,
-    status: "paid",
-    supplier: {
-      name: "Supplier B"
-    },
-    company_id: "1"
-  }
-];
-
 export const mockAuthContext = {
   session: {
+    access_token: "mock_access_token",
+    refresh_token: "mock_refresh_token",
     user: {
       id: "1",
       email: "admin@example.com"
@@ -197,26 +36,21 @@ export const mockAuthContext = {
     id: "1",
     email: "admin@example.com"
   },
-  profile: mockProfiles[0],
-  signOut: async () => {
-    console.log("Mock sign out");
-  }
+  profile: mockProfiles[0]
 };
 
 export const mockDataFunctions = {
-  // Auth functions
   getSession: async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to simulate API call
     return {
       data: {
         session: mockAuthContext.session
-      }
+      },
+      error: null
     };
   },
 
   signIn: async (email: string, password: string) => {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const user = mockProfiles.find(p => p.username === email);
@@ -229,11 +63,11 @@ export const mockDataFunctions = {
 
     return {
       data: {
-        user,
         session: {
           access_token: "mock_token",
           user: { id: user.id, email: user.username }
-        }
+        },
+        user
       },
       error: null
     };
@@ -246,10 +80,8 @@ export const mockDataFunctions = {
     fullName: string;
     companyName: string;
   }) => {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Check if user already exists
     if (mockProfiles.some(p => p.username === data.email)) {
       return {
         data: null,
@@ -272,94 +104,54 @@ export const mockDataFunctions = {
 
     return {
       data: {
-        user: newUser,
         session: {
           access_token: "mock_token",
           user: { id: newUser.id, email: newUser.username }
-        }
+        },
+        user: newUser
       },
       error: null
     };
   },
 
   signOut: async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 100));
     return { error: null };
   },
 
-  updateProfile: async (updates: Partial<typeof mockProfiles[0]>) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const userIndex = mockProfiles.findIndex(p => p.id === updates.id);
-    if (userIndex === -1) {
-      return {
-        data: null,
-        error: { message: "Utilisateur non trouvé" }
-      };
-    }
-
-    mockProfiles[userIndex] = {
-      ...mockProfiles[userIndex],
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
-
+  getClients: async () => {
+    // Simulate fetching clients
+    await new Promise(resolve => setTimeout(resolve, 300));
     return {
-      data: { user: mockProfiles[userIndex] },
+      data: [
+        { id: '1', name: 'Client A', email: 'clienta@example.com' },
+        { id: '2', name: 'Client B', email: 'clientb@example.com' }
+      ],
       error: null
     };
   },
 
-  updatePassword: async (newPassword: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { error: null };
+  getProducts: async () => {
+    // Simulate fetching products
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: [
+        { id: '101', name: 'Product X', price: 25 },
+        { id: '102', name: 'Product Y', price: 50 }
+      ],
+      error: null
+    };
   },
 
-  // Company functions
-  getCompanies: async () => ({ data: mockCompanies, error: null }),
-  createCompany: async (data: Partial<typeof mockCompanies[0]>) => {
-    console.log("Mock create company:", data);
-    return { data: { ...mockCompanies[0], ...data }, error: null };
+  getInvoices: async () => {
+    // Simulate fetching invoices
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: [
+        { id: 'INV001', number: 'INV001', date: '2024-01-20', total_amount: 150 },
+        { id: 'INV002', number: 'INV002', date: '2024-01-25', total_amount: 200 }
+      ],
+      error: null
+    };
   },
-  
-  // Products functions
-  getProducts: async () => ({ data: mockProducts, error: null }),
-  createProduct: async (data: Partial<typeof mockProducts[0]>) => {
-    console.log("Mock create product:", data);
-    return { data: { ...mockProducts[0], ...data }, error: null };
-  },
-  
-  // Clients functions
-  getClients: async () => ({ data: mockClients, error: null }),
-  createClient: async (data: Partial<typeof mockClients[0]>) => {
-    console.log("Mock create client:", data);
-    return { data: { ...mockClients[0], ...data }, error: null };
-  },
-  
-  // Suppliers functions
-  getSuppliers: async () => ({ data: mockSuppliers, error: null }),
-  createSupplier: async (data: Partial<typeof mockSuppliers[0]>) => {
-    console.log("Mock create supplier:", data);
-    return { data: { ...mockSuppliers[0], ...data }, error: null };
-  },
-  
-  // Invoices functions
-  getInvoices: async () => ({ data: mockInvoices, error: null }),
-  createInvoice: async (data: Partial<typeof mockInvoices[0]>) => {
-    console.log("Mock create invoice:", data);
-    return { data: { ...mockInvoices[0], ...data }, error: null };
-  },
-  
-  // Inventory functions
-  getInventory: async () => ({ data: mockInventory, error: null }),
-  updateInventory: async (data: Partial<typeof mockInventory[0]>) => {
-    console.log("Mock update inventory:", data);
-    return { data: { ...mockInventory[0], ...data }, error: null };
-  },
-  
-  // Add new function for supplier invoices
-  getSupplierInvoices: async () => ({ data: mockSupplierInvoices, error: null })
 };
