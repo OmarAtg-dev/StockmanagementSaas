@@ -30,47 +30,44 @@ const Enterprise = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      // First get the company_id from user roles
-      const { data: roleData, error: roleError } = await supabase
+      // Get company data in a single query using the user's role
+      const { data: companyData, error: companyError } = await supabase
         .from("company_user_roles")
-        .select("company_id")
+        .select(`
+          companies (
+            id,
+            name,
+            subscription_status,
+            created_at
+          ),
+          company_id
+        `)
         .eq("user_id", user.id)
         .single();
 
-      if (roleError) {
-        console.error("Error fetching role:", roleError);
-        throw roleError;
-      }
-
-      if (!roleData?.company_id) {
-        throw new Error("No company associated with user");
-      }
-
-      // Then fetch the company details
-      const { data: companyData, error: companyError } = await supabase
-        .from("companies")
-        .select(`
-          id,
-          name,
-          subscription_status,
-          created_at,
-          user_count:company_user_roles(count)
-        `)
-        .eq("id", roleData.company_id)
-        .single();
-
       if (companyError) {
-        console.error("Error fetching company:", companyError);
+        console.error("Error fetching company data:", companyError);
         throw companyError;
       }
 
-      // Transform the data to match our Enterprise type
+      if (!companyData?.companies) {
+        throw new Error("No company associated with user");
+      }
+
+      // Get user count in a separate query
+      const { count: userCount, error: countError } = await supabase
+        .from("company_user_roles")
+        .select("*", { count: 'exact', head: true })
+        .eq("company_id", companyData.company_id);
+
+      if (countError) {
+        console.error("Error fetching user count:", countError);
+        throw countError;
+      }
+
       return {
-        id: companyData.id,
-        name: companyData.name,
-        subscription_status: companyData.subscription_status,
-        user_count: companyData.user_count[0].count,
-        created_at: companyData.created_at,
+        ...companyData.companies,
+        user_count: userCount || 0
       } as Enterprise;
     },
     enabled: !!user?.id,
