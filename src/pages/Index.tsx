@@ -3,7 +3,8 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
-import { Package, DollarSign, AlertTriangle, TrendingUp } from "lucide-react";
+import { Package, AlertTriangle, TrendingUp } from "lucide-react";
+import { MADIcon } from "@/components/icons/MADIcon";
 
 const Index = () => {
   return (
@@ -29,7 +30,7 @@ const Index = () => {
               style: 'currency', 
               currency: 'MAD'
             }).format(142040)}
-            icon={<DollarSign className="h-6 w-6" />}
+            icon={<MADIcon className="h-6 w-6" />}
             trend={{ value: 8, isPositive: true }}
           />
           <StatsCard
