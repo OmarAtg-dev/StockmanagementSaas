@@ -30,35 +30,39 @@ const Enterprise = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      // Get company data in a single query using the user's role
-      const { data: companyData, error: companyError } = await supabase
+      // First get the company_id from user roles
+      const { data: roleData, error: roleError } = await supabase
         .from("company_user_roles")
-        .select(`
-          companies (
-            id,
-            name,
-            subscription_status,
-            created_at
-          ),
-          company_id
-        `)
+        .select("company_id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (companyError) {
-        console.error("Error fetching company data:", companyError);
-        throw companyError;
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
+        throw roleError;
       }
 
-      if (!companyData?.companies) {
+      if (!roleData?.company_id) {
         throw new Error("No company associated with user");
+      }
+
+      // Then fetch the company details separately
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .select("*")
+        .eq("id", roleData.company_id)
+        .maybeSingle();
+
+      if (companyError || !companyData) {
+        console.error("Error fetching company:", companyError);
+        throw companyError || new Error("Company not found");
       }
 
       // Get user count in a separate query
       const { count: userCount, error: countError } = await supabase
         .from("company_user_roles")
         .select("*", { count: 'exact', head: true })
-        .eq("company_id", companyData.company_id);
+        .eq("company_id", roleData.company_id);
 
       if (countError) {
         console.error("Error fetching user count:", countError);
@@ -66,8 +70,11 @@ const Enterprise = () => {
       }
 
       return {
-        ...companyData.companies,
-        user_count: userCount || 0
+        id: companyData.id,
+        name: companyData.name,
+        subscription_status: companyData.subscription_status,
+        user_count: userCount || 0,
+        created_at: companyData.created_at,
       } as Enterprise;
     },
     enabled: !!user?.id,
