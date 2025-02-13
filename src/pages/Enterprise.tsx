@@ -57,7 +57,7 @@ const Enterprise = () => {
           console.error("Error fetching companies:", companiesError);
           throw companiesError;
         }
-
+        console.log('companies >> ', companies);
         if (!companies) {
           throw new Error("Aucune entreprise trouvée");
         }
