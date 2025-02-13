@@ -1,7 +1,6 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
@@ -22,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { mockDataFunctions } from "@/utils/mockData";
 
 interface Invoice {
   id: string;
@@ -48,19 +48,7 @@ const Invoices = () => {
         throw new Error("Aucune entreprise associée à cet utilisateur");
       }
 
-      let query = supabase
-        .from('invoices')
-        .select(`
-          *,
-          client:clients(name, email)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (profile?.role !== 'super_admin' && profile?.company_id) {
-        query = query.eq('company_id', profile.company_id);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await mockDataFunctions.getInvoices();
 
       if (error) {
         console.error("Error fetching invoices:", error);
