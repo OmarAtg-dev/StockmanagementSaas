@@ -13,6 +13,7 @@ import Enterprise from "./pages/Enterprise";
 import CompanyUsers from "./pages/CompanyUsers";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Inventory from "./pages/Inventory";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Products />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/inventory"
+      element={
+        <ProtectedRoute>
+          <Inventory />
         </ProtectedRoute>
       }
     />
