@@ -1,7 +1,6 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
@@ -22,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
+import { mockDataFunctions } from "@/utils/mockData";
 
 interface Supplier {
   id: string;
@@ -46,16 +46,7 @@ const Suppliers = () => {
         throw new Error("Aucune entreprise associée à cet utilisateur");
       }
 
-      let query = supabase
-        .from('suppliers')
-        .select('*')
-        .order('name');
-
-      if (profile?.role !== 'super_admin' && profile?.company_id) {
-        query = query.eq('company_id', profile.company_id);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await mockDataFunctions.getSuppliers();
 
       if (error) {
         console.error("Error fetching suppliers:", error);
