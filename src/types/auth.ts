@@ -1,2 +1,2 @@
 
-export type UserRole = 'super_admin' | 'admin' | 'manager' | 'staff' | 'user';
+// This file is intentionally empty since we removed the role system

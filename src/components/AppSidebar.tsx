@@ -29,72 +29,52 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-const getSidebarSections = (role: string | null) => {
-  const sections = [
-    {
-      label: "Principal",
-      items: [
-        { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
-        { title: "Entreprises", icon: Building2, path: "/enterprise" },
-      ]
-    },
-    {
-      label: "Commercial",
-      items: [
-        { title: "Clients", icon: UserCircle, path: "/clients" },
-        { title: "Factures", icon: Receipt, path: "/invoices" },
-        { title: "Fournisseurs", icon: Truck, path: "/suppliers" },
-        { title: "Factures fournisseurs", icon: FileText, path: "/supplier-invoices" },
-      ]
-    },
-    {
-      label: "Stock",
-      items: [
-        { title: "Produits", icon: Package, path: "/products" },
-        { title: "Inventaire", icon: Boxes, path: "/inventory" },
-      ]
-    },
-    {
-      label: "Données",
-      items: [
-        { title: "Analytique", icon: BarChart, path: "/analytics" },
-        { title: "Historique", icon: History, path: "/history" },
-      ]
-    },
-    {
-      label: "Administration",
-      items: [
-        { title: "Équipe", icon: Users, path: "/team" },
-        { title: "Paramètres", icon: Settings, path: "/settings" },
-      ]
-    }
-  ];
-
-  if (role === "super_admin") {
-    return [
-      {
-        label: "Administration",
-        items: [{ title: "Entreprises", icon: Building2, path: "/companies" }]
-      },
-      ...sections.filter(section => 
-        section.label !== "Principal" || 
-        (section.label === "Principal" && 
-         !section.items.some(item => item.title === "Entreprises"))
-      )
-    ];
+const getSidebarSections = () => [
+  {
+    label: "Principal",
+    items: [
+      { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
+      { title: "Entreprises", icon: Building2, path: "/enterprise" },
+    ]
+  },
+  {
+    label: "Commercial",
+    items: [
+      { title: "Clients", icon: UserCircle, path: "/clients" },
+      { title: "Factures", icon: Receipt, path: "/invoices" },
+      { title: "Fournisseurs", icon: Truck, path: "/suppliers" },
+      { title: "Factures fournisseurs", icon: FileText, path: "/supplier-invoices" },
+    ]
+  },
+  {
+    label: "Stock",
+    items: [
+      { title: "Produits", icon: Package, path: "/products" },
+      { title: "Inventaire", icon: Boxes, path: "/inventory" },
+    ]
+  },
+  {
+    label: "Données",
+    items: [
+      { title: "Analytique", icon: BarChart, path: "/analytics" },
+      { title: "Historique", icon: History, path: "/history" },
+    ]
+  },
+  {
+    label: "Administration",
+    items: [
+      { title: "Équipe", icon: Users, path: "/team" },
+      { title: "Paramètres", icon: Settings, path: "/settings" },
+    ]
   }
-
-  return sections;
-}
+];
 
 export function AppSidebar() {
   const { signOut, profile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  console.log("Full profile data:", profile);
-
-  const sidebarSections = getSidebarSections(profile?.role);
+  const sidebarSections = getSidebarSections();
 
   const handleSignOut = async () => {
     try {
@@ -112,6 +92,10 @@ export function AppSidebar() {
       });
     }
   };
+
+  if (!profile?.company_id) {
+    return null;
+  }
 
   return (
     <Sidebar className="border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

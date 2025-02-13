@@ -2,15 +2,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CompanyUser } from "@/types/company-user";
-import { UserRole } from "@/types/auth";
 import { Eye, EyeOff } from "lucide-react";
 
 interface UserFormProps {
@@ -20,7 +12,6 @@ interface UserFormProps {
     email: string;
     password?: string;
     full_name: string;
-    role: UserRole;
   }) => void;
   onClose: () => void;
 }
@@ -30,14 +21,12 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name || "");
-  const [role, setRole] = useState<UserRole>(user?.role || "staff");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = {
       email,
       full_name: fullName,
-      role,
     } as any;
 
     // Only include password if it's provided (for editing) or if it's a new user
@@ -103,21 +92,6 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
           onChange={(e) => setFullName(e.target.value)}
           required
         />
-      </div>
-      <div>
-        <label htmlFor="role" className="block text-sm font-medium">
-          Rôle
-        </label>
-        <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un rôle" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="staff">Staff</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onClose}>

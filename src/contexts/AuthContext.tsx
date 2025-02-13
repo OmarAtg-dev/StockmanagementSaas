@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!profileData.company_id) {
         const { data: companyRoleData, error: companyRoleError } = await supabase
           .from("company_user_roles")
-          .select("company_id, role")
+          .select("company_id")
           .eq("user_id", userId)
           .single();
 
@@ -55,10 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Update the profile with the company_id
           const { data: updatedProfile, error: updateError } = await supabase
             .from("profiles")
-            .update({ 
-              company_id: companyRoleData.company_id,
-              role: companyRoleData.role 
-            })
+            .update({ company_id: companyRoleData.company_id })
             .eq("id", userId)
             .select()
             .single();

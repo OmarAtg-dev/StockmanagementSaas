@@ -86,7 +86,6 @@ export type Database = {
           company_id: string | null
           created_at: string
           id: string
-          role: string | null
           updated_at: string
           user_id: string | null
         }
@@ -94,7 +93,6 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
-          role?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -102,7 +100,6 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
-          role?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -469,7 +466,6 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
-          role: string | null
           updated_at: string
           username: string | null
         }
@@ -478,7 +474,6 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
-          role?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -487,7 +482,6 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
-          role?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -681,7 +675,6 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string | null
-          role: string | null
           user_id: string | null
           username: string | null
         }
