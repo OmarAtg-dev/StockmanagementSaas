@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDataFunctions } from "@/utils/mockData";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -32,32 +33,17 @@ const Auth = () => {
     setIsLoading(true);
     try {
       console.log("Attempting to sign in with:", formData.email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email.trim(),
-        password: formData.password,
-      });
 
+      // Use mock sign in function
+      const { data, error } = await mockDataFunctions.signIn(formData.email, formData.password);
+      
       if (error) {
         console.error("Sign in error:", error);
-        if (error.message === "Invalid login credentials") {
-          toast({
-            variant: "destructive",
-            title: "Erreur de connexion",
-            description: "Email ou mot de passe incorrect. Veuillez réessayer.",
-          });
-        } else if (error.message.includes("Email not confirmed")) {
-          toast({
-            variant: "destructive",
-            title: "Email non confirmé",
-            description: "Veuillez confirmer votre email avant de vous connecter.",
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Erreur de connexion",
-            description: error.message,
-          });
-        }
+        toast({
+          variant: "destructive",
+          title: "Erreur de connexion",
+          description: error.message,
+        });
         return;
       }
 
@@ -85,117 +71,38 @@ const Auth = () => {
     try {
       console.log("Starting signup process for:", formData.email);
       
-      // 1. Create user first
-      console.log("Creating user account");
-      const { data: userData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email.trim(),
+      // Use mock sign up function
+      const { data, error } = await mockDataFunctions.signUp({
+        email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            username: formData.username,
-            full_name: formData.fullName,
-          },
-        },
+        username: formData.username,
+        fullName: formData.fullName,
+        companyName: formData.companyName,
       });
 
-      if (signUpError) {
-        console.error("Error creating user:", signUpError);
-        if (signUpError.message.includes("User already registered")) {
-          toast({
-            variant: "destructive",
-            title: "Erreur d'inscription",
-            description: "Un compte existe déjà avec cet email.",
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Erreur d'inscription",
-            description: signUpError.message,
-          });
-        }
+      if (error) {
+        console.error("Signup error:", error);
+        toast({
+          variant: "destructive",
+          title: "Erreur d'inscription",
+          description: error.message,
+        });
         return;
       }
 
-      if (!userData.user) {
-        throw new Error("User creation failed");
-      }
-
-      // 2. Sign in immediately after signup
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email.trim(),
-        password: formData.password,
-      });
-
-      if (signInError) {
-        throw new Error("Failed to sign in after registration");
-      }
-
-      // 3. Create company (now that we're authenticated)
-      console.log("Creating company:", formData.companyName);
-      const { data: companyData, error: companyError } = await supabase
-        .from("companies")
-        .insert([{ 
-          name: formData.companyName,
-          subscription_status: 'active'
-        }])
-        .select()
-        .single();
-
-      if (companyError) {
-        console.error("Error creating company:", companyError);
-        throw new Error("Erreur lors de la création de l'entreprise");
-      }
-
-      // 4. Create profile and link to company
-      console.log("Creating user profile");
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert([
-          {
-            id: userData.user.id,
-            username: formData.username,
-            full_name: formData.fullName,
-            company_id: companyData.id,
-            role: 'admin', // First user is admin
-          },
-        ]);
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-        throw new Error("Erreur lors de la création du profil");
-      }
-
-      // 5. Create company user role for backwards compatibility
-      console.log("Creating company user role");
-      const { error: roleError } = await supabase
-        .from("company_user_roles")
-        .insert([
-          {
-            user_id: userData.user.id,
-            company_id: companyData.id,
-            role: 'admin', // First user is admin
-          },
-        ]);
-
-      if (roleError) {
-        console.error("Error creating role:", roleError);
-        throw new Error("Erreur lors de la création du rôle");
-      }
-
-      console.log("Signup process completed successfully");
+      console.log("Signup successful:", data);
       toast({
         title: "Inscription réussie",
         description: "Votre compte a été créé avec succès. Vous êtes maintenant connecté.",
       });
       
       navigate("/");
-      
     } catch (error: any) {
       console.error("Signup process error:", error);
       toast({
         variant: "destructive",
         title: "Erreur d'inscription",
-        description: error.message || "Une erreur inattendue s'est produite. Veuillez réessayer.",
+        description: "Une erreur inattendue s'est produite. Veuillez réessayer.",
       });
     } finally {
       setIsLoading(false);
