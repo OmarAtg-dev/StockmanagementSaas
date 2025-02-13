@@ -25,7 +25,10 @@ const Index = () => {
           />
           <StatsCard
             title="Valeur Totale"
-            value="142 040 €"
+            value={new Intl.NumberFormat('fr-FR', { 
+              style: 'currency', 
+              currency: 'MAD'
+            }).format(142040)}
             icon={<DollarSign className="h-6 w-6" />}
             trend={{ value: 8, isPositive: true }}
           />
@@ -47,7 +50,6 @@ const Index = () => {
 
         <div className="grid gap-6 md:grid-cols-2">
           <RecentActivity />
-          {/* Nous ajouterons plus de composants dans les futures itérations */}
         </div>
       </div>
     </DashboardLayout>
