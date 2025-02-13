@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -139,10 +138,9 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
           date: format(date, 'yyyy-MM-dd'),
           due_date: format(dueDate, 'yyyy-MM-dd'),
           total_amount: calculateTotal(),
-          notes,
+          notes: notes || null,
         }])
-        .select()
-        .single();
+        .select();
 
       if (invoiceError) throw invoiceError;
 
@@ -151,12 +149,12 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
         .from("invoice_items")
         .insert(
           items.map(item => ({
-            invoice_id: invoice.id,
+            invoice_id: invoice[0].id,
+            product_id: item.product_id || null,
             description: item.description,
             quantity: item.quantity,
             unit_price: item.unit_price,
             amount: item.amount,
-            product_id: item.product_id
           }))
         );
 
