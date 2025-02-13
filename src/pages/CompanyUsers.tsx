@@ -188,7 +188,9 @@ const CompanyUsers = () => {
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .rpc('delete_company_user', { user_role_id: id });
+        .from('company_user_roles')
+        .delete()
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -208,16 +210,6 @@ const CompanyUsers = () => {
     },
   });
 
-  if (!profile?.company_id && profile?.role !== "super_admin") {
-    return (
-      <DashboardLayout>
-        <div className="text-center py-8">
-          Vous n'avez pas accès à cette page.
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -235,8 +227,7 @@ const CompanyUsers = () => {
                 <DialogTitle>Ajouter un utilisateur</DialogTitle>
               </DialogHeader>
               <UserForm
-                companyId={companyId!}
-                onSubmit={(data) => addUser.mutate(data as any)}
+                onSubmit={(data) => addUser.mutate(data)}
                 onClose={() => setIsAddOpen(false)}
               />
             </DialogContent>
@@ -262,7 +253,6 @@ const CompanyUsers = () => {
                 {editingUser && (
                   <UserForm
                     user={editingUser}
-                    companyId={companyId!}
                     onSubmit={(data) =>
                       updateUser.mutate({ id: editingUser.id, ...data })
                     }

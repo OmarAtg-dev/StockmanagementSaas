@@ -15,3 +15,9 @@ export type UserFormData = {
   full_name: string;
   role: string;
 };
+
+export type UserFormProps = {
+  user?: CompanyUser;
+  onSubmit: (data: UserFormData) => void;
+  onClose: () => void;
+};
