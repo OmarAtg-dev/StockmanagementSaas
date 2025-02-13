@@ -25,6 +25,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      // First get the profile
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        return;
+      }
+
+      // If we don't have a company_id in profile, try to get it from company_user_roles
+      if (!profileData.company_id) {
+        const { data: roleData, error: roleError } = await supabase
+          .from("company_user_roles")
+          .select("company_id")
+          .eq("user_id", userId)
+          .single();
+
+        if (!roleError && roleData) {
+          // Update the profile with the company_id
+          const { data: updatedProfile, error: updateError } = await supabase
+            .from("profiles")
+            .update({ company_id: roleData.company_id })
+            .eq("id", userId)
+            .select()
+            .single();
+
+          if (!updateError) {
+            setProfile(updatedProfile);
+            return;
+          }
+        }
+      }
+
+      setProfile(profileData);
+    } catch (error) {
+      console.error("Error in fetchProfile:", error);
+    }
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,25 +94,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching profile:", error);
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error("Error in fetchProfile:", error);
-    }
-  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
