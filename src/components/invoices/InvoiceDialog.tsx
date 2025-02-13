@@ -90,15 +90,15 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
       // Create invoice
       const { data: invoice, error: invoiceError } = await supabase
         .from("invoices")
-        .insert({
-          company_id: companyId,
+        .insert([{  // Note: Wrapped in array to match the expected type
           client_id: clientId,
+          company_id: companyId,
           number,
-          date,
-          due_date: dueDate,
+          date: format(date, 'yyyy-MM-dd'),
+          due_date: format(dueDate, 'yyyy-MM-dd'),
           total_amount: calculateTotal(),
           notes,
-        })
+        }])
         .select()
         .single();
 
@@ -110,7 +110,11 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
         .insert(
           items.map(item => ({
             invoice_id: invoice.id,
-            ...item
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            amount: item.amount,
+            product_id: item.product_id
           }))
         );
 
