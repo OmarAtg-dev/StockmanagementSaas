@@ -30,13 +30,17 @@ const CompanyUsers = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ["company-users", companyId],
     queryFn: async () => {
+      console.log("Fetching users for company:", companyId);
       const { data, error } = await supabase
         .from("company_users_with_roles")
         .select("*")
-        .eq("company_id", companyId)
-        .order("created_at", { ascending: false });
+        .eq("company_id", companyId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+      }
+      console.log("Fetched users:", data);
       return data as CompanyUser[];
     },
     enabled: !!companyId,
@@ -97,8 +101,11 @@ const CompanyUsers = () => {
       role: "admin" | "manager" | "staff";
     }) => {
       if (!editingUser?.user_id) {
+        console.error("Editing user data:", editingUser);
         throw new Error("User ID is missing");
       }
+
+      console.log("Updating user with ID:", editingUser.user_id);
 
       // Update user profile first
       const { error: profileError } = await supabase
@@ -109,7 +116,10 @@ const CompanyUsers = () => {
         })
         .eq("id", editingUser.user_id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        throw profileError;
+      }
 
       // Update role
       const { error: roleError } = await supabase
@@ -117,14 +127,20 @@ const CompanyUsers = () => {
         .update({ role })
         .eq("id", id);
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error("Role update error:", roleError);
+        throw roleError;
+      }
 
       // Update password if provided
       if (password) {
         const { error: authError } = await supabase.functions.invoke('update-user-password', {
           body: { userId: editingUser.user_id, password }
         });
-        if (authError) throw authError;
+        if (authError) {
+          console.error("Password update error:", authError);
+          throw authError;
+        }
       }
     },
     onSuccess: () => {
@@ -208,7 +224,11 @@ const CompanyUsers = () => {
           <>
             <Dialog
               open={!!editingUser}
-              onOpenChange={(open) => setEditingUser(open ? editingUser : null)}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setEditingUser(null);
+                }
+              }}
             >
               <DialogContent>
                 <DialogHeader>
@@ -228,7 +248,10 @@ const CompanyUsers = () => {
             </Dialog>
             <UsersTable
               users={users || []}
-              onEdit={setEditingUser}
+              onEdit={(user) => {
+                console.log("Editing user:", user);
+                setEditingUser(user);
+              }}
               onDelete={(id) => deleteUser.mutate(id)}
             />
           </>
