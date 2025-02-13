@@ -12,57 +12,47 @@ import {
 import { Input } from "@/components/ui/input";
 import { Package, Search, Plus } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
-// Exemple de données de produits
-const productsData = [
-  {
-    id: 1,
-    name: "iPhone 14 Pro",
-    category: "Téléphones",
-    price: 1299,
-    stock: 45,
-    status: "En stock",
-  },
-  {
-    id: 2,
-    name: "MacBook Air M2",
-    category: "Ordinateurs",
-    price: 1499,
-    stock: 32,
-    status: "En stock",
-  },
-  {
-    id: 3,
-    name: "AirPods Pro",
-    category: "Accessoires",
-    price: 279,
-    stock: 78,
-    status: "En stock",
-  },
-  {
-    id: 4,
-    name: "iPad Air",
-    category: "Tablettes",
-    price: 789,
-    stock: 12,
-    status: "Stock faible",
-  },
-  {
-    id: 5,
-    name: "Apple Watch Series 8",
-    category: "Montres",
-    price: 499,
-    stock: 56,
-    status: "En stock",
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  stock: number;
+  status: string;
+}
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
 
-  const filteredProducts = productsData.filter((product) =>
+  const { data: products, isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger les produits",
+        });
+        throw error;
+      }
+
+      return data as Product[];
+    }
+  });
+
+  const filteredProducts = products?.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) ?? [];
 
   return (
     <DashboardLayout>
@@ -103,25 +93,39 @@ const Products = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{product.price} €</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.status === "En stock"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {product.status}
-                    </span>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4">
+                    Chargement...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4">
+                    Aucun produit trouvé
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>{product.category}</TableCell>
+                    <TableCell>{product.price} €</TableCell>
+                    <TableCell>{product.stock}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          product.status === "En stock"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {product.status}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </Card>
