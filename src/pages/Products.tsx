@@ -10,12 +10,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Package, Search, Plus } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockDataFunctions } from "@/utils/mockData";
 
 interface Product {
   id: string;
@@ -38,11 +38,7 @@ const Products = () => {
         return [];
       }
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('company_id', profile.company_id)
-        .order('created_at', { ascending: false });
+      const { data, error } = await mockDataFunctions.getProducts();
 
       if (error) {
         console.error("Error fetching products:", error);
