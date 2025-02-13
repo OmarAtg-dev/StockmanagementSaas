@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Product {
   id: string;
@@ -28,16 +29,23 @@ interface Product {
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { profile } = useAuth();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
+      if (!profile?.company_id) {
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error("Error fetching products:", error);
         toast({
           variant: "destructive",
           title: "Erreur",
@@ -47,7 +55,8 @@ const Products = () => {
       }
 
       return data as Product[];
-    }
+    },
+    enabled: !!profile?.company_id
   });
 
   const filteredProducts = products?.filter((product) =>
