@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CompanyUser } from "@/types/company-user";
+import { UserRole } from "@/types/auth";
 import { Eye, EyeOff } from "lucide-react";
 
 interface UserFormProps {
@@ -19,7 +20,7 @@ interface UserFormProps {
     email: string;
     password?: string;
     full_name: string;
-    role: "admin" | "manager" | "staff";
+    role: UserRole;
   }) => void;
   onClose: () => void;
 }
@@ -29,9 +30,7 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name || "");
-  const [role, setRole] = useState<"admin" | "manager" | "staff">(
-    user?.role || "staff"
-  );
+  const [role, setRole] = useState<UserRole>(user?.role || "staff");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +108,7 @@ export const UserForm = ({ user, onSubmit, onClose }: UserFormProps) => {
         <label htmlFor="role" className="block text-sm font-medium">
           Rôle
         </label>
-        <Select value={role} onValueChange={(value: "admin" | "manager" | "staff") => setRole(value)}>
+        <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un rôle" />
           </SelectTrigger>
