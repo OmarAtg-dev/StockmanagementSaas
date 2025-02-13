@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { TrendingUp, Package, ShoppingCart } from "lucide-react";
-import { MADIcon } from "@/components/icons/MADIcon";
 
 const Analytics = () => {
   return (
@@ -24,7 +23,6 @@ const Analytics = () => {
               style: 'currency', 
               currency: 'MAD'
             }).format(45230)}
-            icon={<MADIcon className="h-6 w-6" />}
             trend={{ value: 12, isPositive: true }}
           />
           <StatsCard
