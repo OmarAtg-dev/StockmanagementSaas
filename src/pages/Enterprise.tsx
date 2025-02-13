@@ -39,6 +39,7 @@ const Enterprise = () => {
 
       console.log("Fetching enterprise data for user:", user.id);
       console.log("User profile:", profile);
+      console.log("User profile >> ", profile?.role);
 
       // If user is super_admin and no company_id is set, fetch the first company
       if (profile?.role === 'super_admin') {
