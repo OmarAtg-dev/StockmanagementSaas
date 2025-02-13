@@ -196,6 +196,14 @@ export type Database = {
       }
     }
     Functions: {
+      check_user_role: {
+        Args: {
+          user_id: string
+          company_id: string
+          required_role: Database["public"]["Enums"]["company_role"]
+        }
+        Returns: boolean
+      }
       create_company_user: {
         Args: {
           p_email: string
