@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
-import { Package, AlertTriangle, TrendingUp, CircleDollarSign } from "lucide-react";
+import { Package, AlertTriangle, TrendingUp } from "lucide-react";
 
 const Index = () => {
   return (
@@ -29,7 +29,6 @@ const Index = () => {
               style: 'currency', 
               currency: 'MAD'
             }).format(142040)}
-            icon={<CircleDollarSign className="h-6 w-6" />}
             trend={{ value: 8, isPositive: true }}
           />
           <StatsCard
