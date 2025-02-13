@@ -25,7 +25,7 @@ const Enterprise = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
-  const { data: enterprise, isLoading, error } = useQuery({
+  const { data: enterprise, isLoading } = useQuery({
     queryKey: ["enterprise", user?.id, profile?.role],
     queryFn: async () => {
       if (!user?.id) throw new Error("User not authenticated");
@@ -126,15 +126,28 @@ const Enterprise = () => {
       }
     },
     enabled: !!user?.id,
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          title: "Erreur",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
   });
 
-  if (error) {
-    console.error("Query error:", error);
-    toast({
-      title: "Erreur",
-      description: error.message,
-      variant: "destructive",
-    });
+  if (!user?.id) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
+          <p className="text-muted-foreground">
+            Vous n'êtes pas connecté.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   if (isLoading) {
@@ -147,19 +160,6 @@ const Enterprise = () => {
             <Skeleton className="h-32" />
             <Skeleton className="h-32" />
           </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user?.id) {
-    return (
-      <DashboardLayout>
-        <div className="text-center py-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-4">Mon Entreprise</h1>
-          <p className="text-muted-foreground">
-            Vous n'êtes pas connecté.
-          </p>
         </div>
       </DashboardLayout>
     );
@@ -219,15 +219,6 @@ const Enterprise = () => {
               </CardContent>
             </Card>
           </div>
-        ) : error ? (
-          <div className="text-center py-8">
-            <p className="text-red-500">
-              Une erreur est survenue lors du chargement des données.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {error.message}
-            </p>
-          </div>
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground">
@@ -241,3 +232,4 @@ const Enterprise = () => {
 };
 
 export default Enterprise;
+
