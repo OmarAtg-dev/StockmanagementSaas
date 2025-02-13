@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Receipt } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InvoiceDialog } from "@/components/invoices/InvoiceDialog";
 
 interface Client {
   id: string;
@@ -34,6 +35,8 @@ const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { profile } = useAuth();
   const { toast } = useToast();
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
 
   const { data: clients, isLoading, error } = useQuery({
     queryKey: ['clients', profile?.company_id],
@@ -78,6 +81,19 @@ const Clients = () => {
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   ) ?? [];
+
+  const handleCreateInvoice = (clientId: string) => {
+    if (!profile?.company_id) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Vous devez être associé à une entreprise pour créer une facture.",
+      });
+      return;
+    }
+    setSelectedClientId(clientId);
+    setIsInvoiceDialogOpen(true);
+  };
 
   if (error) {
     return (
@@ -164,6 +180,13 @@ const Clients = () => {
                       {new Date(client.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleCreateInvoice(client.id)}
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon">
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -178,6 +201,15 @@ const Clients = () => {
           </Table>
         </Card>
       </div>
+
+      {selectedClientId && profile?.company_id && (
+        <InvoiceDialog
+          open={isInvoiceDialogOpen}
+          onOpenChange={setIsInvoiceDialogOpen}
+          clientId={selectedClientId}
+          companyId={profile.company_id}
+        />
+      )}
     </DashboardLayout>
   );
 };
