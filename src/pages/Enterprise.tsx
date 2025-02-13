@@ -22,35 +22,55 @@ type Enterprise = {
 };
 
 const Enterprise = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
 
   const { data: enterprise, isLoading, error } = useQuery({
     queryKey: ["enterprise", user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error("User not authenticated");
+      
+      let companyId: string | null = null;
 
-      // First get the company_id from user roles
-      const { data: roleData, error: roleError } = await supabase
-        .from("company_user_roles")
-        .select("company_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // If user is not a super_admin, get their company_id from roles
+      if (profile?.role !== 'super_admin') {
+        const { data: roleData, error: roleError } = await supabase
+          .from("company_user_roles")
+          .select("company_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      if (roleError) {
-        console.error("Error fetching role:", roleError);
-        throw roleError;
+        if (roleError) {
+          console.error("Error fetching role:", roleError);
+          throw roleError;
+        }
+
+        if (!roleData?.company_id) {
+          throw new Error("No company associated with user");
+        }
+
+        companyId = roleData.company_id;
+      } else {
+        // For super_admin, get the first company (or you could add company selection logic)
+        const { data: companies, error: companiesError } = await supabase
+          .from("companies")
+          .select("id")
+          .limit(1)
+          .single();
+
+        if (companiesError) {
+          console.error("Error fetching companies:", companiesError);
+          throw companiesError;
+        }
+
+        companyId = companies.id;
       }
 
-      if (!roleData?.company_id) {
-        throw new Error("No company associated with user");
-      }
-
-      // Then fetch the company details separately
+      // Fetch the company details
       const { data: companyData, error: companyError } = await supabase
         .from("companies")
         .select("*")
-        .eq("id", roleData.company_id)
+        .eq("id", companyId)
         .maybeSingle();
 
       if (companyError || !companyData) {
@@ -58,11 +78,11 @@ const Enterprise = () => {
         throw companyError || new Error("Company not found");
       }
 
-      // Get user count in a separate query
+      // Get user count
       const { count: userCount, error: countError } = await supabase
         .from("company_user_roles")
         .select("*", { count: 'exact', head: true })
-        .eq("company_id", roleData.company_id);
+        .eq("company_id", companyId);
 
       if (countError) {
         console.error("Error fetching user count:", countError);
