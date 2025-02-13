@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, MapPin, Phone, Mail, Globe, Building } from "lucide-react";
+import { Building2, Users, MapPin, Phone, Mail, Globe, Building, Warehouse, Package, Scale, AlertTriangle, Users2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Enterprise {
@@ -28,6 +27,22 @@ interface Enterprise {
       linkedin: string;
       twitter: string;
     };
+  };
+  inventory: {
+    primary_warehouse: {
+      name: string;
+      address: string;
+    };
+    additional_warehouses: Array<{
+      name: string;
+      address: string;
+    }>;
+    valuation_method: 'FIFO' | 'LIFO' | 'WEIGHTED_AVERAGE';
+    stock_thresholds: {
+      alert_level: number;
+      reorder_level: number;
+    };
+    active_suppliers: number;
   };
 }
 
@@ -51,6 +66,24 @@ const mockEnterpriseInfo: Enterprise = {
       linkedin: "linkedin.com/company/acme-corp-ma",
       twitter: "twitter.com/acme_corp_ma"
     }
+  },
+  inventory: {
+    primary_warehouse: {
+      name: "Entrepôt Principal Casablanca",
+      address: "Zone Industrielle Sidi Maârouf, Casablanca"
+    },
+    additional_warehouses: [
+      {
+        name: "Entrepôt Tanger Med",
+        address: "Zone Franche Tanger Med"
+      }
+    ],
+    valuation_method: "FIFO",
+    stock_thresholds: {
+      alert_level: 100,
+      reorder_level: 50
+    },
+    active_suppliers: 12
   }
 };
 
@@ -238,6 +271,111 @@ const Enterprise = () => {
                     </a>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Stock & Configuration d'Inventaire</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Entrepôt Principal
+                </CardTitle>
+                <Warehouse className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="font-medium">{enterprise?.inventory.primary_warehouse.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {enterprise?.inventory.primary_warehouse.address}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Entrepôts Additionnels
+                </CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {enterprise?.inventory.additional_warehouses.map((warehouse, index) => (
+                    <div key={index} className="border-b last:border-0 pb-2 last:pb-0">
+                      <div className="font-medium">{warehouse.name}</div>
+                      <div className="text-sm text-muted-foreground">{warehouse.address}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Méthode de Valorisation
+                </CardTitle>
+                <Scale className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="text-xl font-semibold">
+                    {enterprise?.inventory.valuation_method === 'FIFO' && 'FIFO'}
+                    {enterprise?.inventory.valuation_method === 'LIFO' && 'LIFO'}
+                    {enterprise?.inventory.valuation_method === 'WEIGHTED_AVERAGE' && 'Moyenne pondérée'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Méthode de valorisation des stocks actuelle
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Seuils de Stock
+                </CardTitle>
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium">Niveau d'alerte</div>
+                    <div className="text-lg text-yellow-600">
+                      {enterprise?.inventory.stock_thresholds.alert_level} unités
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">Niveau de réapprovisionnement</div>
+                    <div className="text-lg text-red-600">
+                      {enterprise?.inventory.stock_thresholds.reorder_level} unités
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="cursor-pointer transition-colors hover:bg-accent"
+              onClick={() => navigate('/suppliers')}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Gestion des Fournisseurs
+                </CardTitle>
+                <Users2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{enterprise?.inventory.active_suppliers}</div>
+                <p className="text-sm text-muted-foreground">
+                  Fournisseurs actifs
+                </p>
               </CardContent>
             </Card>
           </div>
