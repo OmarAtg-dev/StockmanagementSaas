@@ -21,6 +21,7 @@ import Settings from "./pages/Settings";
 import Clients from "./pages/Clients";
 import Invoices from "./pages/Invoices";
 import Suppliers from "./pages/Suppliers";
+import SupplierInvoices from "./pages/SupplierInvoices";
 
 const queryClient = new QueryClient();
 
@@ -117,6 +118,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Suppliers />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/supplier-invoices"
+      element={
+        <ProtectedRoute>
+          <SupplierInvoices />
         </ProtectedRoute>
       }
     />
