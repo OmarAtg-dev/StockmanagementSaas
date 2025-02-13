@@ -20,6 +20,7 @@ import Team from "./pages/Team";
 import Settings from "./pages/Settings";
 import Clients from "./pages/Clients";
 import Invoices from "./pages/Invoices";
+import Suppliers from "./pages/Suppliers";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Invoices />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/suppliers"
+      element={
+        <ProtectedRoute>
+          <Suppliers />
         </ProtectedRoute>
       }
     />

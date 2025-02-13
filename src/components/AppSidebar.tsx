@@ -20,7 +20,8 @@ import {
   Building2,
   LogOut,
   UserCircle,
-  Receipt
+  Receipt,
+  Truck
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -34,6 +35,7 @@ const getMenuItems = (role: string | null) => {
     { title: "Entreprises", icon: Building2, path: "/enterprise" },
     { title: "Clients", icon: UserCircle, path: "/clients" },
     { title: "Factures", icon: Receipt, path: "/invoices" },
+    { title: "Fournisseurs", icon: Truck, path: "/suppliers" },
     { title: "Produits", icon: Package, path: "/products" },
     { title: "Inventaire", icon: Boxes, path: "/inventory" },
     { title: "Analytique", icon: BarChart, path: "/analytics" },
