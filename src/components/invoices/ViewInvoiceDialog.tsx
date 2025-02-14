@@ -485,7 +485,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                       <TableCell>
                         {isEditing ? (
                           <Select
-                            defaultValue={products?.find(p => p.name === item.description)?.id}
+                            value={products?.find(p => p.name === item.description)?.id}
                             onValueChange={(value) => updateItem(index, 'product', value)}
                           >
                             <SelectTrigger className="w-full">
