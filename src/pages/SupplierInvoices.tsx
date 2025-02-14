@@ -18,6 +18,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
+import { useState } from "react";
+import { ViewSupplierInvoiceDialog } from "@/components/suppliers/ViewSupplierInvoiceDialog";
 
 interface SupplierInvoice {
   id: string;
@@ -29,10 +31,18 @@ interface SupplierInvoice {
   supplier: {
     name: string;
   };
+  items: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    amount: number;
+  }>;
 }
 
 const SupplierInvoices = () => {
   const { profile } = useAuth();
+  const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['supplier-invoices', profile?.company_id],
@@ -139,7 +149,11 @@ const SupplierInvoices = () => {
                 </TableRow>
               ) : (
                 invoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                  <TableRow 
+                    key={invoice.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setSelectedInvoice(invoice)}
+                  >
                     <TableCell className="font-medium">
                       {invoice.number}
                     </TableCell>
@@ -167,6 +181,12 @@ const SupplierInvoices = () => {
             </TableBody>
           </Table>
         </Card>
+
+        <ViewSupplierInvoiceDialog 
+          open={!!selectedInvoice}
+          onOpenChange={(open) => !open && setSelectedInvoice(null)}
+          invoice={selectedInvoice}
+        />
       </div>
     </DashboardLayout>
   );
