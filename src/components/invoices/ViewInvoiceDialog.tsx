@@ -4,7 +4,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
@@ -79,7 +78,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     invoice ? new Date(invoice.due_date) : undefined
   );
 
-  // Update local state whenever invoice prop changes
   React.useEffect(() => {
     if (invoice) {
       setEditedInvoice(invoice);
@@ -88,6 +86,35 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       setIsEditing(false);
     }
   }, [invoice]);
+
+  const updateItem = (index: number, field: string, value: string | number) => {
+    if (!editedInvoice) return;
+
+    const newItems = [...editedInvoice.items];
+    const item = { ...newItems[index] };
+
+    if (field === 'quantity' || field === 'unit_price') {
+      const numValue = Number(value);
+      item[field] = numValue;
+      item.amount = item.quantity * item.unit_price;
+    } else if (field === 'product') {
+      const selectedProduct = products?.find(p => p.id === value);
+      if (selectedProduct) {
+        item.description = selectedProduct.name;
+        item.unit_price = selectedProduct.price;
+        item.amount = item.quantity * item.unit_price;
+      }
+    } else {
+      item[field as 'description'] = value as string;
+    }
+
+    newItems[index] = item;
+    setEditedInvoice({
+      ...editedInvoice,
+      items: newItems,
+      total_amount: newItems.reduce((sum, item) => sum + item.amount, 0),
+    });
+  };
 
   const handleUpdateClient = (field: string, value: string) => {
     if (!editedInvoice) return;
@@ -132,6 +159,8 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     if (!editedInvoice || !date || !dueDate) return;
 
     try {
+      console.log('Updating invoice with:', editedInvoice); // Debug log
+      
       const updatedInvoice = {
         ...editedInvoice,
         date: format(date, 'yyyy-MM-dd'),
@@ -151,41 +180,13 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       setIsEditing(false);
       onOpenChange(false);
     } catch (error) {
+      console.error('Error updating invoice:', error); // Debug log
       toast({
         variant: "destructive",
         title: "Erreur",
         description: "Une erreur est survenue lors de la mise à jour de la facture.",
       });
     }
-  };
-
-  const updateItem = (index: number, field: string, value: string | number) => {
-    if (!editedInvoice) return;
-
-    const newItems = [...editedInvoice.items];
-    const item = { ...newItems[index] };
-
-    if (field === 'quantity' || field === 'unit_price') {
-      const numValue = Number(value);
-      item[field] = numValue;
-      item.amount = item.quantity * item.unit_price;
-    } else if (field === 'product') {
-      const selectedProduct = products?.find(p => p.id === value);
-      if (selectedProduct) {
-        item.description = selectedProduct.name;
-        item.unit_price = selectedProduct.price;
-        item.amount = item.quantity * item.unit_price;
-      }
-    } else {
-      item[field as 'description'] = value as string;
-    }
-
-    newItems[index] = item;
-    setEditedInvoice({
-      ...editedInvoice,
-      items: newItems,
-      total_amount: newItems.reduce((sum, item) => sum + item.amount, 0),
-    });
   };
 
   const handleGeneratePDF = () => {
@@ -422,7 +423,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                   <Label className="text-sm text-muted-foreground">Status</Label>
                   {isEditing ? (
                     <Select
-                      value={editedInvoice?.status}
+                      value={displayInvoice.status}
                       onValueChange={handleUpdateStatus}
                     >
                       <SelectTrigger className="w-full mt-1">
