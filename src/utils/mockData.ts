@@ -418,7 +418,7 @@ export const mockDataFunctions = {
         ...data,
         id: `SINV${Date.now()}`,
         supplier,
-        items: data.items || [], // Ensure items are included
+        items: data.items || [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -503,67 +503,43 @@ export const mockDataFunctions = {
     };
   },
 
-  updateInvoice: async (updatedInvoice: any) => {
+  updateInvoice: async (id: string, data: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    const index = mockInvoices.findIndex(inv => inv.id === updatedInvoice.id);
-    if (index === -1) {
-      throw new Error("Invoice not found");
-    }
-
-    // Update the invoice in our mock store
-    mockInvoices[index] = {
-      ...mockInvoices[index],
-      date: updatedInvoice.date, // Use the formatted date string directly
-      due_date: updatedInvoice.due_date, // Use the formatted date string directly
-      total_amount: updatedInvoice.total_amount,
-      status: updatedInvoice.status,
-      updated_at: new Date().toISOString()
-    };
-
-    // Find the client ID based on client info
-    const clientId = mockClients.find(c => c.name === updatedInvoice.client?.name)?.id;
-    if (clientId) {
-      mockInvoices[index].client_id = clientId;
-    }
-
-    // Update or replace invoice items
-    const existingItems = mockInvoiceItems.filter(item => item.invoice_id === updatedInvoice.id);
-    for (const existingItem of existingItems) {
-      const updatedItem = updatedInvoice.items.find(item => item.id === existingItem.id);
-      if (updatedItem) {
-        const itemIndex = mockInvoiceItems.findIndex(item => item.id === existingItem.id);
-        mockInvoiceItems[itemIndex] = {
-          ...mockInvoiceItems[itemIndex],
-          description: updatedItem.description,
-          quantity: updatedItem.quantity,
-          unit_price: updatedItem.unit_price,
-          amount: updatedItem.amount,
-          updated_at: new Date().toISOString()
-        };
+    // Find if it's a supplier invoice
+    const supplierInvoiceIndex = mockSupplierInvoices.findIndex(inv => inv.id === id);
+    
+    if (supplierInvoiceIndex !== -1) {
+      // Update supplier invoice
+      const supplier = mockSuppliers.find(s => s.id === data.supplier_id);
+      if (!supplier) {
+        throw new Error('Supplier not found');
       }
+
+      const updatedInvoice = {
+        ...mockSupplierInvoices[supplierInvoiceIndex],
+        ...data,
+        supplier,
+        items: data.items || [],
+        updated_at: new Date().toISOString()
+      };
+
+      mockSupplierInvoices[supplierInvoiceIndex] = updatedInvoice;
+      return { data: updatedInvoice, error: null };
     }
 
-    // When getting invoices, we'll combine this data
-    const client = mockClients.find(c => c.id === mockInvoices[index].client_id);
-    const items = mockInvoiceItems.filter(item => item.invoice_id === updatedInvoice.id);
+    // If not found in supplier invoices, try regular invoices
+    const invoiceIndex = mockInvoices.findIndex(inv => inv.id === id);
+    if (invoiceIndex !== -1) {
+      const updatedInvoice = {
+        ...mockInvoices[invoiceIndex],
+        ...data,
+        updated_at: new Date().toISOString()
+      };
+      mockInvoices[invoiceIndex] = updatedInvoice;
+      return { data: updatedInvoice, error: null };
+    }
 
-    return { 
-      data: {
-        ...mockInvoices[index],
-        client: client ? {
-          name: client.name,
-          email: client.email
-        } : null,
-        items: items.map(item => ({
-          id: item.id,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          amount: item.amount
-        }))
-      }, 
-      error: null 
-    };
+    return { data: null, error: new Error('Invoice not found') };
   }
 };
