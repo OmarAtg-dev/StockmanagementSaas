@@ -127,38 +127,52 @@ export function SupplierInvoiceDialog({
         total_amount: calculateTotal(),
         notes,
         items,
-        status: 'pending',
+        status: invoice?.status || 'pending',
       };
 
       if (invoice?.id) {
         // Update existing invoice
-        await supabase
+        const { error } = await supabase
           .from('supplier_invoices')
           .update(invoiceData)
           .eq('id', invoice.id)
           .select()
           .single();
 
-        // Invalidate supplier-invoices query
-        await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+        if (error) throw error;
+
+        // Show success message
+        toast({
+          title: "Succès",
+          description: "La facture a été mise à jour avec succès.",
+        });
       } else {
         // Create new invoice
-        await supabase
+        const { error } = await supabase
           .from('supplier_invoices')
           .insert([invoiceData])
           .select()
           .single();
 
-        // Invalidate supplier-invoices query
-        await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+        if (error) throw error;
+
+        // Show success message
+        toast({
+          title: "Succès",
+          description: "La facture a été créée avec succès.",
+        });
       }
 
+      // Invalidate the query and close the dialog
+      await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
       onSuccess?.();
+      onOpenChange(false);
     } catch (error: any) {
+      console.error('Error handling invoice:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message,
+        description: error.message || "Une erreur est survenue lors de l'opération.",
       });
     }
   };
