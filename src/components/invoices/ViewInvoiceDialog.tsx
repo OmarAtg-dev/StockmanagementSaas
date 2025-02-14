@@ -301,6 +301,18 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     }
   };
 
+  const handleUpdateClient = (field: string, value: string) => {
+    if (!editedInvoice || !editedInvoice.client) return;
+    
+    setEditedInvoice({
+      ...editedInvoice,
+      client: {
+        ...editedInvoice.client,
+        [field]: value
+      }
+    });
+  };
+
   if (!invoice) return null;
 
   const displayInvoice = isEditing ? editedInvoice : invoice;
@@ -366,8 +378,26 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold text-sm text-muted-foreground">Client</h3>
-                <p className="mt-1">{displayInvoice.client?.name}</p>
-                <p className="text-sm text-muted-foreground">{displayInvoice.client?.email}</p>
+                {isEditing ? (
+                  <div className="space-y-2 mt-1">
+                    <Input
+                      placeholder="Nom du client"
+                      value={displayInvoice.client?.name || ''}
+                      onChange={(e) => handleUpdateClient('name', e.target.value)}
+                    />
+                    <Input
+                      type="email"
+                      placeholder="Email du client"
+                      value={displayInvoice.client?.email || ''}
+                      onChange={(e) => handleUpdateClient('email', e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-1">{displayInvoice.client?.name}</p>
+                    <p className="text-sm text-muted-foreground">{displayInvoice.client?.email}</p>
+                  </>
+                )}
               </div>
               <div className="text-right space-y-4">
                 <div>
