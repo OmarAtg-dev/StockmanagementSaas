@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Pencil, Trash2, Receipt, ChevronRight, ChevronDown } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Receipt } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,9 +21,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InvoiceDialog } from "@/components/invoices/InvoiceDialog";
 import { mockDataFunctions } from "@/utils/mockData";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -53,13 +51,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const formSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  email: z.string().email("Email invalide").nullable(),
-  phone: z.string().nullable(),
-  address: z.string().nullable(),
-});
-
 interface Client {
   id: string;
   name: string;
@@ -69,23 +60,17 @@ interface Client {
   created_at: string;
 }
 
-interface Invoice {
-  id: string;
-  number: string;
-  date: string;
-  due_date: string;
-  total_amount: number;
-  status: 'paid' | 'pending' | 'overdue';
-  client: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+const clientFormSchema = z.object({
+  name: z.string().min(1, "Le nom est requis"),
+  email: z.string().email("Email invalide").nullable(),
+  phone: z.string().nullable(),
+  address: z.string().nullable(),
+});
 
-export const Clients = () => {
+type ClientFormData = z.infer<typeof clientFormSchema>;
+
+const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const { profile } = useAuth();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -95,8 +80,8 @@ export const Clients = () => {
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const queryClient = useQueryClient();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ClientFormData>({
+    resolver: zodResolver(clientFormSchema),
     defaultValues: {
       name: "",
       email: null,
@@ -106,107 +91,113 @@ export const Clients = () => {
   });
 
   const { data: clients, isLoading, error } = useQuery({
-    queryKey: ['clients'],
+    queryKey: ['clients', profile?.company_id],
     queryFn: async () => {
+      if (!profile?.company_id && profile?.role !== 'super_admin') {
+        throw new Error("Aucune entreprise associée à cet utilisateur");
+      }
+
       const { data, error } = await mockDataFunctions.getClients();
-      if (error) throw error;
+
+      if (error) {
+        console.error("Error fetching clients:", error);
+        throw error;
+      }
+
       return data;
     },
+    enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
   });
 
-  const { data: invoices, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: ['client-invoices', expandedClient],
-    queryFn: async () => {
-      if (!expandedClient) return [];
-      const { data, error } = await mockDataFunctions.getInvoices();
+  const createClientMutation = useMutation({
+    mutationFn: async (data: ClientFormData) => {
+      if (!profile?.company_id) {
+        throw new Error("No company ID found");
+      }
+      
+      const { error } = await mockDataFunctions.createClient({
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        company_id: profile.company_id
+      });
       if (error) throw error;
-      return data.filter(invoice => invoice.client?.id === expandedClient) as Invoice[];
-    },
-    enabled: !!expandedClient,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
-      if (!profile) throw new Error("Non authentifié");
-      const clientData = {
-        name: data.name,
-        email: data.email || '',
-        phone: data.phone || '',
-        address: data.address || '',
-        company_id: profile.company_id,
-      };
-      return mockDataFunctions.createClient(clientData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({ title: "Client créé avec succès" });
       setIsClientDialogOpen(false);
       form.reset();
-      toast({
-        title: "Client créé",
-        description: "Le client a été créé avec succès.",
-      });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
       });
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
-      if (!clientToEdit) throw new Error("Aucun client sélectionné");
-      const updateData = {
+  const updateClientMutation = useMutation({
+    mutationFn: async (data: ClientFormData & { id: string }) => {
+      const { error } = await mockDataFunctions.updateClient(data.id, {
         name: data.name,
-        email: data.email || '',
-        phone: data.phone || '',
-        address: data.address || '',
-      };
-      return mockDataFunctions.updateClient(clientToEdit.id, updateData);
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null
+      });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({ title: "Client mis à jour avec succès" });
       setIsClientDialogOpen(false);
-      setClientToEdit(null);
       form.reset();
-      toast({
-        title: "Client modifié",
-        description: "Le client a été modifié avec succès.",
-      });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
       });
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteClientMutation = useMutation({
     mutationFn: async (id: string) => {
-      return mockDataFunctions.deleteClient(id);
+      const { error } = await mockDataFunctions.deleteClient(id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({ title: "Client supprimé avec succès" });
       setIsDeleteDialogOpen(false);
-      toast({
-        title: "Client supprimé",
-        description: "Le client a été supprimé avec succès.",
-      });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
       });
     },
   });
+
+  const filteredClients = clients?.filter(client =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) ?? [];
 
   const handleCreateInvoice = (clientId: string) => {
+    if (!profile?.company_id) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Vous devez être associé à une entreprise pour créer une facture.",
+      });
+      return;
+    }
     setSelectedClientId(clientId);
     setIsInvoiceDialogOpen(true);
   };
@@ -227,30 +218,26 @@ export const Clients = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: ClientFormData) => {
     if (clientToEdit) {
-      updateMutation.mutate(data);
+      await updateClientMutation.mutateAsync({ ...data, id: clientToEdit.id });
     } else {
-      createMutation.mutate(data);
+      await createClientMutation.mutateAsync(data);
     }
   };
-
-  const filteredClients = clients?.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.address?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
 
   if (error) {
     return (
       <DashboardLayout>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Une erreur est survenue lors du chargement des clients.
-          </AlertDescription>
-        </Alert>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error instanceof Error ? error.message : "Une erreur est survenue"}
+            </AlertDescription>
+          </Alert>
+        </div>
       </DashboardLayout>
     );
   }
@@ -293,7 +280,6 @@ export const Clients = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead />
                 <TableHead>Nom</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
@@ -305,7 +291,7 @@ export const Clients = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={6}>
                     <div className="space-y-2">
                       {[...Array(5)].map((_, i) => (
                         <Skeleton key={i} className="h-8 w-full" />
@@ -315,221 +301,173 @@ export const Clients = () => {
                 </TableRow>
               ) : filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     Aucun client trouvé
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredClients.map((client) => (
-                  <>
-                    <TableRow key={client.id}>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setExpandedClient(expandedClient === client.id ? null : client.id)}
-                        >
-                          {expandedClient === client.id ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {client.name}
-                      </TableCell>
-                      <TableCell>{client.email || '-'}</TableCell>
-                      <TableCell>{client.phone || '-'}</TableCell>
-                      <TableCell>{client.address || '-'}</TableCell>
-                      <TableCell>
-                        {new Date(client.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleCreateInvoice(client.id)}
-                        >
-                          <Receipt className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEditClient(client)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDeleteClient(client)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    {expandedClient === client.id && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="bg-muted/50">
-                          <div className="p-4">
-                            <h3 className="font-semibold mb-4">Factures du client</h3>
-                            {isLoadingInvoices ? (
-                              <div className="space-y-2">
-                                {[...Array(3)].map((_, i) => (
-                                  <Skeleton key={i} className="h-8 w-full" />
-                                ))}
-                              </div>
-                            ) : !invoices?.length ? (
-                              <p className="text-muted-foreground">Aucune facture trouvée pour ce client.</p>
-                            ) : (
-                              <div className="space-y-2">
-                                {invoices.map((invoice) => (
-                                  <div
-                                    key={invoice.id}
-                                    className="flex items-center justify-between p-3 bg-background rounded-lg border"
-                                  >
-                                    <div className="space-y-1">
-                                      <p className="font-medium">Facture N° {invoice.number}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        {format(new Date(invoice.date), "PP", { locale: fr })}
-                                      </p>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                      <p className="font-medium">
-                                        {new Intl.NumberFormat('fr-FR', { 
-                                          style: 'currency', 
-                                          currency: 'MAD'
-                                        }).format(invoice.total_amount)}
-                                      </p>
-                                      <Badge variant={
-                                        invoice.status === 'paid' ? 'default' :
-                                        invoice.status === 'pending' ? 'secondary' :
-                                        'destructive'
-                                      }>
-                                        {invoice.status === 'paid' ? 'Payée' :
-                                         invoice.status === 'pending' ? 'En attente' :
-                                         'En retard'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
+                  <TableRow key={client.id}>
+                    <TableCell className="font-medium">
+                      {client.name}
+                    </TableCell>
+                    <TableCell>{client.email || '-'}</TableCell>
+                    <TableCell>{client.phone || '-'}</TableCell>
+                    <TableCell>{client.address || '-'}</TableCell>
+                    <TableCell>
+                      {new Date(client.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleCreateInvoice(client.id)}
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEditClient(client)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDeleteClient(client)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
         </Card>
+      </div>
 
-        <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{clientToEdit ? 'Modifier le client' : 'Ajouter un client'}</DialogTitle>
-              <DialogDescription>
-                {clientToEdit ? 'Modifiez les informations du client.' : 'Ajoutez un nouveau client à votre liste.'}
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nom</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Téléphone</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Adresse</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="submit">
-                    {clientToEdit ? 'Modifier' : 'Ajouter'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{clientToEdit ? "Modifier le client" : "Ajouter un client"}</DialogTitle>
+            <DialogDescription>
+              {clientToEdit 
+                ? "Modifiez les informations du client ci-dessous." 
+                : "Remplissez les informations du nouveau client ci-dessous."}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom*</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nom du client" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Email du client"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Téléphone</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Téléphone du client"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Adresse du client"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">
+                  {clientToEdit ? "Mettre à jour" : "Ajouter"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action ne peut pas être annulée. Le client sera définitivement supprimé
-                de notre base de données.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (clientToEdit) {
-                    deleteMutation.mutate(clientToEdit.id);
-                  }
-                }}
-              >
-                Supprimer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer ce client ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action ne peut pas être annulée. Cela supprimera définitivement le client et toutes ses données associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (clientToEdit) {
+                  deleteClientMutation.mutate(clientToEdit.id);
+                }
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        <InvoiceDialog 
+      {selectedClientId && profile?.company_id && (
+        <InvoiceDialog
           open={isInvoiceDialogOpen}
           onOpenChange={setIsInvoiceDialogOpen}
           clientId={selectedClientId}
-          companyId={profile?.company_id || ''}
+          companyId={profile.company_id}
         />
-      </div>
+      )}
     </DashboardLayout>
   );
 };
