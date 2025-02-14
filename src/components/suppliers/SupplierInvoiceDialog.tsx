@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Plus, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { mockDataFunctions } from "@/utils/mockData";
 
 interface SupplierInvoiceDialogProps {
   open: boolean;
@@ -42,6 +44,7 @@ interface SupplierInvoice {
   status: string;
   notes?: string;
   supplier: {
+    id: string;
     name: string;
   };
   items: Array<{
@@ -84,6 +87,18 @@ export function SupplierInvoiceDialog({
   );
   const [notes, setNotes] = useState(invoice?.notes || "");
 
+  // Fetch supplier information
+  const { data: supplier } = useQuery({
+    queryKey: ['supplier', supplierId],
+    queryFn: async () => {
+      if (!supplierId) return null;
+      const { data, error } = await mockDataFunctions.getSupplier(supplierId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!supplierId,
+  });
+
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + item.amount, 0);
   };
@@ -117,6 +132,15 @@ export function SupplierInvoiceDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!supplierId) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "L'ID du fournisseur est manquant.",
+      });
+      return;
+    }
+
     try {
       if (invoice) {
         // Update existing invoice
@@ -134,7 +158,7 @@ export function SupplierInvoiceDialog({
 
         if (invoiceError) throw invoiceError;
 
-        // Handle items update (in a real app, you'd need to handle item deletions and updates)
+        // Handle items update
         const { error: itemsError } = await supabase
           .from("supplier_invoice_items")
           .insert(
@@ -168,6 +192,7 @@ export function SupplierInvoiceDialog({
             due_date: format(dueDate, 'yyyy-MM-dd'),
             total_amount: calculateTotal(),
             notes,
+            supplier: supplier, // Add supplier information to the invoice
           }])
           .select()
           .single();
