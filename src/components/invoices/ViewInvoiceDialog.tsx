@@ -131,18 +131,21 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
   const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | undefined) => {
     if (!editedInvoice || !newDate) return;
 
+    const formattedDate = format(newDate, 'yyyy-MM-dd');
+    console.log(`Updating ${type} to:`, formattedDate); // Debug log
+
     if (type === 'date') {
       setDate(newDate);
-      setEditedInvoice({
-        ...editedInvoice,
-        date: format(newDate, 'yyyy-MM-dd')
-      });
+      setEditedInvoice(prev => prev ? {
+        ...prev,
+        date: formattedDate
+      } : null);
     } else {
       setDueDate(newDate);
-      setEditedInvoice({
-        ...editedInvoice,
-        due_date: format(newDate, 'yyyy-MM-dd')
-      });
+      setEditedInvoice(prev => prev ? {
+        ...prev,
+        due_date: formattedDate
+      } : null);
     }
   };
 
@@ -159,17 +162,24 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     if (!editedInvoice || !date || !dueDate) return;
 
     try {
-      console.log('Updating invoice with:', editedInvoice); // Debug log
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const formattedDueDate = format(dueDate, 'yyyy-MM-dd');
       
+      console.log('Updating invoice with dates:', { 
+        date: formattedDate, 
+        due_date: formattedDueDate 
+      }); // Debug log
+
       const updatedInvoice = {
         ...editedInvoice,
-        date: format(date, 'yyyy-MM-dd'),
-        due_date: format(dueDate, 'yyyy-MM-dd'),
+        date: formattedDate,
+        due_date: formattedDueDate,
         total_amount: editedInvoice.items.reduce((sum, item) => sum + item.amount, 0),
       };
 
-      await mockDataFunctions.updateInvoice(updatedInvoice);
-      
+      const result = await mockDataFunctions.updateInvoice(updatedInvoice);
+      console.log('Update result:', result); // Debug log
+
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
       
       toast({
@@ -180,7 +190,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       setIsEditing(false);
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating invoice:', error); // Debug log
+      console.error('Error updating invoice:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
