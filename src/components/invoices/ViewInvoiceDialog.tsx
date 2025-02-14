@@ -130,18 +130,26 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
   const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | null) => {
     if (!editedInvoice || !newDate) return;
-
+    
+    const formattedDate = format(newDate, 'yyyy-MM-dd');
+    
     if (type === 'date') {
       setDate(newDate);
-      setEditedInvoice({
-        ...editedInvoice,
-        date: format(newDate, 'yyyy-MM-dd')
+      setEditedInvoice(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          date: formattedDate
+        };
       });
     } else {
       setDueDate(newDate);
-      setEditedInvoice({
-        ...editedInvoice,
-        due_date: format(newDate, 'yyyy-MM-dd')
+      setEditedInvoice(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          due_date: formattedDate
+        };
       });
     }
   };
@@ -487,12 +495,16 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                           {dueDate ? format(dueDate, "PP", { locale: fr }) : "Sélectionner une date"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
+                      <PopoverContent align="start" className="w-auto p-0">
                         <Calendar
                           mode="single"
                           selected={dueDate}
-                          onSelect={(newDate) => handleUpdateDates('dueDate', newDate)}
-                          initialFocus
+                          onSelect={(newDate) => {
+                            console.log('New due date selected:', newDate);
+                            handleUpdateDates('dueDate', newDate);
+                          }}
+                          defaultMonth={dueDate}
+                          fromDate={date}
                         />
                       </PopoverContent>
                     </Popover>
