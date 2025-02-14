@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,10 +84,8 @@ export function SupplierInvoiceDialog({ open, onOpenChange, supplierId, companyI
     e.preventDefault();
 
     try {
-      // Generate invoice number (you might want to implement a more sophisticated system)
       const number = `SUPINV-${Date.now()}`;
 
-      // Create invoice
       const { data: invoice, error: invoiceError } = await supabase
         .from("supplier_invoices")
         .insert([{
@@ -103,7 +102,6 @@ export function SupplierInvoiceDialog({ open, onOpenChange, supplierId, companyI
 
       if (invoiceError) throw invoiceError;
 
-      // Create invoice items
       const { error: itemsError } = await supabase
         .from("supplier_invoice_items")
         .insert(
@@ -137,11 +135,11 @@ export function SupplierInvoiceDialog({ open, onOpenChange, supplierId, companyI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" aria-describedby="supplier-invoice-description">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Nouvelle facture fournisseur</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="supplier-invoice-description">
               Créez une nouvelle facture pour ce fournisseur.
             </DialogDescription>
           </DialogHeader>
