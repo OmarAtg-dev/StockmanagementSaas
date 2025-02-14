@@ -52,6 +52,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 interface Client {
   id: string;
@@ -97,6 +98,7 @@ const Clients = () => {
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const { profile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
@@ -406,7 +408,10 @@ const Clients = () => {
                                 {clientInvoices.map((invoice: ClientInvoice) => (
                                   <div
                                     key={invoice.id}
-                                    className="flex items-center justify-between p-4 bg-background rounded-lg border"
+                                    className="flex items-center justify-between p-4 bg-background rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+                                    onClick={() => {
+                                      navigate(`/invoices?search=${invoice.number}`);
+                                    }}
                                   >
                                     <div className="space-y-1">
                                       <p className="font-medium">

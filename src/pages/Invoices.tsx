@@ -36,6 +36,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useSearchParams } from "react-router-dom";
 
 interface Invoice {
   id: string;
@@ -58,7 +59,8 @@ interface Invoice {
 }
 
 const Invoices = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedDueDate, setSelectedDueDate] = useState<Date>();
@@ -166,7 +168,10 @@ const Invoices = () => {
                 <Input
                   placeholder="Rechercher une facture..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setSearchParams(e.target.value ? { search: e.target.value } : {});
+                  }}
                   className="pl-9"
                 />
               </div>
