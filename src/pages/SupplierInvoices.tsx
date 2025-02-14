@@ -81,6 +81,7 @@ const SupplierInvoices = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState<SupplierInvoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
+  const queryClient = useQueryClient();
 
   const handleCreateInvoice = () => {
     setIsCreateDialogOpen(true);
@@ -98,6 +99,10 @@ const SupplierInvoices = () => {
   const handleDeleteInvoice = (invoice: SupplierInvoice) => {
     setInvoiceToDelete(invoice);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleUpdateSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
   };
 
   const confirmDelete = async () => {
@@ -418,13 +423,7 @@ const SupplierInvoices = () => {
               open={isCreateDialogOpen}
               onOpenChange={setIsCreateDialogOpen}
               companyId={profile.company_id}
-              onSuccess={() => {
-                setIsCreateDialogOpen(false);
-                toast({
-                  title: "Facture créée",
-                  description: "La facture a été créée avec succès.",
-                });
-              }}
+              onSuccess={handleUpdateSuccess}
             />
 
             {invoiceToEdit && (
@@ -436,14 +435,7 @@ const SupplierInvoices = () => {
                 }}
                 companyId={profile.company_id}
                 invoice={invoiceToEdit}
-                onSuccess={() => {
-                  setIsEditDialogOpen(false);
-                  setInvoiceToEdit(null);
-                  toast({
-                    title: "Facture modifiée",
-                    description: "La facture a été modifiée avec succès.",
-                  });
-                }}
+                onSuccess={handleUpdateSuccess}
               />
             )}
           </>
