@@ -86,6 +86,32 @@ let mockInvoices = [
   }
 ];
 
+// Mock supplier invoices data store
+let mockSupplierInvoices = [
+  {
+    id: 'SINV001',
+    number: 'SINV001',
+    date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    total_amount: 1500,
+    status: 'paid',
+    supplier: {
+      name: 'Supplier A'
+    }
+  },
+  {
+    id: 'SINV002',
+    number: 'SINV002',
+    date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    total_amount: 2000,
+    status: 'pending',
+    supplier: {
+      name: 'Supplier B'
+    }
+  }
+];
+
 export const mockAuthContext = {
   session: {
     access_token: "mock_access_token",
@@ -356,53 +382,34 @@ export const mockDataFunctions = {
   getSupplierInvoices: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
-      data: [
-        {
-          id: 'SINV001',
-          number: 'SINV001',
-          date: new Date().toISOString(),
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          total_amount: 1500,
-          status: 'paid',
-          supplier: {
-            name: 'Supplier A'
-          }
-        },
-        {
-          id: 'SINV002',
-          number: 'SINV002',
-          date: new Date().toISOString(),
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          total_amount: 2000,
-          status: 'pending',
-          supplier: {
-            name: 'Supplier B'
-          }
-        }
-      ],
+      data: mockSupplierInvoices,
       error: null
     };
   },
 
-  createInvoice: async (data: {
-    client_id: string;
-    company_id: string;
-    number: string;
-    date: string;
-    due_date: string;
-    total_amount: number;
-    notes?: string;
-  }) => {
+  createInvoice: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
     const newInvoice = {
-      id: `INV${Date.now()}`,
+      id: data.id || `INV${Date.now()}`,
       ...data,
-      status: 'pending',
-      notes: data.notes || null,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      status: data.status || 'pending'
     };
-    mockInvoices.push(newInvoice);
+
+    if (data.number?.startsWith('SUPINV-')) {
+      // This is a supplier invoice
+      mockSupplierInvoices.push({
+        ...newInvoice,
+        supplier: {
+          name: data.supplier_name || 'Unknown Supplier'
+        }
+      });
+    } else {
+      // This is a regular invoice
+      mockInvoices.push(newInvoice);
+    }
+
     return {
       data: [newInvoice],
       error: null
