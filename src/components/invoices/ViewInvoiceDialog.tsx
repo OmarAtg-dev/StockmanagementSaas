@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Dialog,
@@ -338,8 +337,13 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               )}
             </div>
           </DialogTitle>
-          <DialogDescription>
-            Détails de la facture
+          <DialogDescription className="text-sm text-muted-foreground">
+            {displayInvoice.items.map((item, index) => (
+              <span key={item.id}>
+                {item.description}
+                {index < displayInvoice.items.length - 1 ? ', ' : ''}
+              </span>
+            ))}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[80vh]">
