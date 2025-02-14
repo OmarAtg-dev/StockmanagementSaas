@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,14 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { mockDataFunctions } from "@/utils/mockData";
 
 interface SupplierInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   companyId: string;
-  invoice?: any; // The invoice to edit, if any
+  invoice?: any;
   onSuccess?: () => void;
 }
 
@@ -56,6 +57,7 @@ export function SupplierInvoiceDialog({
   onSuccess 
 }: SupplierInvoiceDialogProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [date, setDate] = useState<Date>(invoice ? new Date(invoice.date) : new Date());
   const [dueDate, setDueDate] = useState<Date>(invoice ? new Date(invoice.due_date) : new Date());
   const [selectedSupplier, setSelectedSupplier] = useState<string>(invoice?.supplier?.id || "");
@@ -136,6 +138,9 @@ export function SupplierInvoiceDialog({
           .eq('id', invoice.id)
           .select()
           .single();
+
+        // Invalidate supplier-invoices query
+        await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
       } else {
         // Create new invoice
         await supabase
@@ -143,6 +148,9 @@ export function SupplierInvoiceDialog({
           .insert([invoiceData])
           .select()
           .single();
+
+        // Invalidate supplier-invoices query
+        await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
       }
 
       onSuccess?.();
