@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,7 +59,7 @@ interface Invoice {
 
 const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [selectedClient, setSelectedClient] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedDueDate, setSelectedDueDate] = useState<Date>();
   const { profile } = useAuth();
@@ -100,7 +99,7 @@ const Invoices = () => {
     const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.client?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesClient = !selectedClient || invoice.client?.name === selectedClient;
+    const matchesClient = selectedClient === "all" || invoice.client?.name === selectedClient;
 
     const matchesDate = !selectedDate || 
       format(new Date(invoice.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
@@ -177,7 +176,7 @@ const Invoices = () => {
                   <SelectValue placeholder="Filtrer par client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les clients</SelectItem>
+                  <SelectItem value="all">Tous les clients</SelectItem>
                   {clients?.map((client) => (
                     <SelectItem key={client.id} value={client.name}>
                       {client.name}
@@ -238,13 +237,13 @@ const Invoices = () => {
                 </PopoverContent>
               </Popover>
 
-              {(selectedDate || selectedDueDate || selectedClient) && (
+              {(selectedDate || selectedDueDate || selectedClient !== "all") && (
                 <Button
                   variant="ghost"
                   onClick={() => {
                     setSelectedDate(undefined);
                     setSelectedDueDate(undefined);
-                    setSelectedClient("");
+                    setSelectedClient("all");
                   }}
                 >
                   Réinitialiser les filtres
