@@ -1,6 +1,6 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, CalendarIcon } from "lucide-react";
+import { Search, Plus, CalendarIcon, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -23,7 +23,9 @@ import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
 import { ViewSupplierInvoiceDialog } from "@/components/suppliers/ViewSupplierInvoiceDialog";
+import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
 import { useSearchParams } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Select,
   SelectContent,
@@ -37,6 +39,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SupplierInvoice {
   id: string;
@@ -65,6 +82,65 @@ const SupplierInvoices = () => {
   const [selectedDueDate, setSelectedDueDate] = useState<Date>();
   const { profile } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [invoiceToEdit, setInvoiceToEdit] = useState<SupplierInvoice | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
+
+  const handleCreateInvoice = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click event
+    setInvoiceToEdit(invoice);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleViewInvoice = (invoice: SupplierInvoice) => {
+    setSelectedInvoice(invoice);
+  };
+
+  const handleDeleteInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click event
+    setInvoiceToDelete(invoice);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleUpdateSuccess = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+    // Reset all relevant state
+    setSelectedInvoice(null);
+    setInvoiceToEdit(null);
+    setIsEditDialogOpen(false);
+    setIsCreateDialogOpen(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!invoiceToDelete) return;
+
+    try {
+      const { error } = await mockDataFunctions.deleteSupplierInvoice(invoiceToDelete.id);
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+      toast({
+        title: "Facture supprimée",
+        description: "La facture a été supprimée avec succès.",
+      });
+      setIsDeleteDialogOpen(false);
+      setInvoiceToDelete(null);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression de la facture.",
+      });
+    }
+  };
 
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers'],
@@ -157,7 +233,7 @@ const SupplierInvoices = () => {
               Consultez et gérez vos factures fournisseurs
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleCreateInvoice}>
             <Plus className="h-5 w-5" />
             Créer une facture
           </Button>
@@ -269,12 +345,13 @@ const SupplierInvoices = () => {
                 <TableHead>Échéance</TableHead>
                 <TableHead>Montant</TableHead>
                 <TableHead>Statut</TableHead>
+                <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <div className="space-y-2">
                       {[...Array(5)].map((_, i) => (
                         <Skeleton key={i} className="h-8 w-full" />
@@ -284,7 +361,7 @@ const SupplierInvoices = () => {
                 </TableRow>
               ) : !filteredInvoices?.length ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Aucune facture trouvée
                   </TableCell>
                 </TableRow>
@@ -293,7 +370,7 @@ const SupplierInvoices = () => {
                   <TableRow 
                     key={invoice.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setSelectedInvoice(invoice)}
+                    onClick={() => handleViewInvoice(invoice)}
                   >
                     <TableCell className="font-medium">
                       {invoice.number}
@@ -316,6 +393,30 @@ const SupplierInvoices = () => {
                     <TableCell>
                       {getStatusBadge(invoice.status)}
                     </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => handleViewInvoice(invoice)}>
+                            Voir les détails
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => handleEditInvoice(invoice, e)}>
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={(e) => handleDeleteInvoice(invoice, e)}
+                            className="text-destructive"
+                          >
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -328,6 +429,56 @@ const SupplierInvoices = () => {
           onOpenChange={(open) => !open && setSelectedInvoice(null)}
           invoice={selectedInvoice}
         />
+
+        {profile?.company_id && (
+          <>
+            <SupplierInvoiceDialog
+              open={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+              companyId={profile.company_id}
+              onSuccess={handleUpdateSuccess}
+            />
+
+            {invoiceToEdit && (
+              <SupplierInvoiceDialog
+                open={isEditDialogOpen}
+                onOpenChange={(open) => {
+                  setIsEditDialogOpen(open);
+                  if (!open) setInvoiceToEdit(null);
+                }}
+                companyId={profile.company_id}
+                invoice={invoiceToEdit}
+                onSuccess={handleUpdateSuccess}
+              />
+            )}
+          </>
+        )}
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. Elle supprimera définitivement la facture
+                {invoiceToDelete && ` n°${invoiceToDelete.number}`} et toutes les données associées.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+              >
+                Supprimer
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
