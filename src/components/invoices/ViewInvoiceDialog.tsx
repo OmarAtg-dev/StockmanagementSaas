@@ -205,65 +205,70 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       });
       
       let yOffset = 20;
+      const leftMargin = 20;
+      const pageWidth = 210;
+      const contentWidth = pageWidth - (2 * leftMargin);
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text(enterprise.name, 20, yOffset);
-      
+      doc.setFontSize(22);
+      doc.setTextColor(44, 62, 80);
+      doc.text(enterprise.name, leftMargin, yOffset);
+
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      yOffset += 8;
-      doc.text(enterprise.contact.headquarters, 20, yOffset);
+      doc.setTextColor(100, 100, 100);
+      yOffset += 10;
+      doc.text(enterprise.contact.headquarters, leftMargin, yOffset);
       yOffset += 5;
-      doc.text(`Tél: ${enterprise.contact.phone}`, 20, yOffset);
+      doc.text(`Tél: ${enterprise.contact.phone}`, leftMargin, yOffset);
       yOffset += 5;
-      doc.text(`Email: ${enterprise.contact.email}`, 20, yOffset);
+      doc.text(`Email: ${enterprise.contact.email}`, leftMargin, yOffset);
       yOffset += 5;
-      doc.text(`Site web: ${enterprise.contact.website}`, 20, yOffset);
+      doc.text(`Site web: ${enterprise.contact.website}`, leftMargin, yOffset);
 
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.5);
-      doc.line(20, yOffset, 190, yOffset);
-
-      doc.setDrawColor(220, 220, 220);
-      doc.setFillColor(247, 247, 247);
-      doc.roundedRect(140, yOffset - 35, 50, 15, 2, 2, 'FD');
+      doc.setFillColor(247, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(140, 20, 50, 25, 3, 3, 'FD');
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(44, 62, 80);
-      doc.text(`N° ${invoice.number}`, 165, yOffset - 25, { align: "center" });
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(24);
-      doc.setTextColor(44, 62, 80);
-      doc.text("FACTURE", 105, yOffset, { align: "center" });
-      
-      doc.setTextColor(0);
+      doc.text("FACTURE", 165, 30, { align: "center" });
       doc.setFontSize(11);
-      yOffset += 15;
-      doc.text(`Date: ${format(new Date(invoice.date), "PP", { locale: fr })}`, 20, yOffset);
-      yOffset += 8;
-      doc.text(`Échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, 20, yOffset);
+      doc.text(`N° ${invoice.number}`, 165, 38, { align: "center" });
 
-      doc.setFontSize(12);
-      doc.text("FACTURER À", 20, yOffset);
-      yOffset += 8;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.line(leftMargin, yOffset, pageWidth - leftMargin, yOffset);
+
+      doc.setFillColor(247, 250, 252);
+      doc.roundedRect(leftMargin, yOffset - 5, 80, 30, 2, 2, 'F');
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(44, 62, 80);
+      doc.text("FACTURER À", leftMargin + 5, yOffset + 5);
       if (invoice.client) {
-        doc.setFont("helvetica", "bold");
-        doc.text(invoice.client.name, 20, yOffset);
-        yOffset += 6;
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.text(invoice.client.email, 20, yOffset);
+        doc.text(invoice.client.name, leftMargin + 5, yOffset + 15);
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text(invoice.client.email, leftMargin + 5, yOffset + 22);
       }
 
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(44, 62, 80);
+      yOffset += 40;
+      doc.text(`Date de facturation: ${format(new Date(invoice.date), "PP", { locale: fr })}`, leftMargin, yOffset);
+      yOffset += 6;
+      doc.text(`Date d'échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, leftMargin, yOffset);
+
       const tableTop = yOffset;
-      const tableLeft = 20;
-      const colWidth = [75, 30, 30, 35];
+      const tableLeft = leftMargin;
+      const colWidth = [85, 25, 35, 35];
       const rowHeight = 10;
       
       doc.setFillColor(244, 244, 244);
-      doc.rect(tableLeft, tableTop, 170, rowHeight, "F");
+      doc.rect(tableLeft, tableTop, contentWidth, rowHeight, "F");
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
@@ -283,7 +288,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       invoice.items.forEach((item, index) => {
         if (index % 2 === 1) {
           doc.setFillColor(249, 249, 249);
-          doc.rect(tableLeft, currentY, 170, rowHeight, "F");
+          doc.rect(tableLeft, currentY, contentWidth, rowHeight, "F");
         }
         
         xOffset = tableLeft;
@@ -304,14 +309,15 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         style: 'currency', 
         currency: 'MAD'
       }).format(invoice.total_amount)}`;
-      doc.text(totalText, 190, currentY, { align: "right" });
+      doc.text(totalText, pageWidth - leftMargin, currentY, { align: "right" });
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(128, 128, 128);
-      doc.text(enterprise.name, 105, 280, { align: "center" });
-      doc.text(enterprise.contact.headquarters, 105, 280 + 4, { align: "center" });
-      doc.text(`${enterprise.contact.phone} | ${enterprise.contact.email}`, 105, 280 + 8, { align: "center" });
+      const footerY = 280;
+      doc.text(enterprise.name, pageWidth / 2, footerY, { align: "center" });
+      doc.text(enterprise.contact.headquarters, pageWidth / 2, footerY + 4, { align: "center" });
+      doc.text(`${enterprise.contact.phone} | ${enterprise.contact.email}`, pageWidth / 2, footerY + 8, { align: "center" });
 
       doc.save(`facture-${invoice.number}.pdf`);
 
