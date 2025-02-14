@@ -91,6 +91,10 @@ const SupplierInvoices = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleViewInvoice = (invoice: SupplierInvoice) => {
+    setSelectedInvoice(invoice);
+  };
+
   const handleDeleteInvoice = (invoice: SupplierInvoice) => {
     setInvoiceToDelete(invoice);
     setIsDeleteDialogOpen(true);
@@ -343,46 +347,51 @@ const SupplierInvoices = () => {
                   <TableRow 
                     key={invoice.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setSelectedInvoice(invoice)}
                   >
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium" onClick={() => handleViewInvoice(invoice)}>
                       {invoice.number}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => handleViewInvoice(invoice)}>
                       {invoice.supplier.name}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => handleViewInvoice(invoice)}>
                       {format(new Date(invoice.date), "PP", { locale: fr })}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => handleViewInvoice(invoice)}>
                       {format(new Date(invoice.due_date), "PP", { locale: fr })}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => handleViewInvoice(invoice)}>
                       {new Intl.NumberFormat('fr-FR', { 
                         style: 'currency', 
                         currency: 'MAD'
                       }).format(invoice.total_amount)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => handleViewInvoice(invoice)}>
                       {getStatusBadge(invoice.status)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="icon">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setSelectedInvoice(invoice)}>
+                          <DropdownMenuItem onClick={() => handleViewInvoice(invoice)}>
                             Voir les détails
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditInvoice(invoice);
+                          }}>
                             Modifier
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => handleDeleteInvoice(invoice)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteInvoice(invoice);
+                            }}
                             className="text-destructive"
                           >
                             Supprimer
@@ -404,38 +413,40 @@ const SupplierInvoices = () => {
         />
 
         {profile?.company_id && (
-          <SupplierInvoiceDialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-            companyId={profile.company_id}
-            onSuccess={() => {
-              setIsCreateDialogOpen(false);
-              toast({
-                title: "Facture créée",
-                description: "La facture a été créée avec succès.",
-              });
-            }}
-          />
-        )}
+          <>
+            <SupplierInvoiceDialog
+              open={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+              companyId={profile.company_id}
+              onSuccess={() => {
+                setIsCreateDialogOpen(false);
+                toast({
+                  title: "Facture créée",
+                  description: "La facture a été créée avec succès.",
+                });
+              }}
+            />
 
-        {profile?.company_id && invoiceToEdit && (
-          <SupplierInvoiceDialog
-            open={isEditDialogOpen}
-            onOpenChange={(open) => {
-              setIsEditDialogOpen(open);
-              if (!open) setInvoiceToEdit(null);
-            }}
-            companyId={profile.company_id}
-            invoice={invoiceToEdit}
-            onSuccess={() => {
-              setIsEditDialogOpen(false);
-              setInvoiceToEdit(null);
-              toast({
-                title: "Facture modifiée",
-                description: "La facture a été modifiée avec succès.",
-              });
-            }}
-          />
+            {invoiceToEdit && (
+              <SupplierInvoiceDialog
+                open={isEditDialogOpen}
+                onOpenChange={(open) => {
+                  setIsEditDialogOpen(open);
+                  if (!open) setInvoiceToEdit(null);
+                }}
+                companyId={profile.company_id}
+                invoice={invoiceToEdit}
+                onSuccess={() => {
+                  setIsEditDialogOpen(false);
+                  setInvoiceToEdit(null);
+                  toast({
+                    title: "Facture modifiée",
+                    description: "La facture a été modifiée avec succès.",
+                  });
+                }}
+              />
+            )}
+          </>
         )}
 
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
