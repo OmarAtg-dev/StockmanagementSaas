@@ -128,7 +128,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     });
   };
 
-  const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | undefined) => {
+  const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | null) => {
     if (!editedInvoice || !newDate) return;
 
     if (type === 'date') {
