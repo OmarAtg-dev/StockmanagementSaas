@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -74,6 +75,9 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               Générer PDF
             </Button>
           </DialogTitle>
+          <DialogDescription>
+            Détails de la facture
+          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[80vh]">
           <div className="space-y-6">
