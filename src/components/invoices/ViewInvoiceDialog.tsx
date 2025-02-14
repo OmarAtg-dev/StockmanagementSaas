@@ -487,7 +487,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal mt-1",
+                            "w-full justify-start text-left font-normal mt-1 cursor-pointer",
                             !dueDate && "text-muted-foreground"
                           )}
                         >
@@ -500,11 +500,19 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                           mode="single"
                           selected={dueDate}
                           onSelect={(newDate) => {
-                            console.log('New due date selected:', newDate);
-                            handleUpdateDates('dueDate', newDate);
+                            if (newDate) {
+                              handleUpdateDates('dueDate', newDate);
+                            }
                           }}
                           defaultMonth={dueDate}
                           fromDate={date}
+                          className="cursor-pointer"
+                          classNames={{
+                            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground cursor-pointer",
+                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer",
+                            day_disabled: "text-muted-foreground opacity-50 cursor-not-allowed",
+                            day_today: "bg-accent text-accent-foreground cursor-pointer",
+                          }}
                         />
                       </PopoverContent>
                     </Popover>
