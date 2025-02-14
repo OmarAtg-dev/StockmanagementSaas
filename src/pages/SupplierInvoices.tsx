@@ -91,7 +91,9 @@ const SupplierInvoices = () => {
   const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
 
   const handleCreateInvoice = () => {
-    if (selectedSupplier === "all") {
+    const selectedSupplierData = suppliers?.find(s => s.name === selectedSupplier);
+    
+    if (selectedSupplier === "all" || !selectedSupplierData) {
       toast({
         variant: "destructive",
         title: "Erreur",
