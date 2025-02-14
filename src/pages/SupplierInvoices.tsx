@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, CalendarIcon } from "lucide-react";
+import { Search, Plus, CalendarIcon, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -23,7 +22,9 @@ import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
 import { ViewSupplierInvoiceDialog } from "@/components/suppliers/ViewSupplierInvoiceDialog";
+import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
 import { useSearchParams } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Select,
   SelectContent,
@@ -37,10 +38,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
-import { useToast } from "@/components/ui/use-toast";
-import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +45,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SupplierInvoice {
   id: string;
@@ -57,8 +62,9 @@ interface SupplierInvoice {
   total_amount: number;
   status: string;
   supplier: {
+    id: string;
     name: string;
-  };
+  } | null;
   items: Array<{
     id: string;
     description: string;
@@ -77,14 +83,24 @@ const SupplierInvoices = () => {
   const { profile } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState<SupplierInvoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
-  const queryClient = useQueryClient();
 
   const handleCreateInvoice = () => {
+    const selectedSupplierData = suppliers?.find(s => s.name === selectedSupplier);
+    
+    if (selectedSupplier === "all" || !selectedSupplierData) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner un fournisseur avant de créer une facture.",
+      });
+      return;
+    }
     setIsCreateDialogOpen(true);
   };
 
@@ -117,6 +133,9 @@ const SupplierInvoices = () => {
     if (!invoiceToDelete) return;
 
     try {
+      const { error } = await mockDataFunctions.deleteSupplierInvoice(invoiceToDelete.id);
+      if (error) throw error;
+
       await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
       toast({
         title: "Facture supprimée",
@@ -163,7 +182,7 @@ const SupplierInvoices = () => {
 
   const filteredInvoices = invoices?.filter(invoice => {
     const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      (invoice.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesSupplier = selectedSupplier === "all" || invoice.supplier?.name === selectedSupplier;
 
@@ -367,7 +386,7 @@ const SupplierInvoices = () => {
                       {invoice.number}
                     </TableCell>
                     <TableCell>
-                      {invoice.supplier.name}
+                      {invoice.supplier?.name || 'Fournisseur inconnu'}
                     </TableCell>
                     <TableCell>
                       {format(new Date(invoice.date), "PP", { locale: fr })}
@@ -428,6 +447,7 @@ const SupplierInvoices = () => {
               onOpenChange={setIsCreateDialogOpen}
               companyId={profile.company_id}
               onSuccess={handleUpdateSuccess}
+              supplierId={selectedSupplier !== "all" ? suppliers?.find(s => s.name === selectedSupplier)?.id : undefined}
             />
 
             {invoiceToEdit && (
@@ -440,6 +460,7 @@ const SupplierInvoices = () => {
                 companyId={profile.company_id}
                 invoice={invoiceToEdit}
                 onSuccess={handleUpdateSuccess}
+                supplierId={invoiceToEdit.supplier?.id}
               />
             )}
           </>

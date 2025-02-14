@@ -174,7 +174,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         total_amount: editedInvoice.items.reduce((sum, item) => sum + item.amount, 0),
       };
 
-      await mockDataFunctions.updateInvoice(editedInvoice.id, updatedInvoice);
+      await mockDataFunctions.updateInvoice(updatedInvoice);
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
       
       toast({
