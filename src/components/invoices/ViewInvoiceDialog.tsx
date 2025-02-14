@@ -147,6 +147,13 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       const numValue = Number(value);
       item[field] = numValue;
       item.amount = item.quantity * item.unit_price;
+    } else if (field === 'product') {
+      const selectedProduct = products?.find(p => p.id === value);
+      if (selectedProduct) {
+        item.description = selectedProduct.name;
+        item.unit_price = selectedProduct.price;
+        item.amount = item.quantity * item.unit_price;
+      }
     } else {
       item[field as 'description'] = value as string;
     }
@@ -478,15 +485,17 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                       <TableCell>
                         {isEditing ? (
                           <Select
-                            value={item.description}
-                            onValueChange={(value) => updateItem(index, 'description', value)}
+                            value={products?.find(p => p.name === item.description)?.id || ''}
+                            onValueChange={(value) => updateItem(index, 'product', value)}
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Sélectionner un produit" />
+                              <SelectValue placeholder="Sélectionner un produit">
+                                {products?.find(p => p.name === item.description)?.name || 'Sélectionner un produit'}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {products?.map((product) => (
-                                <SelectItem key={product.id} value={product.name}>
+                                <SelectItem key={product.id} value={product.id}>
                                   {product.name}
                                 </SelectItem>
                               ))}
