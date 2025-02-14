@@ -403,7 +403,7 @@ export const mockDataFunctions = {
     };
     mockInvoices.push(newInvoice);
     return {
-      data: [newInvoice],
+      data: newInvoice,
       error: null
     };
   },
