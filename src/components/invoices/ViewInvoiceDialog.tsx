@@ -71,17 +71,24 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     }
 
     try {
-      // Create a new PDF document
-      const doc = new jsPDF();
+      // Create a new PDF document with slightly larger margins
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+      
       let yOffset = 20;
 
-      // Add company information
-      doc.setFontSize(16);
+      // Add company information with better styling
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
       doc.text(enterprise.name, 20, yOffset);
       
-      // Add company contact details
-      doc.setFontSize(10);
-      yOffset += 10;
+      // Add company contact details with improved spacing
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      yOffset += 8;
       doc.text(enterprise.contact.headquarters, 20, yOffset);
       yOffset += 5;
       doc.text(`Tél: ${enterprise.contact.phone}`, 20, yOffset);
@@ -90,83 +97,111 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       yOffset += 5;
       doc.text(`Site web: ${enterprise.contact.website}`, 20, yOffset);
 
-      // Add separator line
-      yOffset += 10;
+      // Add a subtle separator line
+      yOffset += 8;
       doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
       doc.line(20, yOffset, 190, yOffset);
 
-      // Add invoice title
+      // Add invoice title with better positioning
       yOffset += 15;
-      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(24);
+      doc.setTextColor(44, 62, 80); // Dark blue-grey color
       doc.text("FACTURE", 105, yOffset, { align: "center" });
       
-      // Add invoice details
-      doc.setFontSize(12);
-      yOffset += 20;
+      // Add invoice details with improved layout
+      doc.setTextColor(0);
+      doc.setFontSize(11);
+      yOffset += 15;
       doc.text(`Facture N°: ${invoice.number}`, 20, yOffset);
-      yOffset += 10;
+      yOffset += 8;
       doc.text(`Date: ${format(new Date(invoice.date), "PP", { locale: fr })}`, 20, yOffset);
-      yOffset += 10;
+      yOffset += 8;
       doc.text(`Échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, 20, yOffset);
 
-      // Add client information
-      yOffset += 20;
-      doc.text("Client:", 20, yOffset);
-      yOffset += 10;
+      // Add client information with better styling
+      yOffset += 15;
+      doc.setFontSize(12);
+      doc.text("FACTURER À", 20, yOffset);
+      yOffset += 8;
       if (invoice.client) {
+        doc.setFont("helvetica", "bold");
         doc.text(invoice.client.name, 20, yOffset);
-        yOffset += 10;
+        yOffset += 6;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
         doc.text(invoice.client.email, 20, yOffset);
       }
 
-      // Add items table
-      yOffset += 20;
-      const headers = ["Description", "Quantité", "Prix unitaire", "Montant"];
-      const itemsData = invoice.items.map(item => [
-        item.description,
-        item.quantity.toString(),
-        `${item.unit_price.toFixed(2)} MAD`,
-        `${item.amount.toFixed(2)} MAD`
-      ]);
-
-      // Table header
-      doc.setFillColor(240, 240, 240);
-      doc.rect(20, yOffset, 170, 10, "F");
-      doc.setTextColor(0);
-      headers.forEach((header, i) => {
-        doc.text(header, i === 0 ? 25 : 55 + (i * 40), yOffset + 7);
-      });
-
-      // Table rows
+      // Add items table with improved styling
       yOffset += 15;
-      itemsData.forEach(row => {
-        row.forEach((cell, i) => {
-          doc.text(cell, i === 0 ? 25 : 55 + (i * 40), yOffset);
-        });
-        yOffset += 10;
+      
+      // Table styling
+      const tableTop = yOffset;
+      const tableLeft = 20;
+      const colWidth = [75, 30, 30, 35];
+      const rowHeight = 10;
+      
+      // Table header with better visual design
+      doc.setFillColor(244, 244, 244);
+      doc.rect(tableLeft, tableTop, 170, rowHeight, "F");
+      
+      // Header text
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      
+      let xOffset = tableLeft;
+      ["Description", "Quantité", "Prix unitaire", "Montant"].forEach((header, i) => {
+        doc.text(header, xOffset + 3, tableTop + 7);
+        xOffset += colWidth[i];
       });
 
-      // Add total
-      yOffset += 10;
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text(
-        `Total: ${new Intl.NumberFormat('fr-FR', { 
-          style: 'currency', 
-          currency: 'MAD'
-        }).format(invoice.total_amount)}`,
-        190,
-        yOffset,
-        { align: "right" }
-      );
-
-      // Add footer with additional company info
-      yOffset = 280; // Position at bottom of page
-      doc.setFontSize(8);
+      // Table rows with alternating background
       doc.setFont("helvetica", "normal");
-      doc.text(enterprise.name, 105, yOffset, { align: "center" });
-      yOffset += 5;
-      doc.text(enterprise.contact.headquarters, 105, yOffset, { align: "center" });
+      doc.setTextColor(0);
+      doc.setFontSize(9);
+      
+      let currentY = tableTop + rowHeight;
+      invoice.items.forEach((item, index) => {
+        // Alternate row background
+        if (index % 2 === 1) {
+          doc.setFillColor(249, 249, 249);
+          doc.rect(tableLeft, currentY, 170, rowHeight, "F");
+        }
+        
+        // Item data
+        xOffset = tableLeft;
+        doc.text(item.description, xOffset + 3, currentY + 7);
+        xOffset += colWidth[0];
+        doc.text(item.quantity.toString(), xOffset + 3, currentY + 7);
+        xOffset += colWidth[1];
+        doc.text(`${item.unit_price.toFixed(2)} MAD`, xOffset + 3, currentY + 7);
+        xOffset += colWidth[2];
+        doc.text(`${item.amount.toFixed(2)} MAD`, xOffset + 3, currentY + 7);
+        
+        currentY += rowHeight;
+      });
+
+      // Add total with improved styling
+      currentY += 10;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      const totalText = `Total: ${new Intl.NumberFormat('fr-FR', { 
+        style: 'currency', 
+        currency: 'MAD'
+      }).format(invoice.total_amount)}`;
+      doc.text(totalText, 190, currentY, { align: "right" });
+
+      // Add footer with refined styling
+      const footerY = 280;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(enterprise.name, 105, footerY, { align: "center" });
+      doc.text(enterprise.contact.headquarters, 105, footerY + 4, { align: "center" });
+      doc.text(`${enterprise.contact.phone} | ${enterprise.contact.email}`, 105, footerY + 8, { align: "center" });
 
       // Download the PDF
       doc.save(`facture-${invoice.number}.pdf`);
