@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,15 +12,31 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { AlertCircle, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search, Plus, CalendarIcon } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
-import { useState } from "react";
 import { ViewSupplierInvoiceDialog } from "@/components/suppliers/ViewSupplierInvoiceDialog";
+import { useSearchParams } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface SupplierInvoice {
   id: string;
@@ -41,8 +58,22 @@ interface SupplierInvoice {
 }
 
 const SupplierInvoices = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [selectedSupplier, setSelectedSupplier] = useState<string>("all");
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDueDate, setSelectedDueDate] = useState<Date>();
   const { profile } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
+
+  const { data: suppliers } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: async () => {
+      const { data, error } = await mockDataFunctions.getSuppliers();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['supplier-invoices', profile?.company_id],
@@ -51,7 +82,6 @@ const SupplierInvoices = () => {
         throw new Error("Aucune entreprise associée à cet utilisateur");
       }
 
-      // Use the specific supplier invoices mock data
       const { data, error } = await mockDataFunctions.getSupplierInvoices();
 
       if (error) {
@@ -63,6 +93,21 @@ const SupplierInvoices = () => {
     },
     enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
   });
+
+  const filteredInvoices = invoices?.filter(invoice => {
+    const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesSupplier = selectedSupplier === "all" || invoice.supplier?.name === selectedSupplier;
+
+    const matchesDate = !selectedDate || 
+      format(new Date(invoice.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+
+    const matchesDueDate = !selectedDueDate || 
+      format(new Date(invoice.due_date), 'yyyy-MM-dd') === format(selectedDueDate, 'yyyy-MM-dd');
+
+    return matchesSearch && matchesSupplier && matchesDate && matchesDueDate;
+  }) ?? [];
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -119,6 +164,102 @@ const SupplierInvoices = () => {
         </div>
 
         <Card>
+          <div className="p-6 space-y-4">
+            <div className="flex flex-wrap gap-4">
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher une facture..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setSearchParams(e.target.value ? { search: e.target.value } : {});
+                  }}
+                  className="pl-9"
+                />
+              </div>
+
+              <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrer par fournisseur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les fournisseurs</SelectItem>
+                  {suppliers?.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.name}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`w-[240px] justify-start text-left font-normal ${
+                      !selectedDate && "text-muted-foreground"
+                    }`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? (
+                      format(selectedDate, "P", { locale: fr })
+                    ) : (
+                      "Date de facturation"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`w-[240px] justify-start text-left font-normal ${
+                      !selectedDueDate && "text-muted-foreground"
+                    }`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDueDate ? (
+                      format(selectedDueDate, "P", { locale: fr })
+                    ) : (
+                      "Date d'échéance"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDueDate}
+                    onSelect={setSelectedDueDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {(selectedDate || selectedDueDate || selectedSupplier !== "all") && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedDate(undefined);
+                    setSelectedDueDate(undefined);
+                    setSelectedSupplier("all");
+                  }}
+                >
+                  Réinitialiser les filtres
+                </Button>
+              )}
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -141,14 +282,14 @@ const SupplierInvoices = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : !invoices?.length ? (
+              ) : !filteredInvoices?.length ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4">
                     Aucune facture trouvée
                   </TableCell>
                 </TableRow>
               ) : (
-                invoices.map((invoice) => (
+                filteredInvoices.map((invoice) => (
                   <TableRow 
                     key={invoice.id}
                     className="cursor-pointer hover:bg-muted/50"
