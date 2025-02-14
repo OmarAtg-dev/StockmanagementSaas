@@ -103,6 +103,15 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       doc.setLineWidth(0.5);
       doc.line(20, yOffset, 190, yOffset);
 
+      // Add invoice number in a box at the top right
+      doc.setDrawColor(220, 220, 220);
+      doc.setFillColor(247, 247, 247);
+      doc.roundedRect(140, yOffset - 35, 50, 15, 2, 2, 'FD');
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(44, 62, 80);
+      doc.text(`N° ${invoice.number}`, 165, yOffset - 25, { align: "center" });
+
       // Add invoice title with better positioning
       yOffset += 15;
       doc.setFont("helvetica", "bold");
@@ -114,8 +123,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       doc.setTextColor(0);
       doc.setFontSize(11);
       yOffset += 15;
-      doc.text(`Facture N°: ${invoice.number}`, 20, yOffset);
-      yOffset += 8;
       doc.text(`Date: ${format(new Date(invoice.date), "PP", { locale: fr })}`, 20, yOffset);
       yOffset += 8;
       doc.text(`Échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, 20, yOffset);
