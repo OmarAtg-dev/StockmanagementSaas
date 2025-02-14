@@ -544,5 +544,49 @@ export const mockDataFunctions = {
       }, 
       error: null 
     };
+  },
+
+  createSupplierInvoice: async (data: any) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const newInvoice = {
+      id: `SINV${Date.now()}`,
+      number: `SUPINV-${Date.now()}`,
+      ...data,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: data.status || 'pending'
+    };
+    mockSupplierInvoices.push(newInvoice);
+    return {
+      data: newInvoice,
+      error: null
+    };
+  },
+
+  updateSupplierInvoice: async (id: string, data: any) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const index = mockSupplierInvoices.findIndex(inv => inv.id === id);
+    if (index === -1) {
+      return { data: null, error: new Error('Invoice not found') };
+    }
+    mockSupplierInvoices[index] = {
+      ...mockSupplierInvoices[index],
+      ...data,
+      updated_at: new Date().toISOString()
+    };
+    return {
+      data: mockSupplierInvoices[index],
+      error: null
+    };
+  },
+
+  deleteSupplierInvoice: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const index = mockSupplierInvoices.findIndex(inv => inv.id === id);
+    if (index === -1) {
+      return { error: new Error('Invoice not found') };
+    }
+    mockSupplierInvoices = mockSupplierInvoices.filter(inv => inv.id !== id);
+    return { error: null };
   }
 };
