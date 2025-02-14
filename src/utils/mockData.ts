@@ -116,7 +116,16 @@ let mockSupplierInvoices = [
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     total_amount: 1500,
     status: 'paid',
-    supplier: mockSuppliers[0] // Reference actual supplier
+    supplier: mockSuppliers[0],
+    items: [
+      {
+        id: 'SI001',
+        description: 'Office Supplies',
+        quantity: 10,
+        unit_price: 150,
+        amount: 1500
+      }
+    ]
   },
   {
     id: 'SINV002',
@@ -125,7 +134,16 @@ let mockSupplierInvoices = [
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     total_amount: 2000,
     status: 'pending',
-    supplier: mockSuppliers[1] // Reference actual supplier
+    supplier: mockSuppliers[1],
+    items: [
+      {
+        id: 'SI002',
+        description: 'IT Equipment',
+        quantity: 2,
+        unit_price: 1000,
+        amount: 2000
+      }
+    ]
   }
 ];
 
@@ -399,7 +417,8 @@ export const mockDataFunctions = {
       newInvoice = {
         ...data,
         id: `SINV${Date.now()}`,
-        supplier, // Include the full supplier object
+        supplier,
+        items: data.items || [], // Ensure items are included
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
