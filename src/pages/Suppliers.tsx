@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Pencil, Trash2, Receipt } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Receipt, ChevronRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
@@ -22,6 +22,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
 import { mockDataFunctions } from "@/utils/mockData";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 interface Supplier {
   id: string;
@@ -35,9 +38,11 @@ interface Supplier {
 
 const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedSupplier, setExpandedSupplier] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const { profile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const { data: suppliers, isLoading, error } = useQuery({
     queryKey: ['suppliers', profile?.company_id],
@@ -56,15 +61,17 @@ const Suppliers = () => {
       return data as Supplier[];
     },
     enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
-    meta: {
-      onError: (error: Error) => {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: error.message,
-        });
-      }
-    }
+  });
+
+  const { data: supplierInvoices, isLoading: isLoadingInvoices } = useQuery({
+    queryKey: ['supplierInvoices', expandedSupplier],
+    queryFn: async () => {
+      if (!expandedSupplier) return [];
+      const { data, error } = await mockDataFunctions.getSupplierInvoices();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!expandedSupplier,
   });
 
   const filteredSuppliers = suppliers?.filter(supplier =>
@@ -84,6 +91,26 @@ const Suppliers = () => {
       active: "Actif",
       inactive: "Inactif",
       blocked: "Bloqué"
+    };
+
+    return (
+      <Badge variant={variants[status] || "secondary"}>
+        {labels[status] || status}
+      </Badge>
+    );
+  };
+
+  const getInvoiceStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      paid: "default",
+      pending: "secondary",
+      overdue: "destructive",
+    };
+    
+    const labels: Record<string, string> = {
+      paid: "Payée",
+      pending: "En attente",
+      overdue: "En retard"
     };
 
     return (
@@ -140,6 +167,7 @@ const Suppliers = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Téléphone</TableHead>
@@ -151,7 +179,7 @@ const Suppliers = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <div className="space-y-2">
                       {[...Array(5)].map((_, i) => (
                         <Skeleton key={i} className="h-8 w-full" />
@@ -161,46 +189,113 @@ const Suppliers = () => {
                 </TableRow>
               ) : filteredSuppliers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Aucun fournisseur trouvé
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredSuppliers.map((supplier) => (
-                  <TableRow key={supplier.id}>
-                    <TableCell className="font-medium">
-                      {supplier.name}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div>{supplier.contact_person}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {supplier.email}
+                  <>
+                    <TableRow key={`row-${supplier.id}`}>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
+                        >
+                          {expandedSupplier === supplier.id ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {supplier.name}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div>{supplier.contact_person}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {supplier.email}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{supplier.phone || '-'}</TableCell>
-                    <TableCell>{supplier.address || '-'}</TableCell>
-                    <TableCell>
-                      {getStatusBadge(supplier.status)}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedSupplierId(supplier.id)}
-                        title="Créer une facture"
-                      >
-                        <Receipt className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell>{supplier.phone || '-'}</TableCell>
+                      <TableCell>{supplier.address || '-'}</TableCell>
+                      <TableCell>
+                        {getStatusBadge(supplier.status)}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedSupplierId(supplier.id);
+                          }}
+                          title="Créer une facture"
+                        >
+                          <Receipt className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {expandedSupplier === supplier.id && (
+                      <TableRow key={`expanded-${supplier.id}`}>
+                        <TableCell colSpan={7} className="bg-muted/50 p-4">
+                          <div className="space-y-4">
+                            <h3 className="font-semibold">Historique des factures</h3>
+                            {isLoadingInvoices ? (
+                              <div className="space-y-2">
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-12 w-full" />
+                              </div>
+                            ) : !supplierInvoices?.length ? (
+                              <p className="text-muted-foreground">
+                                Aucune facture trouvée pour ce fournisseur.
+                              </p>
+                            ) : (
+                              <div className="space-y-2">
+                                {supplierInvoices.map((invoice) => (
+                                  <div
+                                    key={invoice.id}
+                                    className="flex items-center justify-between p-4 bg-background rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+                                    onClick={() => {
+                                      navigate(`/supplier-invoices?search=${invoice.number}`);
+                                    }}
+                                  >
+                                    <div className="space-y-1">
+                                      <p className="font-medium">
+                                        Facture N° {invoice.number}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {format(new Date(invoice.date), 'PP', { locale: fr })}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                      <p className="font-medium">
+                                        {new Intl.NumberFormat('fr-FR', {
+                                          style: 'currency',
+                                          currency: 'MAD'
+                                        }).format(invoice.total_amount)}
+                                      </p>
+                                      {getInvoiceStatusBadge(invoice.status)}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 ))
               )}
             </TableBody>
