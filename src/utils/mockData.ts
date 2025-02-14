@@ -328,8 +328,8 @@ export const mockDataFunctions = {
       return {
         id: invoice.id,
         number: invoice.number,
-        date: invoice.date,
-        due_date: invoice.due_date,
+        date: invoice.date, // Keep the ISO string format
+        due_date: invoice.due_date, // Keep the ISO string format
         total_amount: invoice.total_amount,
         status: invoice.status,
         client: client ? {
@@ -478,7 +478,6 @@ export const mockDataFunctions = {
   updateInvoice: async (updatedInvoice: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Find and update the invoice in the mock store
     const index = mockInvoices.findIndex(inv => inv.id === updatedInvoice.id);
     if (index === -1) {
       throw new Error("Invoice not found");
@@ -487,8 +486,8 @@ export const mockDataFunctions = {
     // Update the invoice in our mock store
     mockInvoices[index] = {
       ...mockInvoices[index],
-      date: updatedInvoice.date,
-      due_date: updatedInvoice.due_date,
+      date: updatedInvoice.date, // Use the formatted date string directly
+      due_date: updatedInvoice.due_date, // Use the formatted date string directly
       total_amount: updatedInvoice.total_amount,
       status: updatedInvoice.status,
       updated_at: new Date().toISOString()
