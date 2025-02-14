@@ -46,7 +46,7 @@ interface SupplierInvoice {
   supplier: {
     id: string;
     name: string;
-  };
+  } | null;
   items: Array<{
     id: string;
     description: string;
@@ -92,9 +92,10 @@ export function SupplierInvoiceDialog({
     queryKey: ['supplier', supplierId],
     queryFn: async () => {
       if (!supplierId) return null;
-      const { data, error } = await mockDataFunctions.getSupplier(supplierId);
+      const { data, error } = await mockDataFunctions.getSuppliers();
       if (error) throw error;
-      return data;
+      // Find the specific supplier from the list
+      return data?.find(s => s.id === supplierId) || null;
     },
     enabled: !!supplierId,
   });
@@ -137,6 +138,15 @@ export function SupplierInvoiceDialog({
         variant: "destructive",
         title: "Erreur",
         description: "L'ID du fournisseur est manquant.",
+      });
+      return;
+    }
+
+    if (!supplier) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Les informations du fournisseur sont manquantes.",
       });
       return;
     }
@@ -192,7 +202,10 @@ export function SupplierInvoiceDialog({
             due_date: format(dueDate, 'yyyy-MM-dd'),
             total_amount: calculateTotal(),
             notes,
-            supplier: supplier, // Add supplier information to the invoice
+            supplier: {
+              id: supplier.id,
+              name: supplier.name
+            }
           }])
           .select()
           .single();

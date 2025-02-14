@@ -62,8 +62,9 @@ interface SupplierInvoice {
   total_amount: number;
   status: string;
   supplier: {
+    id: string;
     name: string;
-  };
+  } | null;
   items: Array<{
     id: string;
     description: string;
