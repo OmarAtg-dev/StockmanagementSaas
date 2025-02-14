@@ -76,7 +76,7 @@ let mockInvoices = [
     number: 'INV001',
     date: new Date().toISOString(),
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    total_amount: 50900, // Sum of all items
+    total_amount: 50900,
     status: 'pending',
     client_id: '1',
     company_id: '1',
@@ -473,5 +473,19 @@ export const mockDataFunctions = {
         active_suppliers: 12
       }
     };
+  },
+
+  updateInvoice: async (updatedInvoice: any) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const index = mockInvoices.findIndex(inv => inv.id === updatedInvoice.id);
+    if (index === -1) {
+      throw new Error("Invoice not found");
+    }
+    mockInvoices[index] = {
+      ...mockInvoices[index],
+      ...updatedInvoice,
+      updated_at: new Date().toISOString()
+    };
+    return { data: mockInvoices[index], error: null };
   }
 };

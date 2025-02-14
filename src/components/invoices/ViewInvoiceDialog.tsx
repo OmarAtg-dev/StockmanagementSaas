@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -29,6 +28,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
@@ -135,7 +141,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     if (!enterprise || !invoice) return;
 
     try {
-      // Create a new PDF document with slightly larger margins
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -144,12 +149,10 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       
       let yOffset = 20;
 
-      // Add company information with better styling
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.text(enterprise.name, 20, yOffset);
       
-      // Add company contact details with improved spacing
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       yOffset += 8;
@@ -161,13 +164,10 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       yOffset += 5;
       doc.text(`Site web: ${enterprise.contact.website}`, 20, yOffset);
 
-      // Add a subtle separator line
-      yOffset += 8;
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.5);
       doc.line(20, yOffset, 190, yOffset);
 
-      // Add invoice number in a box at the top right
       doc.setDrawColor(220, 220, 220);
       doc.setFillColor(247, 247, 247);
       doc.roundedRect(140, yOffset - 35, 50, 15, 2, 2, 'FD');
@@ -176,14 +176,11 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       doc.setTextColor(44, 62, 80);
       doc.text(`N° ${invoice.number}`, 165, yOffset - 25, { align: "center" });
 
-      // Add invoice title with better positioning
-      yOffset += 15;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(24);
-      doc.setTextColor(44, 62, 80); // Dark blue-grey color
+      doc.setTextColor(44, 62, 80);
       doc.text("FACTURE", 105, yOffset, { align: "center" });
       
-      // Add invoice details with improved layout
       doc.setTextColor(0);
       doc.setFontSize(11);
       yOffset += 15;
@@ -191,8 +188,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       yOffset += 8;
       doc.text(`Échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, 20, yOffset);
 
-      // Add client information with better styling
-      yOffset += 15;
       doc.setFontSize(12);
       doc.text("FACTURER À", 20, yOffset);
       yOffset += 8;
@@ -205,20 +200,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         doc.text(invoice.client.email, 20, yOffset);
       }
 
-      // Add items table with improved styling
-      yOffset += 15;
-      
-      // Table styling
       const tableTop = yOffset;
       const tableLeft = 20;
       const colWidth = [75, 30, 30, 35];
       const rowHeight = 10;
       
-      // Table header with better visual design
       doc.setFillColor(244, 244, 244);
       doc.rect(tableLeft, tableTop, 170, rowHeight, "F");
       
-      // Header text
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
@@ -229,20 +218,17 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         xOffset += colWidth[i];
       });
 
-      // Table rows with alternating background
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0);
       doc.setFontSize(9);
       
       let currentY = tableTop + rowHeight;
       invoice.items.forEach((item, index) => {
-        // Alternate row background
         if (index % 2 === 1) {
           doc.setFillColor(249, 249, 249);
           doc.rect(tableLeft, currentY, 170, rowHeight, "F");
         }
         
-        // Item data
         xOffset = tableLeft;
         doc.text(item.description, xOffset + 3, currentY + 7);
         xOffset += colWidth[0];
@@ -255,8 +241,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         currentY += rowHeight;
       });
 
-      // Add total with improved styling
-      currentY += 10;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       const totalText = `Total: ${new Intl.NumberFormat('fr-FR', { 
@@ -265,16 +249,13 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       }).format(invoice.total_amount)}`;
       doc.text(totalText, 190, currentY, { align: "right" });
 
-      // Add footer with refined styling
-      const footerY = 280;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(128, 128, 128);
-      doc.text(enterprise.name, 105, footerY, { align: "center" });
-      doc.text(enterprise.contact.headquarters, 105, footerY + 4, { align: "center" });
-      doc.text(`${enterprise.contact.phone} | ${enterprise.contact.email}`, 105, footerY + 8, { align: "center" });
+      doc.text(enterprise.name, 105, 280, { align: "center" });
+      doc.text(enterprise.contact.headquarters, 105, 280 + 4, { align: "center" });
+      doc.text(`${enterprise.contact.phone} | ${enterprise.contact.email}`, 105, 280 + 8, { align: "center" });
 
-      // Download the PDF
       doc.save(`facture-${invoice.number}.pdf`);
 
       toast({
@@ -355,6 +336,37 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 <p className="text-sm text-muted-foreground">{displayInvoice.client?.email}</p>
               </div>
               <div className="text-right space-y-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Status</Label>
+                  {isEditing ? (
+                    <Select
+                      value={editedInvoice?.status}
+                      onValueChange={(value) => {
+                        if (editedInvoice) {
+                          setEditedInvoice({
+                            ...editedInvoice,
+                            status: value
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full mt-1">
+                        <SelectValue placeholder="Sélectionner un status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">En attente</SelectItem>
+                        <SelectItem value="paid">Payée</SelectItem>
+                        <SelectItem value="overdue">En retard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="mt-1">
+                      {displayInvoice.status === 'paid' ? 'Payée' :
+                       displayInvoice.status === 'pending' ? 'En attente' :
+                       'En retard'}
+                    </p>
+                  )}
+                </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">Date de facturation</Label>
                   {isEditing ? (
