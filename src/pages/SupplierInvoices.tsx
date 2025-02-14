@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +36,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
+import { useToast } from "@/components/ui/use-toast";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SupplierInvoice {
   id: string;
@@ -65,6 +75,45 @@ const SupplierInvoices = () => {
   const [selectedDueDate, setSelectedDueDate] = useState<Date>();
   const { profile } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [invoiceToEdit, setInvoiceToEdit] = useState<SupplierInvoice | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
+
+  const handleCreateInvoice = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: SupplierInvoice) => {
+    setInvoiceToEdit(invoice);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteInvoice = (invoice: SupplierInvoice) => {
+    setInvoiceToDelete(invoice);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!invoiceToDelete) return;
+
+    try {
+      toast({
+        title: "Facture supprimée",
+        description: "La facture a été supprimée avec succès.",
+      });
+      setIsDeleteDialogOpen(false);
+      setInvoiceToDelete(null);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression de la facture.",
+      });
+    }
+  };
 
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers'],
@@ -157,7 +206,7 @@ const SupplierInvoices = () => {
               Consultez et gérez vos factures fournisseurs
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleCreateInvoice}>
             <Plus className="h-5 w-5" />
             Créer une facture
           </Button>
@@ -269,12 +318,13 @@ const SupplierInvoices = () => {
                 <TableHead>Échéance</TableHead>
                 <TableHead>Montant</TableHead>
                 <TableHead>Statut</TableHead>
+                <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <div className="space-y-2">
                       {[...Array(5)].map((_, i) => (
                         <Skeleton key={i} className="h-8 w-full" />
@@ -284,7 +334,7 @@ const SupplierInvoices = () => {
                 </TableRow>
               ) : !filteredInvoices?.length ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Aucune facture trouvée
                   </TableCell>
                 </TableRow>
@@ -316,6 +366,30 @@ const SupplierInvoices = () => {
                     <TableCell>
                       {getStatusBadge(invoice.status)}
                     </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setSelectedInvoice(invoice)}>
+                            Voir les détails
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteInvoice(invoice)}
+                            className="text-destructive"
+                          >
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -328,6 +402,67 @@ const SupplierInvoices = () => {
           onOpenChange={(open) => !open && setSelectedInvoice(null)}
           invoice={selectedInvoice}
         />
+
+        {profile?.company_id && (
+          <SupplierInvoiceDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            companyId={profile.company_id}
+            onSuccess={() => {
+              setIsCreateDialogOpen(false);
+              toast({
+                title: "Facture créée",
+                description: "La facture a été créée avec succès.",
+              });
+            }}
+          />
+        )}
+
+        {profile?.company_id && invoiceToEdit && (
+          <SupplierInvoiceDialog
+            open={isEditDialogOpen}
+            onOpenChange={(open) => {
+              setIsEditDialogOpen(open);
+              if (!open) setInvoiceToEdit(null);
+            }}
+            companyId={profile.company_id}
+            invoice={invoiceToEdit}
+            onSuccess={() => {
+              setIsEditDialogOpen(false);
+              setInvoiceToEdit(null);
+              toast({
+                title: "Facture modifiée",
+                description: "La facture a été modifiée avec succès.",
+              });
+            }}
+          />
+        )}
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. Elle supprimera définitivement la facture
+                {invoiceToDelete && ` n°${invoiceToDelete.number}`} et toutes les données associées.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+              >
+                Supprimer
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
