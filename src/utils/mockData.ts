@@ -333,6 +333,7 @@ export const mockDataFunctions = {
         total_amount: invoice.total_amount,
         status: invoice.status,
         client: client ? {
+          id: client.id,
           name: client.name,
           email: client.email
         } : null,

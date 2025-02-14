@@ -129,6 +129,7 @@ const Clients = () => {
       if (!expandedClient) return [];
       const { data, error } = await mockDataFunctions.getInvoices();
       if (error) throw error;
+      console.log('Fetched invoices:', data); // Debug log
       return data.filter((invoice: ClientInvoice) => 
         invoice.client?.id === expandedClient
       );
