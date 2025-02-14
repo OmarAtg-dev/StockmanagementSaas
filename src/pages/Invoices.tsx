@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
+import { ViewInvoiceDialog } from "@/components/invoices/ViewInvoiceDialog";
 
 interface Invoice {
   id: string;
@@ -41,6 +42,7 @@ const Invoices = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['invoices', profile?.company_id],
@@ -156,7 +158,11 @@ const Invoices = () => {
                 </TableRow>
               ) : (
                 filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                  <TableRow 
+                    key={invoice.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setSelectedInvoice(invoice)}
+                  >
                     <TableCell className="font-medium">
                       {invoice.number}
                     </TableCell>
@@ -189,6 +195,12 @@ const Invoices = () => {
             </TableBody>
           </Table>
         </Card>
+
+        <ViewInvoiceDialog 
+          open={!!selectedInvoice}
+          onOpenChange={(open) => !open && setSelectedInvoice(null)}
+          invoice={selectedInvoice}
+        />
       </div>
     </DashboardLayout>
   );
