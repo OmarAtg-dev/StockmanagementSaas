@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,3 +53,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+export const Clients = () => {
+  return (
+    <div>
+      
+    </div>
+  );
+};
+
+export default Clients;
