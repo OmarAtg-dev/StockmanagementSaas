@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,7 +35,7 @@ interface SupplierInvoice {
   supplier: {
     name: string;
     email?: string;
-  } | null;
+  };
   items: Array<{
     id: string;
     description: string;
@@ -245,7 +244,7 @@ export function ViewSupplierInvoiceDialog({ open, onOpenChange, invoice }: ViewS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl" aria-describedby="supplier-invoice-description">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">Facture fournisseur - {displayInvoice.number}</DialogTitle>
         </DialogHeader>
@@ -255,8 +254,8 @@ export function ViewSupplierInvoiceDialog({ open, onOpenChange, invoice }: ViewS
               <div>
                 <Label className="text-sm text-muted-foreground">Fournisseur</Label>
                 <p className="mt-1">
-                  {displayInvoice.supplier?.name || 'Fournisseur inconnu'}
-                  {displayInvoice.supplier?.email && (
+                  {displayInvoice.supplier.name}
+                  {displayInvoice.supplier.email && (
                     <span className="block text-sm text-muted-foreground">
                       {displayInvoice.supplier.email}
                     </span>

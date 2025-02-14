@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { mockDataFunctions } from '@/utils/mockData';
 
+// Using mock values to prevent actual API calls
 const SUPABASE_URL = "mock://supabase";
 const SUPABASE_PUBLISHABLE_KEY = "mock_key";
 
@@ -11,13 +12,25 @@ const mockSupabase = {
     insert: (data: any) => ({
       select: () => ({
         single: async () => {
-          switch (table) {
-            case 'supplier_invoices':
-              return mockDataFunctions.createSupplierInvoice(data[0]);
-            case 'supplier_invoice_items':
-              return mockDataFunctions.createInvoiceItems(data);
-            default:
-              throw new Error(`Table ${table} not implemented in mock`);
+          try {
+            switch (table) {
+              case 'invoices':
+                return mockDataFunctions.createInvoice(data[0]);
+              case 'invoice_items':
+                return mockDataFunctions.createInvoiceItems(data);
+              case 'supplier_invoices':
+                return mockDataFunctions.createInvoice({
+                  ...data[0],
+                  supplier_id: data[0].supplier_id,
+                  number: `SUPINV-${Date.now()}`,
+                });
+              case 'supplier_invoice_items':
+                return mockDataFunctions.createInvoiceItems(data);
+              default:
+                throw new Error(`Table ${table} not implemented in mock`);
+            }
+          } catch (error) {
+            return { data: null, error };
           }
         }
       })
@@ -26,22 +39,20 @@ const mockSupabase = {
       eq: (field: string, value: string) => ({
         select: () => ({
           single: async () => {
-            if (table === 'supplier_invoices') {
-              return mockDataFunctions.updateSupplierInvoice(value, data);
+            try {
+              switch (table) {
+                case 'supplier_invoices':
+                  return mockDataFunctions.updateInvoice(value, data);
+                case 'invoices':
+                  return mockDataFunctions.updateInvoice(value, data);
+                default:
+                  throw new Error(`Table ${table} not implemented in mock`);
+              }
+            } catch (error) {
+              return { data: null, error };
             }
-            throw new Error(`Table ${table} not implemented in mock`);
           }
         })
-      })
-    }),
-    delete: () => ({
-      eq: (field: string, value: string) => ({
-        single: async () => {
-          if (table === 'supplier_invoices') {
-            return mockDataFunctions.deleteSupplierInvoice(value);
-          }
-          throw new Error(`Table ${table} not implemented in mock`);
-        }
       })
     }),
     select: () => ({

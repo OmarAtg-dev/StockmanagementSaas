@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -23,41 +24,25 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Plus, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { mockDataFunctions } from "@/utils/mockData";
 
 interface SupplierInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  supplierId?: string;
   companyId: string;
+  invoice?: any;
   onSuccess?: () => void;
-  invoice?: SupplierInvoice | null;
-}
-
-interface SupplierInvoice {
-  id: string;
-  number: string;
-  date: string;
-  due_date: string;
-  total_amount: number;
-  status: string;
-  notes?: string;
-  supplier: {
-    id: string;
-    name: string;
-  } | null;
-  items: Array<{
-    id: string;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    amount: number;
-  }>;
 }
 
 interface InvoiceItem {
-  product_id?: string;
   description: string;
   quantity: number;
   unit_price: number;
@@ -67,37 +52,27 @@ interface InvoiceItem {
 export function SupplierInvoiceDialog({ 
   open, 
   onOpenChange, 
-  supplierId, 
   companyId, 
-  onSuccess,
-  invoice 
+  invoice, 
+  onSuccess 
 }: SupplierInvoiceDialogProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [date, setDate] = useState<Date>(invoice ? new Date(invoice.date) : new Date());
   const [dueDate, setDueDate] = useState<Date>(invoice ? new Date(invoice.due_date) : new Date());
+  const [selectedSupplier, setSelectedSupplier] = useState<string>(invoice?.supplier?.id || "");
   const [items, setItems] = useState<InvoiceItem[]>(
-    invoice?.items 
-      ? invoice.items.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          amount: item.amount
-        }))
-      : [{ description: "", quantity: 1, unit_price: 0, amount: 0 }]
+    invoice?.items || [{ description: "", quantity: 1, unit_price: 0, amount: 0 }]
   );
   const [notes, setNotes] = useState(invoice?.notes || "");
 
-  // Fetch supplier information
-  const { data: supplier } = useQuery({
-    queryKey: ['supplier', supplierId],
+  const { data: suppliers } = useQuery({
+    queryKey: ['suppliers'],
     queryFn: async () => {
-      if (!supplierId) return null;
       const { data, error } = await mockDataFunctions.getSuppliers();
       if (error) throw error;
-      // Find the specific supplier from the list
-      return data?.find(s => s.id === supplierId) || null;
+      return data;
     },
-    enabled: !!supplierId,
   });
 
   const calculateTotal = () => {
@@ -133,185 +108,164 @@ export function SupplierInvoiceDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!supplierId) {
+    if (!selectedSupplier) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "L'ID du fournisseur est manquant.",
-      });
-      return;
-    }
-
-    if (!supplier) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Les informations du fournisseur sont manquantes.",
+        description: "Veuillez sélectionner un fournisseur.",
       });
       return;
     }
 
     try {
-      if (invoice) {
+      const invoiceData = {
+        supplier_id: selectedSupplier,
+        company_id: companyId,
+        number: invoice?.number || `SUPINV-${Date.now()}`,
+        date: format(date, 'yyyy-MM-dd'),
+        due_date: format(dueDate, 'yyyy-MM-dd'),
+        total_amount: calculateTotal(),
+        notes,
+        items,
+        status: invoice?.status || 'pending',
+      };
+
+      if (invoice?.id) {
         // Update existing invoice
-        const { error: invoiceError } = await supabase
-          .from("supplier_invoices")
-          .update({
-            date: format(date, 'yyyy-MM-dd'),
-            due_date: format(dueDate, 'yyyy-MM-dd'),
-            total_amount: calculateTotal(),
-            notes,
-          })
+        const { error } = await supabase
+          .from('supplier_invoices')
+          .update(invoiceData)
           .eq('id', invoice.id)
           .select()
           .single();
 
-        if (invoiceError) throw invoiceError;
+        if (error) throw error;
 
-        // Handle items update
-        const { error: itemsError } = await supabase
-          .from("supplier_invoice_items")
-          .insert(
-            items.map(item => ({
-              invoice_id: invoice.id,
-              description: item.description,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              amount: item.amount,
-              product_id: item.product_id
-            }))
-          );
-
-        if (itemsError) throw itemsError;
-
+        // Show success message
         toast({
-          title: "Facture mise à jour",
-          description: "La facture fournisseur a été mise à jour avec succès.",
+          title: "Succès",
+          description: "La facture a été mise à jour avec succès.",
         });
       } else {
         // Create new invoice
-        const number = `SUPINV-${Date.now()}`;
-
-        const { data: newInvoice, error: invoiceError } = await supabase
-          .from("supplier_invoices")
-          .insert([{
-            supplier_id: supplierId,
-            company_id: companyId,
-            number,
-            date: format(date, 'yyyy-MM-dd'),
-            due_date: format(dueDate, 'yyyy-MM-dd'),
-            total_amount: calculateTotal(),
-            notes,
-            supplier: {
-              id: supplier.id,
-              name: supplier.name
-            }
-          }])
+        const { error } = await supabase
+          .from('supplier_invoices')
+          .insert([invoiceData])
           .select()
           .single();
 
-        if (invoiceError) throw invoiceError;
+        if (error) throw error;
 
-        const { error: itemsError } = await supabase
-          .from("supplier_invoice_items")
-          .insert(
-            items.map(item => ({
-              invoice_id: newInvoice.id,
-              description: item.description,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              amount: item.amount,
-              product_id: item.product_id
-            }))
-          );
-
-        if (itemsError) throw itemsError;
-
+        // Show success message
         toast({
-          title: "Facture créée",
-          description: "La facture fournisseur a été créée avec succès.",
+          title: "Succès",
+          description: "La facture a été créée avec succès.",
         });
       }
 
-      onOpenChange(false);
+      // Invalidate the query and close the dialog
+      await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
       onSuccess?.();
+      onOpenChange(false);
     } catch (error: any) {
+      console.error('Error handling invoice:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message,
+        description: error.message || "Une erreur est survenue lors de l'opération.",
       });
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl" aria-describedby="supplier-invoice-description">
+      <DialogContent className="max-w-4xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {invoice ? "Modifier la facture fournisseur" : "Nouvelle facture fournisseur"}
+              {invoice ? "Modifier la facture" : "Nouvelle facture fournisseur"}
             </DialogTitle>
-            <DialogDescription id="supplier-invoice-description">
+            <DialogDescription>
               {invoice 
                 ? "Modifiez les détails de la facture fournisseur."
-                : "Créez une nouvelle facture pour ce fournisseur."
+                : "Créez une nouvelle facture pour votre fournisseur."
               }
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-6 py-4">
+            <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label>Date de facturation</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP", { locale: fr }) : "Sélectionner une date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={(date) => date && setDate(date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label>Fournisseur</Label>
+                <Select 
+                  value={selectedSupplier} 
+                  onValueChange={setSelectedSupplier}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un fournisseur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers?.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Date d'échéance</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !dueDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dueDate ? format(dueDate, "PPP", { locale: fr }) : "Sélectionner une date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={dueDate}
-                      onSelect={(date) => date && setDueDate(date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Date de facturation</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP", { locale: fr }) : "Sélectionner une date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(date) => date && setDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Date d'échéance</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dueDate ? format(dueDate, "PPP", { locale: fr }) : "Sélectionner une date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate}
+                        onSelect={(date) => date && setDueDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
 
@@ -336,6 +290,7 @@ export function SupplierInvoiceDialog({
                   <div className="col-span-2">
                     <Input
                       type="number"
+                      min="1"
                       placeholder="Quantité"
                       value={item.quantity}
                       onChange={(e) => updateItem(index, "quantity", e.target.value)}
@@ -344,6 +299,8 @@ export function SupplierInvoiceDialog({
                   <div className="col-span-2">
                     <Input
                       type="number"
+                      min="0"
+                      step="0.01"
                       placeholder="Prix unitaire"
                       value={item.unit_price}
                       onChange={(e) => updateItem(index, "unit_price", e.target.value)}
@@ -374,7 +331,7 @@ export function SupplierInvoiceDialog({
                 <div className="w-[200px]">
                   <Label>Total</Label>
                   <Input
-                    value={calculateTotal().toFixed(2) + " MAD"}
+                    value={`${calculateTotal().toFixed(2)} MAD`}
                     readOnly
                     className="bg-muted"
                   />
@@ -397,7 +354,7 @@ export function SupplierInvoiceDialog({
               Annuler
             </Button>
             <Button type="submit">
-              {invoice ? "Mettre à jour" : "Créer la facture"}
+              {invoice ? "Modifier la facture" : "Créer la facture"}
             </Button>
           </DialogFooter>
         </form>

@@ -23,6 +23,27 @@ export const mockProfiles = [
   }
 ];
 
+const mockSuppliers = [
+  {
+    id: '1',
+    name: 'Supplier A',
+    email: 'suppliera@example.com',
+    phone: '+33 1 11 11 11 11',
+    address: '789 Boulevard Haussmann',
+    contact_person: 'John Doe',
+    status: 'active'
+  },
+  {
+    id: '2',
+    name: 'Supplier B',
+    email: 'supplierb@example.com',
+    phone: '+33 2 22 22 22 22',
+    address: '321 Rue de Rivoli',
+    contact_person: 'Jane Smith',
+    status: 'active'
+  }
+];
+
 // Mock clients data store
 let mockClients = [
   { 
@@ -95,9 +116,16 @@ let mockSupplierInvoices = [
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     total_amount: 1500,
     status: 'paid',
-    supplier: {
-      name: 'Supplier A'
-    }
+    supplier: mockSuppliers[0],
+    items: [
+      {
+        id: 'SI001',
+        description: 'Office Supplies',
+        quantity: 10,
+        unit_price: 150,
+        amount: 1500
+      }
+    ]
   },
   {
     id: 'SINV002',
@@ -106,9 +134,16 @@ let mockSupplierInvoices = [
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     total_amount: 2000,
     status: 'pending',
-    supplier: {
-      name: 'Supplier B'
-    }
+    supplier: mockSuppliers[1],
+    items: [
+      {
+        id: 'SI002',
+        description: 'IT Equipment',
+        quantity: 2,
+        unit_price: 1000,
+        amount: 2000
+      }
+    ]
   }
 ];
 
@@ -319,26 +354,7 @@ export const mockDataFunctions = {
   getSuppliers: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
-      data: [
-        {
-          id: '1',
-          name: 'Supplier A',
-          email: 'suppliera@example.com',
-          phone: '+33 1 11 11 11 11',
-          address: '789 Boulevard Haussmann',
-          contact_person: 'John Doe',
-          status: 'active'
-        },
-        {
-          id: '2',
-          name: 'Supplier B',
-          email: 'supplierb@example.com',
-          phone: '+33 2 22 22 22 22',
-          address: '321 Rue de Rivoli',
-          contact_person: 'Jane Smith',
-          status: 'active'
-        }
-      ],
+      data: mockSuppliers,
       error: null
     };
   },
@@ -389,31 +405,36 @@ export const mockDataFunctions = {
 
   createInvoice: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    const newInvoice = {
-      id: data.id || `INV${Date.now()}`,
-      ...data,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      status: data.status || 'pending'
-    };
+    let newInvoice;
 
     if (data.number?.startsWith('SUPINV-')) {
       // This is a supplier invoice
-      mockSupplierInvoices.push({
-        ...newInvoice,
-        supplier: {
-          name: data.supplier_name || 'Unknown Supplier'
-        }
-      });
+      const supplier = mockSuppliers.find(s => s.id === data.supplier_id);
+      if (!supplier) {
+        throw new Error('Supplier not found');
+      }
+
+      newInvoice = {
+        ...data,
+        id: `SINV${Date.now()}`,
+        supplier,
+        items: data.items || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      mockSupplierInvoices.push(newInvoice);
     } else {
-      // This is a regular invoice
+      // Handle regular invoices
+      newInvoice = {
+        ...data,
+        id: `INV${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       mockInvoices.push(newInvoice);
     }
 
-    return {
-      data: [newInvoice],
-      error: null
-    };
+    return { data: newInvoice, error: null };
   },
 
   createInvoiceItems: async (items: {
@@ -482,111 +503,43 @@ export const mockDataFunctions = {
     };
   },
 
-  updateInvoice: async (updatedInvoice: any) => {
+  updateInvoice: async (id: string, data: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    const index = mockInvoices.findIndex(inv => inv.id === updatedInvoice.id);
-    if (index === -1) {
-      throw new Error("Invoice not found");
-    }
-
-    // Update the invoice in our mock store
-    mockInvoices[index] = {
-      ...mockInvoices[index],
-      date: updatedInvoice.date, // Use the formatted date string directly
-      due_date: updatedInvoice.due_date, // Use the formatted date string directly
-      total_amount: updatedInvoice.total_amount,
-      status: updatedInvoice.status,
-      updated_at: new Date().toISOString()
-    };
-
-    // Find the client ID based on client info
-    const clientId = mockClients.find(c => c.name === updatedInvoice.client?.name)?.id;
-    if (clientId) {
-      mockInvoices[index].client_id = clientId;
-    }
-
-    // Update or replace invoice items
-    const existingItems = mockInvoiceItems.filter(item => item.invoice_id === updatedInvoice.id);
-    for (const existingItem of existingItems) {
-      const updatedItem = updatedInvoice.items.find(item => item.id === existingItem.id);
-      if (updatedItem) {
-        const itemIndex = mockInvoiceItems.findIndex(item => item.id === existingItem.id);
-        mockInvoiceItems[itemIndex] = {
-          ...mockInvoiceItems[itemIndex],
-          description: updatedItem.description,
-          quantity: updatedItem.quantity,
-          unit_price: updatedItem.unit_price,
-          amount: updatedItem.amount,
-          updated_at: new Date().toISOString()
-        };
+    // Find if it's a supplier invoice
+    const supplierInvoiceIndex = mockSupplierInvoices.findIndex(inv => inv.id === id);
+    
+    if (supplierInvoiceIndex !== -1) {
+      // Update supplier invoice
+      const supplier = mockSuppliers.find(s => s.id === data.supplier_id);
+      if (!supplier) {
+        throw new Error('Supplier not found');
       }
+
+      const updatedInvoice = {
+        ...mockSupplierInvoices[supplierInvoiceIndex],
+        ...data,
+        supplier,
+        items: data.items || [],
+        updated_at: new Date().toISOString()
+      };
+
+      mockSupplierInvoices[supplierInvoiceIndex] = updatedInvoice;
+      return { data: updatedInvoice, error: null };
     }
 
-    // When getting invoices, we'll combine this data
-    const client = mockClients.find(c => c.id === mockInvoices[index].client_id);
-    const items = mockInvoiceItems.filter(item => item.invoice_id === updatedInvoice.id);
-
-    return { 
-      data: {
-        ...mockInvoices[index],
-        client: client ? {
-          name: client.name,
-          email: client.email
-        } : null,
-        items: items.map(item => ({
-          id: item.id,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          amount: item.amount
-        }))
-      }, 
-      error: null 
-    };
-  },
-
-  createSupplierInvoice: async (data: any) => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const newInvoice = {
-      id: `SINV${Date.now()}`,
-      number: `SUPINV-${Date.now()}`,
-      ...data,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      status: data.status || 'pending'
-    };
-    mockSupplierInvoices.push(newInvoice);
-    return {
-      data: newInvoice,
-      error: null
-    };
-  },
-
-  updateSupplierInvoice: async (id: string, data: any) => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const index = mockSupplierInvoices.findIndex(inv => inv.id === id);
-    if (index === -1) {
-      return { data: null, error: new Error('Invoice not found') };
+    // If not found in supplier invoices, try regular invoices
+    const invoiceIndex = mockInvoices.findIndex(inv => inv.id === id);
+    if (invoiceIndex !== -1) {
+      const updatedInvoice = {
+        ...mockInvoices[invoiceIndex],
+        ...data,
+        updated_at: new Date().toISOString()
+      };
+      mockInvoices[invoiceIndex] = updatedInvoice;
+      return { data: updatedInvoice, error: null };
     }
-    mockSupplierInvoices[index] = {
-      ...mockSupplierInvoices[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    };
-    return {
-      data: mockSupplierInvoices[index],
-      error: null
-    };
-  },
 
-  deleteSupplierInvoice: async (id: string) => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const index = mockSupplierInvoices.findIndex(inv => inv.id === id);
-    if (index === -1) {
-      return { error: new Error('Invoice not found') };
-    }
-    mockSupplierInvoices = mockSupplierInvoices.filter(inv => inv.id !== id);
-    return { error: null };
+    return { data: null, error: new Error('Invoice not found') };
   }
 };
