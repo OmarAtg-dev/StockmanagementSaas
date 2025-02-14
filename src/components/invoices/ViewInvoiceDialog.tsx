@@ -80,11 +80,13 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     invoice ? new Date(invoice.due_date) : undefined
   );
 
+  // Update local state whenever invoice prop changes
   React.useEffect(() => {
     if (invoice) {
       setEditedInvoice(invoice);
       setDate(new Date(invoice.date));
       setDueDate(new Date(invoice.due_date));
+      setIsEditing(false); // Reset editing state when invoice changes
     }
   }, [invoice]);
 
@@ -109,12 +111,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
       await mockDataFunctions.updateInvoice(updatedInvoice);
       
+      // Force a refetch of the invoices data
+      await queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      
       toast({
         title: "Facture mise à jour",
         description: "La facture a été mise à jour avec succès.",
       });
 
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       setIsEditing(false);
     } catch (error) {
       toast({
