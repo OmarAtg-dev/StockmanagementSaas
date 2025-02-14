@@ -71,7 +71,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     }
 
     try {
-      // Create a new PDF document with slightly larger margins
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -80,12 +79,12 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       
       let yOffset = 20;
 
-      // Add company information with better styling
+      // Company information
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.text(enterprise.name, 20, yOffset);
       
-      // Add company contact details with improved spacing
+      // Company contact details
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       yOffset += 8;
@@ -97,30 +96,37 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       yOffset += 5;
       doc.text(`Site web: ${enterprise.contact.website}`, 20, yOffset);
 
-      // Add a subtle separator line
+      // Separator line
       yOffset += 8;
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.5);
       doc.line(20, yOffset, 190, yOffset);
 
-      // Add invoice title with better positioning
+      // Add invoice number prominently in a box
+      yOffset += 15;
+      doc.setDrawColor(220, 220, 220);
+      doc.setFillColor(247, 247, 247);
+      doc.roundedRect(140, yOffset - 10, 50, 15, 2, 2, 'FD');
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(44, 62, 80);
+      doc.text(`N° ${invoice.number}`, 165, yOffset, { align: "center" });
+
+      // Add invoice title
       yOffset += 15;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(24);
-      doc.setTextColor(44, 62, 80); // Dark blue-grey color
       doc.text("FACTURE", 105, yOffset, { align: "center" });
       
-      // Add invoice details with improved layout
+      // Invoice details
       doc.setTextColor(0);
       doc.setFontSize(11);
       yOffset += 15;
-      doc.text(`Facture N°: ${invoice.number}`, 20, yOffset);
-      yOffset += 8;
       doc.text(`Date: ${format(new Date(invoice.date), "PP", { locale: fr })}`, 20, yOffset);
       yOffset += 8;
       doc.text(`Échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, 20, yOffset);
 
-      // Add client information with better styling
+      // Client information
       yOffset += 15;
       doc.setFontSize(12);
       doc.text("FACTURER À", 20, yOffset);
@@ -134,16 +140,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         doc.text(invoice.client.email, 20, yOffset);
       }
 
-      // Add items table with improved styling
+      // Items table
       yOffset += 15;
-      
-      // Table styling
       const tableTop = yOffset;
       const tableLeft = 20;
       const colWidth = [75, 30, 30, 35];
       const rowHeight = 10;
       
-      // Table header with better visual design
+      // Table header
       doc.setFillColor(244, 244, 244);
       doc.rect(tableLeft, tableTop, 170, rowHeight, "F");
       
@@ -158,20 +162,18 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         xOffset += colWidth[i];
       });
 
-      // Table rows with alternating background
+      // Table rows
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0);
       doc.setFontSize(9);
       
       let currentY = tableTop + rowHeight;
       invoice.items.forEach((item, index) => {
-        // Alternate row background
         if (index % 2 === 1) {
           doc.setFillColor(249, 249, 249);
           doc.rect(tableLeft, currentY, 170, rowHeight, "F");
         }
         
-        // Item data
         xOffset = tableLeft;
         doc.text(item.description, xOffset + 3, currentY + 7);
         xOffset += colWidth[0];
@@ -184,17 +186,21 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         currentY += rowHeight;
       });
 
-      // Add total with improved styling
-      currentY += 10;
+      // Add total in a highlighted box
+      currentY += 15;
+      doc.setFillColor(44, 62, 80);
+      doc.setDrawColor(44, 62, 80);
+      doc.roundedRect(120, currentY - 12, 70, 20, 2, 2, 'FD');
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
       const totalText = `Total: ${new Intl.NumberFormat('fr-FR', { 
         style: 'currency', 
         currency: 'MAD'
       }).format(invoice.total_amount)}`;
-      doc.text(totalText, 190, currentY, { align: "right" });
+      doc.text(totalText, 155, currentY, { align: "center" });
 
-      // Add footer with refined styling
+      // Footer
       const footerY = 280;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
