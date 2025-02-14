@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -371,15 +372,8 @@ const Suppliers = () => {
           <SupplierInvoiceDialog
             open={!!selectedSupplierId}
             onOpenChange={(open) => !open && setSelectedSupplierId(null)}
+            supplierId={selectedSupplierId}
             companyId={profile.company_id}
-            invoice={{ supplier: { id: selectedSupplierId } }}
-            onSuccess={() => {
-              setSelectedSupplierId(null);
-              toast({
-                title: "Facture créée",
-                description: "La facture a été créée avec succès.",
-              });
-            }}
           />
         )}
       </div>

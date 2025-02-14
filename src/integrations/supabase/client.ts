@@ -12,47 +12,24 @@ const mockSupabase = {
     insert: (data: any) => ({
       select: () => ({
         single: async () => {
-          try {
-            switch (table) {
-              case 'invoices':
-                return mockDataFunctions.createInvoice(data[0]);
-              case 'invoice_items':
-                return mockDataFunctions.createInvoiceItems(data);
-              case 'supplier_invoices':
-                return mockDataFunctions.createInvoice({
-                  ...data[0],
-                  supplier_id: data[0].supplier_id,
-                  number: `SUPINV-${Date.now()}`,
-                });
-              case 'supplier_invoice_items':
-                return mockDataFunctions.createInvoiceItems(data);
-              default:
-                throw new Error(`Table ${table} not implemented in mock`);
-            }
-          } catch (error) {
-            return { data: null, error };
+          switch (table) {
+            case 'invoices':
+              return mockDataFunctions.createInvoice(data[0]);
+            case 'invoice_items':
+              return mockDataFunctions.createInvoiceItems(data);
+            case 'supplier_invoices':
+              // Handle supplier invoices the same way as regular invoices
+              return mockDataFunctions.createInvoice({
+                ...data[0],
+                number: `SUPINV-${Date.now()}`, // Ensure unique number format for supplier invoices
+              });
+            case 'supplier_invoice_items':
+              // Handle supplier invoice items the same way as regular invoice items
+              return mockDataFunctions.createInvoiceItems(data);
+            default:
+              throw new Error(`Table ${table} not implemented in mock`);
           }
         }
-      })
-    }),
-    update: (data: any) => ({
-      eq: (field: string, value: string) => ({
-        select: () => ({
-          single: async () => {
-            try {
-              switch (table) {
-                case 'supplier_invoices':
-                  return mockDataFunctions.updateInvoice(value, data);
-                case 'invoices':
-                  return mockDataFunctions.updateInvoice(value, data);
-                default:
-                  throw new Error(`Table ${table} not implemented in mock`);
-              }
-            } catch (error) {
-              return { data: null, error };
-            }
-          }
-        })
       })
     }),
     select: () => ({

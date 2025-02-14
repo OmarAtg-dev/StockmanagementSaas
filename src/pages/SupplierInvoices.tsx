@@ -1,6 +1,6 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
@@ -37,17 +37,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
-import { useToast } from "@/components/ui/use-toast";
-import { MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface SupplierInvoice {
   id: string;
@@ -76,62 +65,6 @@ const SupplierInvoices = () => {
   const [selectedDueDate, setSelectedDueDate] = useState<Date>();
   const { profile } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
-  const { toast } = useToast();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [invoiceToEdit, setInvoiceToEdit] = useState<SupplierInvoice | null>(null);
-  const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
-  const queryClient = useQueryClient();
-
-  const handleCreateInvoice = () => {
-    setIsCreateDialogOpen(true);
-  };
-
-  const handleEditInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click event
-    setInvoiceToEdit(invoice);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleViewInvoice = (invoice: SupplierInvoice) => {
-    setSelectedInvoice(invoice);
-  };
-
-  const handleDeleteInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click event
-    setInvoiceToDelete(invoice);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleUpdateSuccess = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
-    // Reset all relevant state
-    setSelectedInvoice(null);
-    setInvoiceToEdit(null);
-    setIsEditDialogOpen(false);
-    setIsCreateDialogOpen(false);
-  };
-
-  const confirmDelete = async () => {
-    if (!invoiceToDelete) return;
-
-    try {
-      await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
-      toast({
-        title: "Facture supprimée",
-        description: "La facture a été supprimée avec succès.",
-      });
-      setIsDeleteDialogOpen(false);
-      setInvoiceToDelete(null);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la suppression de la facture.",
-      });
-    }
-  };
 
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers'],
@@ -224,7 +157,7 @@ const SupplierInvoices = () => {
               Consultez et gérez vos factures fournisseurs
             </p>
           </div>
-          <Button className="gap-2" onClick={handleCreateInvoice}>
+          <Button className="gap-2">
             <Plus className="h-5 w-5" />
             Créer une facture
           </Button>
@@ -336,13 +269,12 @@ const SupplierInvoices = () => {
                 <TableHead>Échéance</TableHead>
                 <TableHead>Montant</TableHead>
                 <TableHead>Statut</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={6}>
                     <div className="space-y-2">
                       {[...Array(5)].map((_, i) => (
                         <Skeleton key={i} className="h-8 w-full" />
@@ -352,7 +284,7 @@ const SupplierInvoices = () => {
                 </TableRow>
               ) : !filteredInvoices?.length ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     Aucune facture trouvée
                   </TableCell>
                 </TableRow>
@@ -361,7 +293,7 @@ const SupplierInvoices = () => {
                   <TableRow 
                     key={invoice.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleViewInvoice(invoice)}
+                    onClick={() => setSelectedInvoice(invoice)}
                   >
                     <TableCell className="font-medium">
                       {invoice.number}
@@ -384,30 +316,6 @@ const SupplierInvoices = () => {
                     <TableCell>
                       {getStatusBadge(invoice.status)}
                     </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => handleViewInvoice(invoice)}>
-                            Voir les détails
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleEditInvoice(invoice, e)}>
-                            Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={(e) => handleDeleteInvoice(invoice, e)}
-                            className="text-destructive"
-                          >
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -420,56 +328,6 @@ const SupplierInvoices = () => {
           onOpenChange={(open) => !open && setSelectedInvoice(null)}
           invoice={selectedInvoice}
         />
-
-        {profile?.company_id && (
-          <>
-            <SupplierInvoiceDialog
-              open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
-              companyId={profile.company_id}
-              onSuccess={handleUpdateSuccess}
-            />
-
-            {invoiceToEdit && (
-              <SupplierInvoiceDialog
-                open={isEditDialogOpen}
-                onOpenChange={(open) => {
-                  setIsEditDialogOpen(open);
-                  if (!open) setInvoiceToEdit(null);
-                }}
-                companyId={profile.company_id}
-                invoice={invoiceToEdit}
-                onSuccess={handleUpdateSuccess}
-              />
-            )}
-          </>
-        )}
-
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est irréversible. Elle supprimera définitivement la facture
-                {invoiceToDelete && ` n°${invoiceToDelete.number}`} et toutes les données associées.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteDialogOpen(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={confirmDelete}
-              >
-                Supprimer
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </DashboardLayout>
   );
