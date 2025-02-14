@@ -118,25 +118,33 @@ export function SupplierInvoiceDialog({
 
     try {
       const invoiceData = {
-        supplier_id: selectedSupplier,
+        supplier_id: selectedSupplier, // Make sure we pass the supplier_id
         company_id: companyId,
         number: invoice?.number || `SUPINV-${Date.now()}`,
         date: format(date, 'yyyy-MM-dd'),
         due_date: format(dueDate, 'yyyy-MM-dd'),
         total_amount: calculateTotal(),
         notes,
-        items
+        items,
+        status: 'pending', // Add default status
       };
 
       if (invoice) {
         // Update existing invoice
-        await mockDataFunctions.updateInvoice({
-          ...invoiceData,
-          id: invoice.id
-        });
+        const { id, ...updateData } = invoiceData;
+        await supabase
+          .from('supplier_invoices')
+          .update(updateData)
+          .eq('id', invoice.id)
+          .select()
+          .single();
       } else {
         // Create new invoice
-        await mockDataFunctions.createInvoice(invoiceData);
+        await supabase
+          .from('supplier_invoices')
+          .insert([invoiceData])
+          .select()
+          .single();
       }
 
       onSuccess?.();

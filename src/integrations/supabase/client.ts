@@ -18,9 +18,10 @@ const mockSupabase = {
             case 'invoice_items':
               return mockDataFunctions.createInvoiceItems(data);
             case 'supplier_invoices':
-              // Handle supplier invoices the same way as regular invoices
+              // Handle supplier invoices with proper supplier association
               return mockDataFunctions.createInvoice({
                 ...data[0],
+                supplier_id: data[0].supplier_id, // Ensure supplier_id is passed through
                 number: `SUPINV-${Date.now()}`, // Ensure unique number format for supplier invoices
               });
             case 'supplier_invoice_items':
