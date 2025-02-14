@@ -97,6 +97,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     },
   });
 
+  const { data: products } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data } = await mockDataFunctions.getProducts();
+      return data;
+    },
+  });
+
   const handleUpdateInvoice = async () => {
     if (!editedInvoice || !date || !dueDate) return;
 
@@ -458,7 +466,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Description</TableHead>
+                    <TableHead>Produit</TableHead>
                     <TableHead className="text-right">Quantité</TableHead>
                     <TableHead className="text-right">Prix unitaire</TableHead>
                     <TableHead className="text-right">Montant</TableHead>
@@ -469,10 +477,21 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                     <TableRow key={item.id}>
                       <TableCell>
                         {isEditing ? (
-                          <Input
+                          <Select
                             value={item.description}
-                            onChange={(e) => updateItem(index, 'description', e.target.value)}
-                          />
+                            onValueChange={(value) => updateItem(index, 'description', value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionner un produit" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {products?.map((product) => (
+                                <SelectItem key={product.id} value={product.name}>
+                                  {product.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         ) : (
                           item.description
                         )}
