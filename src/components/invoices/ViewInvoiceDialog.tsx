@@ -71,7 +71,7 @@ interface ViewInvoiceDialogProps {
 export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDialogProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedInvoice, setEditedInvoice] = useState(invoice);
+  const [editedInvoice, setEditedInvoice] = useState<typeof invoice>(invoice);
   const [date, setDate] = useState<Date | undefined>(
     invoice ? new Date(invoice.date) : undefined
   );
@@ -85,9 +85,21 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       setEditedInvoice(invoice);
       setDate(new Date(invoice.date));
       setDueDate(new Date(invoice.due_date));
-      setIsEditing(false); // Reset editing state when invoice changes
+      setIsEditing(false);
     }
   }, [invoice]);
+
+  const handleUpdateClient = (field: string, value: string) => {
+    if (!editedInvoice) return;
+    
+    setEditedInvoice({
+      ...editedInvoice,
+      client: editedInvoice.client ? {
+        ...editedInvoice.client,
+        [field]: value
+      } : null
+    });
+  };
 
   const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | undefined) => {
     if (!editedInvoice || !newDate) return;
@@ -107,21 +119,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     }
   };
 
-  const { data: enterprise } = useQuery({
-    queryKey: ["enterprise"],
-    queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return mockDataFunctions.getEnterpriseInfo();
-    },
-  });
-
-  const { data: products } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const { data } = await mockDataFunctions.getProducts();
-      return data;
-    },
-  });
+  const handleUpdateStatus = (status: string) => {
+    if (!editedInvoice) return;
+    
+    setEditedInvoice({
+      ...editedInvoice,
+      status
+    });
+  };
 
   const handleUpdateInvoice = async () => {
     if (!editedInvoice || !date || !dueDate) return;
@@ -136,7 +141,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
       await mockDataFunctions.updateInvoice(updatedInvoice);
       
-      // Force a refetch of the invoices data
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
       
       toast({
@@ -145,7 +149,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       });
 
       setIsEditing(false);
-      onOpenChange(false); // Close the modal after successful update
+      onOpenChange(false);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -319,17 +323,21 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     }
   };
 
-  const handleUpdateClient = (field: string, value: string) => {
-    if (!editedInvoice || !editedInvoice.client) return;
-    
-    setEditedInvoice({
-      ...editedInvoice,
-      client: {
-        ...editedInvoice.client,
-        [field]: value
-      }
-    });
-  };
+  const { data: enterprise } = useQuery({
+    queryKey: ["enterprise"],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return mockDataFunctions.getEnterpriseInfo();
+    },
+  });
+
+  const { data: products } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data } = await mockDataFunctions.getProducts();
+      return data;
+    },
+  });
 
   if (!invoice) return null;
 
@@ -382,14 +390,6 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               )}
             </div>
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
-            {displayInvoice.items.map((item, index) => (
-              <span key={item.id}>
-                {item.description}
-                {index < displayInvoice.items.length - 1 ? ', ' : ''}
-              </span>
-            ))}
-          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[80vh]">
           <div className="space-y-6">
@@ -423,14 +423,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                   {isEditing ? (
                     <Select
                       value={editedInvoice?.status}
-                      onValueChange={(value) => {
-                        if (editedInvoice) {
-                          setEditedInvoice({
-                            ...editedInvoice,
-                            status: value
-                          });
-                        }
-                      }}
+                      onValueChange={handleUpdateStatus}
                     >
                       <SelectTrigger className="w-full mt-1">
                         <SelectValue placeholder="Sélectionner un status" />
