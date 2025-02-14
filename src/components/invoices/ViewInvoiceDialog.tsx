@@ -89,6 +89,24 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     }
   }, [invoice]);
 
+  const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | undefined) => {
+    if (!editedInvoice || !newDate) return;
+
+    if (type === 'date') {
+      setDate(newDate);
+      setEditedInvoice({
+        ...editedInvoice,
+        date: format(newDate, 'yyyy-MM-dd')
+      });
+    } else {
+      setDueDate(newDate);
+      setEditedInvoice({
+        ...editedInvoice,
+        due_date: format(newDate, 'yyyy-MM-dd')
+      });
+    }
+  };
+
   const { data: enterprise } = useQuery({
     queryKey: ["enterprise"],
     queryFn: async () => {
@@ -451,7 +469,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                         <Calendar
                           mode="single"
                           selected={date}
-                          onSelect={setDate}
+                          onSelect={(newDate) => handleUpdateDates('date', newDate)}
                           initialFocus
                         />
                       </PopoverContent>
@@ -482,7 +500,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                         <Calendar
                           mode="single"
                           selected={dueDate}
-                          onSelect={setDueDate}
+                          onSelect={(newDate) => handleUpdateDates('dueDate', newDate)}
                           initialFocus
                         />
                       </PopoverContent>
