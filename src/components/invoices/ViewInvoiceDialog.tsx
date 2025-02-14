@@ -204,50 +204,59 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         format: "a4"
       });
 
-      let yOffset = 20;
+      let yOffset = 25;
       const leftMargin = 20;
       const pageWidth = 210;
       const contentWidth = pageWidth - (2 * leftMargin);
 
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.rect(10, 10, pageWidth - 20, 277);
+      doc.setFillColor(250, 250, 250);
+      doc.rect(11, 11, pageWidth - 22, 275);
+
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(24);
+      doc.setFontSize(28);
       doc.setTextColor(44, 62, 80);
       doc.text(enterprise.name, leftMargin, yOffset);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      yOffset += 12;
+      doc.setFontSize(9);
+      doc.setTextColor(75, 85, 99);
+      yOffset += 15;
       doc.text(enterprise.contact.headquarters, leftMargin, yOffset);
-      yOffset += 6;
+      yOffset += 5;
       doc.text(`Tél: ${enterprise.contact.phone}`, leftMargin, yOffset);
-      yOffset += 6;
+      yOffset += 5;
       doc.text(`Email: ${enterprise.contact.email}`, leftMargin, yOffset);
-      yOffset += 6;
+      yOffset += 5;
       doc.text(`Site web: ${enterprise.contact.website}`, leftMargin, yOffset);
 
-      const boxY = 15;
       doc.setFillColor(247, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(140, boxY, 50, 30, 3, 3, 'FD');
+      doc.roundedRect(140, 20, 55, 45, 2, 2, 'FD');
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(44, 62, 80);
-      doc.text("FACTURE", 165, boxY + 12, { align: "center" });
-      doc.setFontSize(12);
-      doc.text(`N° ${invoice.number}`, 165, boxY + 22, { align: "center" });
+      doc.text("FACTURE", 167.5, 32, { align: "center" });
+      doc.setFontSize(11);
+      doc.text(`N° ${invoice.number}`, 167.5, 42, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("Date d'émission:", 145, 52);
+      doc.text(format(new Date(invoice.date), "PP", { locale: fr }), 167.5, 52, { align: "center" });
 
       doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.5);
+      doc.setLineWidth(0.3);
       doc.line(leftMargin, yOffset, pageWidth - leftMargin, yOffset);
 
-      yOffset += 10;
       doc.setFillColor(247, 250, 252);
-      doc.roundedRect(leftMargin, yOffset, 85, 35, 2, 2, 'F');
+      doc.roundedRect(leftMargin, yOffset, 85, 40, 2, 2, 'F');
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setTextColor(44, 62, 80);
       doc.text("FACTURER À", leftMargin + 5, yOffset + 8);
+      
       if (invoice.client) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
@@ -258,73 +267,107 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       }
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(44, 62, 80);
+      doc.setFontSize(9);
+      doc.setTextColor(75, 85, 99);
       yOffset += 50;
-      doc.text(`Date de facturation: ${format(new Date(invoice.date), "PP", { locale: fr })}`, leftMargin, yOffset);
-      yOffset += 8;
-      doc.text(`Date d'échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, leftMargin, yOffset);
+      doc.text("Conditions de paiement: 30 jours", leftMargin, yOffset);
+      doc.text(`Date d'échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, leftMargin, yOffset + 5);
 
-      const tableTop = yOffset;
-      const tableLeft = leftMargin;
-      const colWidth = [85, 25, 35, 35];
-      const rowHeight = 10;
+      const tableHeaders = ["Description", "Quantité", "Prix unitaire", "Montant"];
+      const colWidths = [85, 25, 35, 35];
       
-      doc.setFillColor(244, 244, 244);
-      doc.rect(tableLeft, tableTop, contentWidth, rowHeight, "F");
-      
+      doc.setFillColor(247, 250, 252);
+      doc.roundedRect(leftMargin, yOffset, contentWidth, 10, 1, 1, 'F');
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(9);
+      doc.setTextColor(44, 62, 80);
       
-      let xOffset = tableLeft;
-      ["Description", "Quantité", "Prix unitaire", "Montant"].forEach((header, i) => {
-        doc.text(header, xOffset + 3, tableTop + 7);
-        xOffset += colWidth[i];
+      let xPos = leftMargin;
+      tableHeaders.forEach((header, index) => {
+        const align = index === 0 ? "left" : "right";
+        doc.text(header, index === 0 ? xPos + 3 : xPos + colWidths[index] - 3, yOffset + 7, { align });
+        xPos += colWidths[index];
       });
 
+      yOffset += 10;
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(0);
-      doc.setFontSize(9);
-      
-      let currentY = tableTop + rowHeight;
-      invoice.items.forEach((item, index) => {
+      invoice.items?.forEach((item, index) => {
+        const rowHeight = 8;
         if (index % 2 === 1) {
-          doc.setFillColor(249, 249, 249);
-          doc.rect(tableLeft, currentY, contentWidth, rowHeight, "F");
+          doc.setFillColor(252, 252, 253);
+          doc.rect(leftMargin, yOffset, contentWidth, rowHeight, 'F');
         }
         
-        xOffset = tableLeft;
-        doc.text(item.description, xOffset + 3, currentY + 7);
-        xOffset += colWidth[0];
-        doc.text(item.quantity.toString(), xOffset + 3, currentY + 7);
-        xOffset += colWidth[1];
-        doc.text(`${item.unit_price.toFixed(2)} MAD`, xOffset + 3, currentY + 7);
-        xOffset += colWidth[2];
-        doc.text(`${item.amount.toFixed(2)} MAD`, xOffset + 3, currentY + 7);
+        xPos = leftMargin;
+        doc.text(item.description, xPos + 3, yOffset + 5);
+        xPos += colWidths[0];
+        doc.text(item.quantity.toString(), xPos + colWidths[1] - 3, yOffset + 5, { align: "right" });
+        xPos += colWidths[1];
+        doc.text(`${item.unit_price.toFixed(2)} MAD`, xPos + colWidths[2] - 3, yOffset + 5, { align: "right" });
+        xPos += colWidths[2];
+        doc.text(`${item.amount.toFixed(2)} MAD`, xPos + colWidths[3] - 3, yOffset + 5, { align: "right" });
         
-        currentY += rowHeight;
+        yOffset += rowHeight;
       });
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      const totalText = `Total: ${new Intl.NumberFormat('fr-FR', { 
-        style: 'currency', 
-        currency: 'MAD'
-      }).format(invoice.total_amount)}`;
-      doc.text(totalText, pageWidth - leftMargin, currentY, { align: "right" });
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
-      const footerY = 280;
-      doc.text(enterprise.name, pageWidth / 2, footerY, { align: "center" });
-      doc.text(enterprise.contact.headquarters, pageWidth / 2, footerY + 4, { align: "center" });
-      doc.text(`${enterprise.contact.phone} | ${enterprise.contact.email}`, pageWidth / 2, footerY + 8, { align: "center" });
 
       doc.setDrawColor(226, 232, 240);
       doc.setLineWidth(0.5);
-      doc.rect(10, 10, pageWidth - 20, 277);
+      doc.line(leftMargin, yOffset, pageWidth - leftMargin, yOffset);
+      
+      const subtotal = invoice.total_amount;
+      const tva = subtotal * 0.20; // 20% TVA
+      const total = subtotal + tva;
+
+      yOffset += 5;
+      const totalsX = pageWidth - leftMargin - 60;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("Sous-total:", totalsX, yOffset);
+      doc.text(`${subtotal.toFixed(2)} MAD`, pageWidth - leftMargin, yOffset, { align: "right" });
+      
+      yOffset += 5;
+      doc.text("TVA (20%):", totalsX, yOffset);
+      doc.text(`${tva.toFixed(2)} MAD`, pageWidth - leftMargin, yOffset, { align: "right" });
+      
+      yOffset += 6;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Total:", totalsX, yOffset);
+      doc.text(`${total.toFixed(2)} MAD`, pageWidth - leftMargin, yOffset, { align: "right" });
+
+      yOffset += 20;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("Instructions de paiement", leftMargin, yOffset);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      yOffset += 5;
+      doc.text("Veuillez effectuer votre paiement sur le compte bancaire suivant:", leftMargin, yOffset);
+      yOffset += 4;
+      doc.text("IBAN: MA00 0000 0000 0000 0000 0000", leftMargin, yOffset);
+      yOffset += 4;
+      doc.text("BIC: XXXXXXXX", leftMargin, yOffset);
+      yOffset += 4;
+      doc.text("Banque: Nom de la banque", leftMargin, yOffset);
+
+      yOffset += 10;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("Conditions", leftMargin, yOffset);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      yOffset += 4;
+      doc.text("Le paiement est dû dans les 30 jours suivant la date de facturation.", leftMargin, yOffset);
+
+      doc.setFillColor(247, 250, 252);
+      doc.rect(10, 270, pageWidth - 20, 17, 'F');
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      const footerY = 275;
+      doc.text(enterprise.name, pageWidth / 2, footerY, { align: "center" });
+      doc.text(enterprise.contact.headquarters, pageWidth / 2, footerY + 4, { align: "center" });
+      doc.text(`${enterprise.contact.phone} | ${enterprise.contact.email}`, pageWidth / 2, footerY + 8, { align: "center" });
 
       doc.save(`facture-${invoice.number}.pdf`);
 
