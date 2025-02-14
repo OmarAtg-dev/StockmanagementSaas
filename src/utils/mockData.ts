@@ -309,9 +309,11 @@ export const mockDataFunctions = {
   getInvoices: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Map the mock invoices to include client information
+    // Map the mock invoices to include client information and items
     const invoicesWithClients = mockInvoices.map(invoice => {
       const client = mockClients.find(c => c.id === invoice.client_id);
+      const items = mockInvoiceItems.filter(item => item.invoice_id === invoice.id);
+      
       return {
         id: invoice.id,
         number: invoice.number,
@@ -322,7 +324,14 @@ export const mockDataFunctions = {
         client: client ? {
           name: client.name,
           email: client.email
-        } : null
+        } : null,
+        items: items.map(item => ({
+          id: item.id,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          amount: item.amount
+        }))
       };
     });
 

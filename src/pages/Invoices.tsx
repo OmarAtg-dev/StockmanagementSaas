@@ -35,6 +35,13 @@ interface Invoice {
     name: string;
     email: string;
   };
+  items: {
+    id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    amount: number;
+  }[];
 }
 
 const Invoices = () => {
