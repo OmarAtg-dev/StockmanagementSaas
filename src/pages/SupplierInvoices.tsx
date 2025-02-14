@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -172,7 +171,7 @@ const SupplierInvoices = () => {
 
   const filteredInvoices = invoices?.filter(invoice => {
     const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      (invoice.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesSupplier = selectedSupplier === "all" || invoice.supplier?.name === selectedSupplier;
 
@@ -376,7 +375,7 @@ const SupplierInvoices = () => {
                       {invoice.number}
                     </TableCell>
                     <TableCell>
-                      {invoice.supplier.name}
+                      {invoice.supplier?.name || 'Fournisseur inconnu'}
                     </TableCell>
                     <TableCell>
                       {format(new Date(invoice.date), "PP", { locale: fr })}
