@@ -144,7 +144,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       yOffset += 15;
       const tableTop = yOffset;
       const tableLeft = 20;
-      const colWidth = [75, 30, 30, 35];
+      const colWidth = [65, 25, 30, 25, 25]; // Adjusted column widths to fit new column
       const rowHeight = 10;
       
       // Table header
@@ -157,7 +157,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       doc.setTextColor(60, 60, 60);
       
       let xOffset = tableLeft;
-      ["Description", "Quantité", "Prix unitaire", "Montant"].forEach((header, i) => {
+      ["Description", "Quantité", "Prix unit.", "Calcul", "Total"].forEach((header, i) => {
         doc.text(header, xOffset + 3, tableTop + 7);
         xOffset += colWidth[i];
       });
@@ -175,13 +175,24 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         }
         
         xOffset = tableLeft;
+        // Description
         doc.text(item.description, xOffset + 3, currentY + 7);
         xOffset += colWidth[0];
+        
+        // Quantity
         doc.text(item.quantity.toString(), xOffset + 3, currentY + 7);
         xOffset += colWidth[1];
-        doc.text(`${item.unit_price.toFixed(2)} MAD`, xOffset + 3, currentY + 7);
+        
+        // Unit price
+        doc.text(`${item.unit_price.toFixed(2)}`, xOffset + 3, currentY + 7);
         xOffset += colWidth[2];
-        doc.text(`${item.amount.toFixed(2)} MAD`, xOffset + 3, currentY + 7);
+        
+        // Calculation (quantity × unit price)
+        doc.text(`${item.quantity} × ${item.unit_price.toFixed(2)}`, xOffset + 3, currentY + 7);
+        xOffset += colWidth[3];
+        
+        // Total amount
+        doc.text(`${item.amount.toFixed(2)}`, xOffset + 3, currentY + 7);
         
         currentY += rowHeight;
       });
