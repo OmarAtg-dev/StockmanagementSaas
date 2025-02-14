@@ -5,13 +5,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Edit2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -23,7 +25,17 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import jsPDF from 'jspdf';
 import { mockDataFunctions } from "@/utils/mockData";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -50,7 +62,15 @@ interface ViewInvoiceDialogProps {
 }
 
 export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDialogProps) {
-  if (!invoice) return null;
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedInvoice, setEditedInvoice] = useState(invoice);
+  const [date, setDate] = useState<Date | undefined>(
+    invoice ? new Date(invoice.date) : undefined
+  );
+  const [dueDate, setDueDate] = useState<Date | undefined>(
+    invoice ? new Date(invoice.due_date) : undefined
+  );
 
   const { data: enterprise } = useQuery({
     queryKey: ["enterprise"],
@@ -60,15 +80,59 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     },
   });
 
-  const handleGeneratePDF = () => {
-    if (!enterprise) {
+  const handleUpdateInvoice = async () => {
+    if (!editedInvoice || !date || !dueDate) return;
+
+    try {
+      const updatedInvoice = {
+        ...editedInvoice,
+        date: format(date, 'yyyy-MM-dd'),
+        due_date: format(dueDate, 'yyyy-MM-dd'),
+        total_amount: editedInvoice.items.reduce((sum, item) => sum + item.amount, 0),
+      };
+
+      await mockDataFunctions.updateInvoice(updatedInvoice);
+      
+      toast({
+        title: "Facture mise à jour",
+        description: "La facture a été mise à jour avec succès.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      setIsEditing(false);
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger les informations de l'entreprise.",
+        description: "Une erreur est survenue lors de la mise à jour de la facture.",
       });
-      return;
     }
+  };
+
+  const updateItem = (index: number, field: string, value: string | number) => {
+    if (!editedInvoice) return;
+
+    const newItems = [...editedInvoice.items];
+    const item = { ...newItems[index] };
+
+    if (field === 'quantity' || field === 'unit_price') {
+      const numValue = Number(value);
+      item[field] = numValue;
+      item.amount = item.quantity * item.unit_price;
+    } else {
+      item[field as 'description'] = value as string;
+    }
+
+    newItems[index] = item;
+    setEditedInvoice({
+      ...editedInvoice,
+      items: newItems,
+      total_amount: newItems.reduce((sum, item) => sum + item.amount, 0),
+    });
+  };
+
+  const handleGeneratePDF = () => {
+    if (!enterprise || !invoice) return;
 
     try {
       // Create a new PDF document with slightly larger margins
@@ -227,6 +291,11 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     }
   };
 
+  if (!invoice) return null;
+
+  const displayInvoice = isEditing ? editedInvoice : invoice;
+  if (!displayInvoice) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
@@ -234,16 +303,44 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Facture {invoice.number}
+              Facture {displayInvoice.number}
             </div>
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={handleGeneratePDF}
-            >
-              <Download className="h-4 w-4" />
-              Générer PDF
-            </Button>
+            <div className="flex gap-2">
+              {isEditing ? (
+                <Button 
+                  variant="default"
+                  className="flex items-center gap-2"
+                  onClick={handleUpdateInvoice}
+                >
+                  <Save className="h-4 w-4" />
+                  Enregistrer
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={handleGeneratePDF}
+                  >
+                    <Download className="h-4 w-4" />
+                    Générer PDF
+                  </Button>
+                  <Button 
+                    variant="default"
+                    className="flex items-center gap-2"
+                    onClick={() => {
+                      setEditedInvoice(invoice);
+                      setDate(new Date(invoice.date));
+                      setDueDate(new Date(invoice.due_date));
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    Modifier
+                  </Button>
+                </>
+              )}
+            </div>
           </DialogTitle>
           <DialogDescription>
             Détails de la facture
@@ -254,17 +351,72 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold text-sm text-muted-foreground">Client</h3>
-                <p className="mt-1">{invoice.client?.name}</p>
-                <p className="text-sm text-muted-foreground">{invoice.client?.email}</p>
+                <p className="mt-1">{displayInvoice.client?.name}</p>
+                <p className="text-sm text-muted-foreground">{displayInvoice.client?.email}</p>
               </div>
-              <div className="text-right">
-                <h3 className="font-semibold text-sm text-muted-foreground">Détails</h3>
-                <p className="mt-1">
-                  Date: {format(new Date(invoice.date), "PP", { locale: fr })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Échéance: {format(new Date(invoice.due_date), "PP", { locale: fr })}
-                </p>
+              <div className="text-right space-y-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Date de facturation</Label>
+                  {isEditing ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal mt-1",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? format(date, "PP", { locale: fr }) : "Sélectionner une date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <p className="mt-1">
+                      {format(new Date(displayInvoice.date), "PP", { locale: fr })}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Date d'échéance</Label>
+                  {isEditing ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal mt-1",
+                            !dueDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dueDate ? format(dueDate, "PP", { locale: fr }) : "Sélectionner une date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={dueDate}
+                          onSelect={setDueDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <p className="mt-1">
+                      {format(new Date(displayInvoice.due_date), "PP", { locale: fr })}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -282,15 +434,47 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoice.items.map((item) => (
+                  {displayInvoice.items.map((item, index) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
+                      <TableCell>
+                        {isEditing ? (
+                          <Input
+                            value={item.description}
+                            onChange={(e) => updateItem(index, 'description', e.target.value)}
+                          />
+                        ) : (
+                          item.description
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
-                        {new Intl.NumberFormat('fr-FR', {
-                          style: 'currency',
-                          currency: 'MAD'
-                        }).format(item.unit_price)}
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                            className="w-20 ml-auto"
+                          />
+                        ) : (
+                          item.quantity
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.unit_price}
+                            onChange={(e) => updateItem(index, 'unit_price', e.target.value)}
+                            className="w-32 ml-auto"
+                          />
+                        ) : (
+                          new Intl.NumberFormat('fr-FR', {
+                            style: 'currency',
+                            currency: 'MAD'
+                          }).format(item.unit_price)
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         {new Intl.NumberFormat('fr-FR', {
@@ -313,12 +497,22 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                   {new Intl.NumberFormat('fr-FR', {
                     style: 'currency',
                     currency: 'MAD'
-                  }).format(invoice.total_amount)}
+                  }).format(displayInvoice.total_amount)}
                 </p>
               </div>
             </div>
           </div>
         </ScrollArea>
+        {isEditing && (
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditing(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleUpdateInvoice}>
+              Enregistrer les modifications
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
