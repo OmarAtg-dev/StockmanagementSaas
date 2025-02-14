@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/components/ui/use-toast";
+import jsPDF from 'jspdf';
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -50,11 +51,90 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
   if (!invoice) return null;
 
   const handleGeneratePDF = () => {
-    // For now, just show a toast since we're using mock data
-    toast({
-      title: "Génération PDF",
-      description: "La fonctionnalité de génération PDF sera bientôt disponible.",
-    });
+    try {
+      // Create a new PDF document
+      const doc = new jsPDF();
+      let yOffset = 20;
+
+      // Add company logo or name
+      doc.setFontSize(20);
+      doc.text("FACTURE", 105, yOffset, { align: "center" });
+      
+      // Add invoice details
+      doc.setFontSize(12);
+      yOffset += 20;
+      doc.text(`Facture N°: ${invoice.number}`, 20, yOffset);
+      yOffset += 10;
+      doc.text(`Date: ${format(new Date(invoice.date), "PP", { locale: fr })}`, 20, yOffset);
+      yOffset += 10;
+      doc.text(`Échéance: ${format(new Date(invoice.due_date), "PP", { locale: fr })}`, 20, yOffset);
+
+      // Add client information
+      yOffset += 20;
+      doc.text("Client:", 20, yOffset);
+      yOffset += 10;
+      if (invoice.client) {
+        doc.text(invoice.client.name, 20, yOffset);
+        yOffset += 10;
+        doc.text(invoice.client.email, 20, yOffset);
+      }
+
+      // Add items table
+      yOffset += 20;
+      const headers = ["Description", "Quantité", "Prix unitaire", "Montant"];
+      const itemsData = invoice.items.map(item => [
+        item.description,
+        item.quantity.toString(),
+        `${item.unit_price.toFixed(2)} MAD`,
+        `${item.amount.toFixed(2)} MAD`
+      ]);
+
+      // Table header
+      doc.setFillColor(240, 240, 240);
+      doc.rect(20, yOffset, 170, 10, "F");
+      doc.setTextColor(0);
+      headers.forEach((header, i) => {
+        doc.text(header, i === 0 ? 25 : 55 + (i * 40), yOffset + 7);
+      });
+
+      // Table rows
+      yOffset += 15;
+      itemsData.forEach(row => {
+        row.forEach((cell, i) => {
+          doc.text(cell, i === 0 ? 25 : 55 + (i * 40), yOffset);
+        });
+        yOffset += 10;
+      });
+
+      // Add total
+      yOffset += 10;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        `Total: ${new Intl.NumberFormat('fr-FR', { 
+          style: 'currency', 
+          currency: 'MAD'
+        }).format(invoice.total_amount)}`,
+        190,
+        yOffset,
+        { align: "right" }
+      );
+
+      // Download the PDF
+      doc.save(`facture-${invoice.number}.pdf`);
+
+      toast({
+        title: "PDF généré",
+        description: "Le PDF a été téléchargé avec succès.",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la génération du PDF.",
+      });
+    }
   };
 
   return (
