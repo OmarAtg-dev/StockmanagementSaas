@@ -128,7 +128,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     });
   };
 
-  const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | null) => {
+  const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | undefined) => {
     if (!editedInvoice || !newDate) return;
     
     const formattedDate = format(newDate, 'yyyy-MM-dd');
@@ -496,24 +496,26 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent align="start" className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={dueDate}
-                          onSelect={(newDate) => {
-                            if (newDate) {
-                              handleUpdateDates('dueDate', newDate);
-                            }
-                          }}
-                          defaultMonth={dueDate}
-                          fromDate={date}
-                          className="cursor-pointer"
-                          classNames={{
-                            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground cursor-pointer",
-                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer",
-                            day_disabled: "text-muted-foreground opacity-50 cursor-not-allowed",
-                            day_today: "bg-accent text-accent-foreground cursor-pointer",
-                          }}
-                        />
+                        <div className="p-2">
+                          <Calendar
+                            mode="single"
+                            selected={dueDate}
+                            onSelect={(newDate) => {
+                              console.log("Selected date:", newDate);
+                              handleUpdateDates('dueDate', newDate || undefined);
+                            }}
+                            disabled={(date) => date < (new Date(displayInvoice.date))}
+                            defaultMonth={dueDate}
+                            className="border rounded-md"
+                            classNames={{
+                              cell: "text-center p-0",
+                              day: "h-9 w-9 p-0 font-normal cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground aria-selected:opacity-100",
+                              day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                              day_today: "bg-accent text-accent-foreground",
+                              day_disabled: "text-muted-foreground opacity-50 cursor-not-allowed",
+                            }}
+                          />
+                        </div>
                       </PopoverContent>
                     </Popover>
                   ) : (
