@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Pencil, Trash2, Receipt, ChevronRight, ChevronDown } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Receipt, ChevronRight, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
@@ -25,6 +25,14 @@ import { mockDataFunctions } from "@/utils/mockData";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Supplier {
   id: string;
@@ -40,6 +48,7 @@ const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedSupplier, setExpandedSupplier] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string[]>(["active", "inactive", "blocked"]);
   const { profile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -74,11 +83,18 @@ const Suppliers = () => {
     enabled: !!expandedSupplier,
   });
 
-  const filteredSuppliers = suppliers?.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.contact_person?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) ?? [];
+  const filteredSuppliers = suppliers?.filter(supplier => {
+    const matchesSearch = 
+      supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.address?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter.includes(supplier.status);
+
+    return matchesSearch && matchesStatus;
+  }) ?? [];
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -154,14 +170,64 @@ const Suppliers = () => {
 
         <Card>
           <div className="p-6">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un fournisseur..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+            <div className="flex gap-4 items-center">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un fournisseur..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filtres
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  <DropdownMenuLabel>Statut</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={statusFilter.includes('active')}
+                    onCheckedChange={(checked) => {
+                      setStatusFilter(
+                        checked
+                          ? [...statusFilter, 'active']
+                          : statusFilter.filter((s) => s !== 'active')
+                      );
+                    }}
+                  >
+                    Actif
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={statusFilter.includes('inactive')}
+                    onCheckedChange={(checked) => {
+                      setStatusFilter(
+                        checked
+                          ? [...statusFilter, 'inactive']
+                          : statusFilter.filter((s) => s !== 'inactive')
+                      );
+                    }}
+                  >
+                    Inactif
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={statusFilter.includes('blocked')}
+                    onCheckedChange={(checked) => {
+                      setStatusFilter(
+                        checked
+                          ? [...statusFilter, 'blocked']
+                          : statusFilter.filter((s) => s !== 'blocked')
+                      );
+                    }}
+                  >
+                    Bloqué
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <Table>
