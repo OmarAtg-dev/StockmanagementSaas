@@ -477,15 +477,66 @@ export const mockDataFunctions = {
 
   updateInvoice: async (updatedInvoice: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Find and update the invoice in the mock store
     const index = mockInvoices.findIndex(inv => inv.id === updatedInvoice.id);
     if (index === -1) {
       throw new Error("Invoice not found");
     }
+
+    // Update the invoice in our mock store
     mockInvoices[index] = {
       ...mockInvoices[index],
-      ...updatedInvoice,
+      date: updatedInvoice.date,
+      due_date: updatedInvoice.due_date,
+      total_amount: updatedInvoice.total_amount,
+      status: updatedInvoice.status,
       updated_at: new Date().toISOString()
     };
-    return { data: mockInvoices[index], error: null };
+
+    // Find the client ID based on client info
+    const clientId = mockClients.find(c => c.name === updatedInvoice.client?.name)?.id;
+    if (clientId) {
+      mockInvoices[index].client_id = clientId;
+    }
+
+    // Update or replace invoice items
+    const existingItems = mockInvoiceItems.filter(item => item.invoice_id === updatedInvoice.id);
+    for (const existingItem of existingItems) {
+      const updatedItem = updatedInvoice.items.find(item => item.id === existingItem.id);
+      if (updatedItem) {
+        const itemIndex = mockInvoiceItems.findIndex(item => item.id === existingItem.id);
+        mockInvoiceItems[itemIndex] = {
+          ...mockInvoiceItems[itemIndex],
+          description: updatedItem.description,
+          quantity: updatedItem.quantity,
+          unit_price: updatedItem.unit_price,
+          amount: updatedItem.amount,
+          updated_at: new Date().toISOString()
+        };
+      }
+    }
+
+    // When getting invoices, we'll combine this data
+    const client = mockClients.find(c => c.id === mockInvoices[index].client_id);
+    const items = mockInvoiceItems.filter(item => item.invoice_id === updatedInvoice.id);
+
+    return { 
+      data: {
+        ...mockInvoices[index],
+        client: client ? {
+          name: client.name,
+          email: client.email
+        } : null,
+        items: items.map(item => ({
+          id: item.id,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          amount: item.amount
+        }))
+      }, 
+      error: null 
+    };
   }
 };
