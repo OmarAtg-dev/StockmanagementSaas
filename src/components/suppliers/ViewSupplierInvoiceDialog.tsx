@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -53,9 +52,7 @@ export function ViewSupplierInvoiceDialog({ open, onOpenChange, invoice }: ViewS
   const { data: enterprise } = useQuery({
     queryKey: ['enterprise'],
     queryFn: async () => {
-      const { data, error } = await mockDataFunctions.getEnterpriseInfo(); // Fix: Changed getEnterprise to getEnterpriseInfo
-      if (error) throw error;
-      return data;
+      return await mockDataFunctions.getEnterpriseInfo();
     },
   });
 
@@ -163,7 +160,7 @@ export function ViewSupplierInvoiceDialog({ open, onOpenChange, invoice }: ViewS
       // Table rows
       yOffset += 10;
       doc.setFont("helvetica", "normal");
-      invoice.items.forEach((item, index) => {
+      invoice.items?.forEach((item, index) => {
         const rowHeight = 8;
         if (index % 2 === 1) {
           doc.setFillColor(252, 252, 253);
@@ -298,7 +295,7 @@ export function ViewSupplierInvoiceDialog({ open, onOpenChange, invoice }: ViewS
                   </tr>
                 </thead>
                 <tbody>
-                  {displayInvoice.items.map((item, index) => (
+                  {displayInvoice.items?.map((item, index) => (
                     <tr key={item.id} className={cn("border-b", index % 2 === 0 ? "bg-muted/50" : "")}>
                       <td className="py-2">{item.description}</td>
                       <td className="py-2 text-right">{item.quantity}</td>
