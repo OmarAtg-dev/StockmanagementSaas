@@ -485,12 +485,12 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                       <TableCell>
                         {isEditing ? (
                           <Select
-                            value={products?.find(p => p.name === item.description)?.id || ''}
+                            defaultValue={products?.find(p => p.name === item.description)?.id}
                             onValueChange={(value) => updateItem(index, 'product', value)}
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Sélectionner un produit">
-                                {products?.find(p => p.name === item.description)?.name || 'Sélectionner un produit'}
+                              <SelectValue>
+                                {item.description}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
