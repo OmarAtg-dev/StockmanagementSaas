@@ -1,5 +1,6 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
