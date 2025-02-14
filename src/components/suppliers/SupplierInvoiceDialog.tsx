@@ -126,7 +126,6 @@ export function SupplierInvoiceDialog({
         due_date: format(dueDate, 'yyyy-MM-dd'),
         total_amount: calculateTotal(),
         notes,
-        items,
         status: invoice?.status || 'pending',
       };
 
@@ -141,7 +140,6 @@ export function SupplierInvoiceDialog({
 
         if (error) throw error;
 
-        // Show success message
         toast({
           title: "Succès",
           description: "La facture a été mise à jour avec succès.",
@@ -156,14 +154,12 @@ export function SupplierInvoiceDialog({
 
         if (error) throw error;
 
-        // Show success message
         toast({
           title: "Succès",
           description: "La facture a été créée avec succès.",
         });
       }
 
-      // Invalidate the query and close the dialog
       await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
       onSuccess?.();
       onOpenChange(false);
@@ -200,6 +196,7 @@ export function SupplierInvoiceDialog({
                 <Select 
                   value={selectedSupplier} 
                   onValueChange={setSelectedSupplier}
+                  disabled={!!invoice}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un fournisseur" />
