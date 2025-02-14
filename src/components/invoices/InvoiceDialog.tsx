@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -129,35 +129,30 @@ export function InvoiceDialog({ open, onOpenChange, clientId, companyId, onSucce
       const number = `INV-${Date.now()}`;
 
       // Create invoice
-      const { data: invoices, error: invoiceError } = await supabase
-        .from("invoices")
-        .insert([{
-          client_id: clientId,
-          company_id: companyId,
-          number,
-          date: format(date, 'yyyy-MM-dd'),
-          due_date: format(dueDate, 'yyyy-MM-dd'),
-          total_amount: calculateTotal(),
-          notes: notes || null,
-        }])
-        .select();
+      const { data: invoices, error: invoiceError } = await mockDataFunctions.createInvoice({
+        client_id: clientId,
+        company_id: companyId,
+        number,
+        date: format(date, 'yyyy-MM-dd'),
+        due_date: format(dueDate, 'yyyy-MM-dd'),
+        total_amount: calculateTotal(),
+        notes: notes || null,
+      });
 
       if (invoiceError) throw invoiceError;
       if (!invoices || !invoices[0]) throw new Error("Failed to create invoice");
 
       // Create invoice items
-      const { error: itemsError } = await supabase
-        .from("invoice_items")
-        .insert(
-          items.map(item => ({
-            invoice_id: invoices[0].id,
-            product_id: item.product_id || null,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            amount: item.amount,
-          }))
-        );
+      const { error: itemsError } = await mockDataFunctions.createInvoiceItems(
+        items.map(item => ({
+          invoice_id: invoices[0].id,
+          product_id: item.product_id || null,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          amount: item.amount,
+        }))
+      );
 
       if (itemsError) throw itemsError;
 
