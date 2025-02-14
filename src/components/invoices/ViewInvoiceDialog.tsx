@@ -78,6 +78,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     invoice ? new Date(invoice.due_date) : undefined
   );
 
+  React.useEffect(() => {
+    if (invoice) {
+      setEditedInvoice(invoice);
+      setDate(new Date(invoice.date));
+      setDueDate(new Date(invoice.due_date));
+    }
+  }, [invoice]);
+
   const { data: enterprise } = useQuery({
     queryKey: ["enterprise"],
     queryFn: async () => {
