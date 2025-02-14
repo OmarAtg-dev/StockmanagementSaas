@@ -12,17 +12,31 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, isWithinInterval, parse } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
 import { ViewInvoiceDialog } from "@/components/invoices/ViewInvoiceDialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Invoice {
   id: string;
@@ -46,10 +60,22 @@ interface Invoice {
 
 const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDueDate, setSelectedDueDate] = useState<Date>();
   const { profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+
+  const { data: clients } = useQuery({
+    queryKey: ['clients'],
+    queryFn: async () => {
+      const { data, error } = await mockDataFunctions.getClients();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['invoices', profile?.company_id],
@@ -70,10 +96,20 @@ const Invoices = () => {
     enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
   });
 
-  const filteredInvoices = invoices?.filter(invoice =>
-    invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.client?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) ?? [];
+  const filteredInvoices = invoices?.filter(invoice => {
+    const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.client?.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesClient = !selectedClient || invoice.client?.name === selectedClient;
+
+    const matchesDate = !selectedDate || 
+      format(new Date(invoice.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+
+    const matchesDueDate = !selectedDueDate || 
+      format(new Date(invoice.due_date), 'yyyy-MM-dd') === format(selectedDueDate, 'yyyy-MM-dd');
+
+    return matchesSearch && matchesClient && matchesDate && matchesDueDate;
+  }) ?? [];
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -124,15 +160,96 @@ const Invoices = () => {
         </div>
 
         <Card>
-          <div className="p-6">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher une facture..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+          <div className="p-6 space-y-4">
+            <div className="flex flex-wrap gap-4">
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher une facture..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              <Select value={selectedClient} onValueChange={setSelectedClient}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrer par client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tous les clients</SelectItem>
+                  {clients?.map((client) => (
+                    <SelectItem key={client.id} value={client.name}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`w-[240px] justify-start text-left font-normal ${
+                      !selectedDate && "text-muted-foreground"
+                    }`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? (
+                      format(selectedDate, "P", { locale: fr })
+                    ) : (
+                      "Date de facturation"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`w-[240px] justify-start text-left font-normal ${
+                      !selectedDueDate && "text-muted-foreground"
+                    }`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDueDate ? (
+                      format(selectedDueDate, "P", { locale: fr })
+                    ) : (
+                      "Date d'échéance"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDueDate}
+                    onSelect={setSelectedDueDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {(selectedDate || selectedDueDate || selectedClient) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedDate(undefined);
+                    setSelectedDueDate(undefined);
+                    setSelectedClient("");
+                  }}
+                >
+                  Réinitialiser les filtres
+                </Button>
+              )}
             </div>
           </div>
           <Table>
