@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/table";
 import { toast } from "@/components/ui/use-toast";
 import jsPDF from 'jspdf';
+import { mockDataFunctions } from "@/utils/mockData";
+import { useQuery } from "@tanstack/react-query";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -50,13 +52,51 @@ interface ViewInvoiceDialogProps {
 export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDialogProps) {
   if (!invoice) return null;
 
+  const { data: enterprise } = useQuery({
+    queryKey: ["enterprise"],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return mockDataFunctions.getEnterpriseInfo();
+    },
+  });
+
   const handleGeneratePDF = () => {
+    if (!enterprise) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger les informations de l'entreprise.",
+      });
+      return;
+    }
+
     try {
       // Create a new PDF document
       const doc = new jsPDF();
       let yOffset = 20;
 
-      // Add company logo or name
+      // Add company information
+      doc.setFontSize(16);
+      doc.text(enterprise.name, 20, yOffset);
+      
+      // Add company contact details
+      doc.setFontSize(10);
+      yOffset += 10;
+      doc.text(enterprise.contact.headquarters, 20, yOffset);
+      yOffset += 5;
+      doc.text(`Tél: ${enterprise.contact.phone}`, 20, yOffset);
+      yOffset += 5;
+      doc.text(`Email: ${enterprise.contact.email}`, 20, yOffset);
+      yOffset += 5;
+      doc.text(`Site web: ${enterprise.contact.website}`, 20, yOffset);
+
+      // Add separator line
+      yOffset += 10;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, yOffset, 190, yOffset);
+
+      // Add invoice title
+      yOffset += 15;
       doc.setFontSize(20);
       doc.text("FACTURE", 105, yOffset, { align: "center" });
       
@@ -119,6 +159,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         yOffset,
         { align: "right" }
       );
+
+      // Add footer with additional company info
+      yOffset = 280; // Position at bottom of page
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.text(enterprise.name, 105, yOffset, { align: "center" });
+      yOffset += 5;
+      doc.text(enterprise.contact.headquarters, 105, yOffset, { align: "center" });
 
       // Download the PDF
       doc.save(`facture-${invoice.number}.pdf`);
