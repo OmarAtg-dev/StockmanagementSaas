@@ -91,6 +91,14 @@ const SupplierInvoices = () => {
   const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
 
   const handleCreateInvoice = () => {
+    if (selectedSupplier === "all") {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner un fournisseur avant de créer une facture.",
+      });
+      return;
+    }
     setIsCreateDialogOpen(true);
   };
 
@@ -437,6 +445,7 @@ const SupplierInvoices = () => {
               onOpenChange={setIsCreateDialogOpen}
               companyId={profile.company_id}
               onSuccess={handleUpdateSuccess}
+              supplierId={selectedSupplier !== "all" ? suppliers?.find(s => s.name === selectedSupplier)?.id : undefined}
             />
 
             {invoiceToEdit && (
@@ -449,6 +458,7 @@ const SupplierInvoices = () => {
                 companyId={profile.company_id}
                 invoice={invoiceToEdit}
                 onSuccess={handleUpdateSuccess}
+                supplierId={invoiceToEdit.supplier?.id}
               />
             )}
           </>
