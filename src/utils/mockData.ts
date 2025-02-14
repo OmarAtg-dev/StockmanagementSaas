@@ -429,5 +429,48 @@ export const mockDataFunctions = {
       data: newItems,
       error: null
     };
+  },
+
+  getEnterpriseInfo: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      id: "1",
+      name: "Acme Corporation",
+      subscription_status: "active",
+      created_at: "2024-01-01T00:00:00.000Z",
+      user_count: 25,
+      contact: {
+        headquarters: "123 Boulevard Mohammed V, Casablanca, Maroc",
+        branches: [
+          "45 Avenue Hassan II, Rabat, Maroc",
+          "78 Rue Atlas, Marrakech, Maroc"
+        ],
+        phone: "+212 522-123456",
+        email: "contact@acme-corp.ma",
+        website: "www.acme-corp.ma",
+        social: {
+          linkedin: "linkedin.com/company/acme-corp-ma",
+          twitter: "twitter.com/acme_corp_ma"
+        }
+      },
+      inventory: {
+        primary_warehouse: {
+          name: "Entrepôt Principal Casablanca",
+          address: "Zone Industrielle Sidi Maârouf, Casablanca"
+        },
+        additional_warehouses: [
+          {
+            name: "Entrepôt Tanger Med",
+            address: "Zone Franche Tanger Med"
+          }
+        ],
+        valuation_method: "FIFO",
+        stock_thresholds: {
+          alert_level: 100,
+          reorder_level: 50
+        },
+        active_suppliers: 12
+      }
+    };
   }
 };
