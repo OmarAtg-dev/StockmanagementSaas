@@ -120,6 +120,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
       });
 
       setIsEditing(false);
+      onOpenChange(false); // Close the modal after successful update
     } catch (error) {
       toast({
         variant: "destructive",
