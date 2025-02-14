@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -118,7 +117,7 @@ export function SupplierInvoiceDialog({
 
     try {
       const invoiceData = {
-        supplier_id: selectedSupplier, // Make sure we pass the supplier_id
+        supplier_id: selectedSupplier,
         company_id: companyId,
         number: invoice?.number || `SUPINV-${Date.now()}`,
         date: format(date, 'yyyy-MM-dd'),
@@ -126,15 +125,14 @@ export function SupplierInvoiceDialog({
         total_amount: calculateTotal(),
         notes,
         items,
-        status: 'pending', // Add default status
+        status: 'pending',
       };
 
-      if (invoice) {
+      if (invoice?.id) {
         // Update existing invoice
-        const { id, ...updateData } = invoiceData;
         await supabase
           .from('supplier_invoices')
-          .update(updateData)
+          .update(invoiceData)
           .eq('id', invoice.id)
           .select()
           .single();
