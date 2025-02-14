@@ -53,7 +53,7 @@ export function ViewSupplierInvoiceDialog({ open, onOpenChange, invoice }: ViewS
   const { data: enterprise } = useQuery({
     queryKey: ['enterprise'],
     queryFn: async () => {
-      const { data, error } = await mockDataFunctions.getEnterprise();
+      const { data, error } = await mockDataFunctions.getEnterpriseInfo(); // Fix: Changed getEnterprise to getEnterpriseInfo
       if (error) throw error;
       return data;
     },
