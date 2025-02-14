@@ -131,21 +131,18 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
   const handleUpdateDates = (type: 'date' | 'dueDate', newDate: Date | undefined) => {
     if (!editedInvoice || !newDate) return;
 
-    const formattedDate = format(newDate, 'yyyy-MM-dd');
-    console.log(`Updating ${type} to:`, formattedDate); // Debug log
-
     if (type === 'date') {
       setDate(newDate);
-      setEditedInvoice(prev => prev ? {
-        ...prev,
-        date: formattedDate
-      } : null);
+      setEditedInvoice({
+        ...editedInvoice,
+        date: format(newDate, 'yyyy-MM-dd')
+      });
     } else {
       setDueDate(newDate);
-      setEditedInvoice(prev => prev ? {
-        ...prev,
-        due_date: formattedDate
-      } : null);
+      setEditedInvoice({
+        ...editedInvoice,
+        due_date: format(newDate, 'yyyy-MM-dd')
+      });
     }
   };
 
@@ -162,24 +159,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
     if (!editedInvoice || !date || !dueDate) return;
 
     try {
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      const formattedDueDate = format(dueDate, 'yyyy-MM-dd');
-      
-      console.log('Updating invoice with dates:', { 
-        date: formattedDate, 
-        due_date: formattedDueDate 
-      }); // Debug log
-
       const updatedInvoice = {
         ...editedInvoice,
-        date: formattedDate,
-        due_date: formattedDueDate,
+        date: format(date, 'yyyy-MM-dd'),
+        due_date: format(dueDate, 'yyyy-MM-dd'),
         total_amount: editedInvoice.items.reduce((sum, item) => sum + item.amount, 0),
       };
 
-      const result = await mockDataFunctions.updateInvoice(updatedInvoice);
-      console.log('Update result:', result); // Debug log
-
+      await mockDataFunctions.updateInvoice(updatedInvoice);
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
       
       toast({
