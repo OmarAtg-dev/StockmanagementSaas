@@ -31,13 +31,6 @@ import { cn } from "@/lib/utils";
 
 const getSidebarSections = () => [
   {
-    label: "Principal",
-    items: [
-      { title: "Tableau de bord", icon: LayoutDashboard, path: "/" },
-      { title: "Entreprises", icon: Building2, path: "/enterprise" },
-    ]
-  },
-  {
     label: "Commercial",
     items: [
       { title: "Clients", icon: UserCircle, path: "/clients" },
@@ -103,8 +96,43 @@ export function AppSidebar() {
             </div>
           </SidebarGroupLabel>
           <SidebarGroupContent className="py-4">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link 
+                    to="/" 
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-2 rounded-md transition-colors",
+                      "text-sm font-medium",
+                      "hover:bg-accent hover:text-accent-foreground",
+                      location.pathname === "/" && "bg-accent text-accent-foreground"
+                    )}
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Tableau de bord</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link 
+                    to="/enterprise" 
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-2 rounded-md transition-colors",
+                      "text-sm font-medium",
+                      "hover:bg-accent hover:text-accent-foreground",
+                      location.pathname === "/enterprise" && "bg-accent text-accent-foreground"
+                    )}
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span>Entreprises</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+
             {sidebarSections.map((section, index) => (
-              <div key={section.label} className={cn("space-y-1", index > 0 && "mt-6")}>
+              <div key={section.label} className="mt-6">
                 <div className="px-4 py-2">
                   <h2 className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
                     {section.label}
