@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,6 +69,20 @@ interface Client {
   created_at: string;
 }
 
+interface Invoice {
+  id: string;
+  number: string;
+  date: string;
+  due_date: string;
+  total_amount: number;
+  status: 'paid' | 'pending' | 'overdue';
+  client: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
@@ -107,7 +120,7 @@ export const Clients = () => {
       if (!expandedClient) return [];
       const { data, error } = await mockDataFunctions.getInvoices();
       if (error) throw error;
-      return data.filter(invoice => invoice.client?.id === expandedClient);
+      return data.filter(invoice => invoice.client?.id === expandedClient) as Invoice[];
     },
     enabled: !!expandedClient,
   });
@@ -115,10 +128,14 @@ export const Clients = () => {
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       if (!profile) throw new Error("Non authentifié");
-      return mockDataFunctions.createClient({
-        ...data,
+      const clientData = {
+        name: data.name,
+        email: data.email || '',
+        phone: data.phone || '',
+        address: data.address || '',
         company_id: profile.company_id,
-      });
+      };
+      return mockDataFunctions.createClient(clientData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -141,7 +158,13 @@ export const Clients = () => {
   const updateMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       if (!clientToEdit) throw new Error("Aucun client sélectionné");
-      return mockDataFunctions.updateClient(clientToEdit.id, data);
+      const updateData = {
+        name: data.name,
+        email: data.email || '',
+        phone: data.phone || '',
+        address: data.address || '',
+      };
+      return mockDataFunctions.updateClient(clientToEdit.id, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -504,6 +527,7 @@ export const Clients = () => {
           open={isInvoiceDialogOpen}
           onOpenChange={setIsInvoiceDialogOpen}
           clientId={selectedClientId}
+          companyId={profile?.company_id || ''}
         />
       </div>
     </DashboardLayout>
