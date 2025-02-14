@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Pencil, Trash2, Receipt } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Receipt, ChevronRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -21,6 +20,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InvoiceDialog } from "@/components/invoices/InvoiceDialog";
 import { mockDataFunctions } from "@/utils/mockData";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +62,27 @@ interface Client {
   created_at: string;
 }
 
+interface ClientInvoice {
+  id: string;
+  number: string;
+  date: string;
+  due_date: string;
+  total_amount: number;
+  status: string;
+  client: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  items: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    amount: number;
+  }>;
+}
+
 const clientFormSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   email: z.string().email("Email invalide").nullable(),
@@ -71,6 +94,7 @@ type ClientFormData = z.infer<typeof clientFormSchema>;
 
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const { profile } = useAuth();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -93,20 +117,23 @@ const Clients = () => {
   const { data: clients, isLoading, error } = useQuery({
     queryKey: ['clients', profile?.company_id],
     queryFn: async () => {
-      if (!profile?.company_id && profile?.role !== 'super_admin') {
-        throw new Error("Aucune entreprise associée à cet utilisateur");
-      }
-
       const { data, error } = await mockDataFunctions.getClients();
-
-      if (error) {
-        console.error("Error fetching clients:", error);
-        throw error;
-      }
-
+      if (error) throw error;
       return data;
     },
-    enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
+  });
+
+  const { data: clientInvoices, isLoading: isLoadingInvoices } = useQuery({
+    queryKey: ['invoices', expandedClient],
+    queryFn: async () => {
+      if (!expandedClient) return [];
+      const { data, error } = await mockDataFunctions.getInvoices();
+      if (error) throw error;
+      return data.filter((invoice: ClientInvoice) => 
+        invoice.client?.id === expandedClient
+      );
+    },
+    enabled: !!expandedClient,
   });
 
   const createClientMutation = useMutation({
@@ -280,6 +307,7 @@ const Clients = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
@@ -291,7 +319,7 @@ const Clients = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <div className="space-y-2">
                       {[...Array(5)].map((_, i) => (
                         <Skeleton key={i} className="h-8 w-full" />
@@ -301,46 +329,118 @@ const Clients = () => {
                 </TableRow>
               ) : filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Aucun client trouvé
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredClients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">
-                      {client.name}
-                    </TableCell>
-                    <TableCell>{client.email || '-'}</TableCell>
-                    <TableCell>{client.phone || '-'}</TableCell>
-                    <TableCell>{client.address || '-'}</TableCell>
-                    <TableCell>
-                      {new Date(client.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleCreateInvoice(client.id)}
-                      >
-                        <Receipt className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleEditClient(client)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDeleteClient(client)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    <TableRow key={`row-${client.id}`}>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExpandedClient(expandedClient === client.id ? null : client.id)}
+                        >
+                          {expandedClient === client.id ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {client.name}
+                      </TableCell>
+                      <TableCell>{client.email || '-'}</TableCell>
+                      <TableCell>{client.phone || '-'}</TableCell>
+                      <TableCell>{client.address || '-'}</TableCell>
+                      <TableCell>
+                        {format(new Date(client.created_at), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setSelectedClientId(client.id);
+                            setIsInvoiceDialogOpen(true);
+                          }}
+                        >
+                          <Receipt className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditClient(client)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteClient(client)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {expandedClient === client.id && (
+                      <TableRow key={`expanded-${client.id}`}>
+                        <TableCell colSpan={7} className="bg-muted/50 p-4">
+                          <div className="space-y-4">
+                            <h3 className="font-semibold">Historique des factures</h3>
+                            {isLoadingInvoices ? (
+                              <div className="space-y-2">
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-12 w-full" />
+                              </div>
+                            ) : !clientInvoices?.length ? (
+                              <p className="text-muted-foreground">
+                                Aucune facture trouvée pour ce client.
+                              </p>
+                            ) : (
+                              <div className="space-y-2">
+                                {clientInvoices.map((invoice: ClientInvoice) => (
+                                  <div
+                                    key={invoice.id}
+                                    className="flex items-center justify-between p-4 bg-background rounded-lg border"
+                                  >
+                                    <div className="space-y-1">
+                                      <p className="font-medium">
+                                        Facture N° {invoice.number}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {format(new Date(invoice.date), 'PP', { locale: fr })}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                      <p className="font-medium">
+                                        {new Intl.NumberFormat('fr-FR', {
+                                          style: 'currency',
+                                          currency: 'MAD'
+                                        }).format(invoice.total_amount)}
+                                      </p>
+                                      <Badge variant={
+                                        invoice.status === 'paid' ? 'default' :
+                                        invoice.status === 'pending' ? 'secondary' :
+                                        'destructive'
+                                      }>
+                                        {invoice.status === 'paid' ? 'Payée' :
+                                         invoice.status === 'pending' ? 'En attente' :
+                                         'En retard'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 ))
               )}
             </TableBody>
