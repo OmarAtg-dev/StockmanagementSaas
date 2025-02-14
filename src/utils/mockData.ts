@@ -23,6 +23,27 @@ export const mockProfiles = [
   }
 ];
 
+const mockSuppliers = [
+  {
+    id: '1',
+    name: 'Supplier A',
+    email: 'suppliera@example.com',
+    phone: '+33 1 11 11 11 11',
+    address: '789 Boulevard Haussmann',
+    contact_person: 'John Doe',
+    status: 'active'
+  },
+  {
+    id: '2',
+    name: 'Supplier B',
+    email: 'supplierb@example.com',
+    phone: '+33 2 22 22 22 22',
+    address: '321 Rue de Rivoli',
+    contact_person: 'Jane Smith',
+    status: 'active'
+  }
+];
+
 // Mock clients data store
 let mockClients = [
   { 
@@ -95,9 +116,7 @@ let mockSupplierInvoices = [
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     total_amount: 1500,
     status: 'paid',
-    supplier: {
-      name: 'Supplier A'
-    }
+    supplier: mockSuppliers[0] // Reference actual supplier
   },
   {
     id: 'SINV002',
@@ -106,9 +125,7 @@ let mockSupplierInvoices = [
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     total_amount: 2000,
     status: 'pending',
-    supplier: {
-      name: 'Supplier B'
-    }
+    supplier: mockSuppliers[1] // Reference actual supplier
   }
 ];
 
@@ -319,26 +336,7 @@ export const mockDataFunctions = {
   getSuppliers: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
-      data: [
-        {
-          id: '1',
-          name: 'Supplier A',
-          email: 'suppliera@example.com',
-          phone: '+33 1 11 11 11 11',
-          address: '789 Boulevard Haussmann',
-          contact_person: 'John Doe',
-          status: 'active'
-        },
-        {
-          id: '2',
-          name: 'Supplier B',
-          email: 'supplierb@example.com',
-          phone: '+33 2 22 22 22 22',
-          address: '321 Rue de Rivoli',
-          contact_person: 'Jane Smith',
-          status: 'active'
-        }
-      ],
+      data: mockSuppliers,
       error: null
     };
   },
@@ -389,31 +387,35 @@ export const mockDataFunctions = {
 
   createInvoice: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    const newInvoice = {
-      id: data.id || `INV${Date.now()}`,
-      ...data,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      status: data.status || 'pending'
-    };
+    let newInvoice;
 
     if (data.number?.startsWith('SUPINV-')) {
       // This is a supplier invoice
-      mockSupplierInvoices.push({
-        ...newInvoice,
-        supplier: {
-          name: data.supplier_name || 'Unknown Supplier'
-        }
-      });
+      const supplier = mockSuppliers.find(s => s.id === data.supplier_id);
+      if (!supplier) {
+        throw new Error('Supplier not found');
+      }
+
+      newInvoice = {
+        ...data,
+        id: `SINV${Date.now()}`,
+        supplier, // Include the full supplier object
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      mockSupplierInvoices.push(newInvoice);
     } else {
-      // This is a regular invoice
+      // Handle regular invoices
+      newInvoice = {
+        ...data,
+        id: `INV${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       mockInvoices.push(newInvoice);
     }
 
-    return {
-      data: [newInvoice],
-      error: null
-    };
+    return { data: newInvoice, error: null };
   },
 
   createInvoiceItems: async (items: {
