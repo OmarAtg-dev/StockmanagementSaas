@@ -43,6 +43,32 @@ let mockClients = [
   }
 ];
 
+// Mock invoice items data store
+let mockInvoiceItems = [
+  {
+    id: '1',
+    invoice_id: 'INV001',
+    product_id: '101',
+    description: 'Laptop Dell XPS 13',
+    quantity: 2,
+    unit_price: 25000,
+    amount: 50000,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: '2',
+    invoice_id: 'INV001',
+    product_id: '102',
+    description: 'Souris sans fil',
+    quantity: 3,
+    unit_price: 300,
+    amount: 900,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 // Mock invoices data store
 let mockInvoices = [
   { 
@@ -50,26 +76,11 @@ let mockInvoices = [
     number: 'INV001',
     date: new Date().toISOString(),
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    total_amount: 150,
+    total_amount: 50900, // Sum of all items
     status: 'pending',
     client_id: '1',
     company_id: '1',
     notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
-// Mock invoice items data store
-let mockInvoiceItems = [
-  {
-    id: '1',
-    invoice_id: 'INV001',
-    product_id: '101',
-    description: 'Product X',
-    quantity: 1,
-    unit_price: 150,
-    amount: 150,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
