@@ -88,7 +88,8 @@ const SupplierInvoices = () => {
     setIsCreateDialogOpen(true);
   };
 
-  const handleEditInvoice = (invoice: SupplierInvoice) => {
+  const handleEditInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click event
     setInvoiceToEdit(invoice);
     setIsEditDialogOpen(true);
   };
@@ -97,19 +98,26 @@ const SupplierInvoices = () => {
     setSelectedInvoice(invoice);
   };
 
-  const handleDeleteInvoice = (invoice: SupplierInvoice) => {
+  const handleDeleteInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click event
     setInvoiceToDelete(invoice);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleUpdateSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+  const handleUpdateSuccess = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+    // Reset all relevant state
+    setSelectedInvoice(null);
+    setInvoiceToEdit(null);
+    setIsEditDialogOpen(false);
+    setIsCreateDialogOpen(false);
   };
 
   const confirmDelete = async () => {
     if (!invoiceToDelete) return;
 
     try {
+      await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
       toast({
         title: "Facture supprimée",
         description: "La facture a été supprimée avec succès.",
@@ -353,26 +361,27 @@ const SupplierInvoices = () => {
                   <TableRow 
                     key={invoice.id}
                     className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleViewInvoice(invoice)}
                   >
-                    <TableCell className="font-medium" onClick={() => handleViewInvoice(invoice)}>
+                    <TableCell className="font-medium">
                       {invoice.number}
                     </TableCell>
-                    <TableCell onClick={() => handleViewInvoice(invoice)}>
+                    <TableCell>
                       {invoice.supplier.name}
                     </TableCell>
-                    <TableCell onClick={() => handleViewInvoice(invoice)}>
+                    <TableCell>
                       {format(new Date(invoice.date), "PP", { locale: fr })}
                     </TableCell>
-                    <TableCell onClick={() => handleViewInvoice(invoice)}>
+                    <TableCell>
                       {format(new Date(invoice.due_date), "PP", { locale: fr })}
                     </TableCell>
-                    <TableCell onClick={() => handleViewInvoice(invoice)}>
+                    <TableCell>
                       {new Intl.NumberFormat('fr-FR', { 
                         style: 'currency', 
                         currency: 'MAD'
                       }).format(invoice.total_amount)}
                     </TableCell>
-                    <TableCell onClick={() => handleViewInvoice(invoice)}>
+                    <TableCell>
                       {getStatusBadge(invoice.status)}
                     </TableCell>
                     <TableCell>
@@ -383,21 +392,15 @@ const SupplierInvoices = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewInvoice(invoice)}>
+                          <DropdownMenuItem onClick={(e) => handleViewInvoice(invoice)}>
                             Voir les détails
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditInvoice(invoice);
-                          }}>
+                          <DropdownMenuItem onClick={(e) => handleEditInvoice(invoice, e)}>
                             Modifier
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteInvoice(invoice);
-                            }}
+                            onClick={(e) => handleDeleteInvoice(invoice, e)}
                             className="text-destructive"
                           >
                             Supprimer
