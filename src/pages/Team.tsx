@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -100,12 +101,18 @@ const Team = () => {
       full_name: string;
       role: string;
     }) => {
-      await mockDataFunctions.updateProfile({
-        id,
-        username: email,
-        full_name,
-        role
-      });
+      console.log("Updating user with data:", { id, email, full_name, role });
+      // Find and update the user in mockProfiles
+      const userIndex = mockProfiles.findIndex(user => user.id === id);
+      if (userIndex !== -1) {
+        mockProfiles[userIndex] = {
+          ...mockProfiles[userIndex],
+          username: email,
+          full_name,
+          role,
+          updated_at: new Date().toISOString()
+        };
+      }
       return { success: true };
     },
     onSuccess: () => {
@@ -127,12 +134,12 @@ const Team = () => {
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
-      const mockResult = await new Promise<{ success: boolean }>((resolve) => {
-        setTimeout(() => {
-          resolve({ success: true });
-        }, 500);
-      });
-      return mockResult;
+      // Remove user from mockProfiles
+      const index = mockProfiles.findIndex(user => user.id === userId);
+      if (index !== -1) {
+        mockProfiles.splice(index, 1);
+      }
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
