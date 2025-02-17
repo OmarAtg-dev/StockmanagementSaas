@@ -232,7 +232,7 @@ export function AppSidebar() {
                                       to={subItem.path}
                                       className={cn(
                                         "flex items-center gap-3",
-                                        "w-full px-4 py-2.5 pl-11",
+                                        "w-full px-4 py-2.5 pl-8",
                                         "rounded-md text-sm",
                                         "transition-all duration-200",
                                         "hover:bg-accent/40 hover:text-accent-foreground",
