@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InventoryItem {
   id: string;
@@ -42,6 +43,8 @@ interface ExpectedInventoryItem {
   status: string;
   notes: string | null;
 }
+
+const SECURITY_STOCK_THRESHOLD = 5;
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,6 +108,8 @@ const Inventory = () => {
     item.product.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) ?? [];
 
+  const lowStockItems = inventory?.filter(item => item.quantity <= SECURITY_STOCK_THRESHOLD) ?? [];
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -118,6 +123,18 @@ const Inventory = () => {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const renderStockCell = (quantity: number) => {
+    if (quantity <= SECURITY_STOCK_THRESHOLD) {
+      return (
+        <div className="flex items-center gap-2 text-destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <span>{quantity}</span>
+        </div>
+      );
+    }
+    return quantity;
   };
 
   return (
@@ -135,6 +152,15 @@ const Inventory = () => {
             Ajouter un article
           </button>
         </div>
+
+        {lowStockItems.length > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {lowStockItems.length} article(s) sont en stock de sécurité (≤ {SECURITY_STOCK_THRESHOLD} unités)
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-4">
           <div className="relative w-full max-w-sm">
@@ -189,7 +215,7 @@ const Inventory = () => {
                             </TableCell>
                             <TableCell className="font-medium">{item.product.name}</TableCell>
                             <TableCell>{item.product.category}</TableCell>
-                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>{renderStockCell(item.quantity)}</TableCell>
                             <TableCell>{item.location || '-'}</TableCell>
                             <TableCell>
                               {format(new Date(item.last_updated), "dd/MM/yyyy", { locale: fr })}
@@ -247,7 +273,7 @@ const Inventory = () => {
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.product.name}</TableCell>
                           <TableCell>{item.product.category}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>{renderStockCell(item.quantity)}</TableCell>
                           <TableCell>{item.location || '-'}</TableCell>
                           <TableCell>
                             {format(new Date(item.last_updated), "dd/MM/yyyy", { locale: fr })}
