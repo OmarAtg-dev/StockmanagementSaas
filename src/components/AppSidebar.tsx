@@ -8,6 +8,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
@@ -34,9 +37,15 @@ const getSidebarSections = () => [
     label: "Commercial",
     items: [
       { title: "Clients", icon: UserCircle, path: "/clients" },
-      { title: "Factures", icon: Receipt, path: "/invoices" },
+      {
+        title: "Facture",
+        icon: Receipt,
+        subItems: [
+          { title: "Factures", path: "/invoices" },
+          { title: "Factures fournisseurs", path: "/supplier-invoices" }
+        ]
+      },
       { title: "Fournisseurs", icon: Truck, path: "/suppliers" },
-      { title: "Factures fournisseurs", icon: FileText, path: "/supplier-invoices" },
     ]
   },
   {
@@ -141,20 +150,47 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {section.items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <Link 
-                          to={item.path} 
-                          className={cn(
-                            "flex items-center gap-3 px-4 py-2 rounded-md transition-colors",
-                            "text-sm font-medium",
-                            "hover:bg-accent hover:text-accent-foreground",
-                            location.pathname === item.path && "bg-accent text-accent-foreground"
-                          )}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
+                      {'subItems' in item ? (
+                        <>
+                          <SidebarMenuButton
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-2 rounded-md transition-colors w-full",
+                              "text-sm font-medium",
+                              "hover:bg-accent hover:text-accent-foreground",
+                            )}
+                          >
+                            <Receipt className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </SidebarMenuButton>
+                          <SidebarMenuSub>
+                            {item.subItems.map((subItem) => (
+                              <SidebarMenuSubItem key={subItem.title}>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={location.pathname === subItem.path}
+                                >
+                                  <Link to={subItem.path}>{subItem.title}</Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            ))}
+                          </SidebarMenuSub>
+                        </>
+                      ) : (
+                        <SidebarMenuButton asChild>
+                          <Link 
+                            to={item.path} 
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-2 rounded-md transition-colors",
+                              "text-sm font-medium",
+                              "hover:bg-accent hover:text-accent-foreground",
+                              location.pathname === item.path && "bg-accent text-accent-foreground"
+                            )}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      )}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
