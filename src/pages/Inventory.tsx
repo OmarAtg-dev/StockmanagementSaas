@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import {
@@ -80,7 +79,19 @@ const Inventory = () => {
         return [];
       }
 
-      return [];
+      const { data, error } = await mockDataFunctions.getExpectedInventory();
+
+      if (error) {
+        console.error("Error fetching expected inventory:", error);
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger l'inventaire attendu",
+        });
+        throw error;
+      }
+
+      return data as ExpectedInventoryItem[];
     },
     enabled: !!profile?.company_id
   });

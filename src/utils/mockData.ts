@@ -316,6 +316,39 @@ export const mockDataFunctions = {
     };
   },
 
+  getExpectedInventory: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: [
+        {
+          id: 'exp1',
+          product: { name: 'Nouveau Smartphone', category: 'Electronics' },
+          quantity: 50,
+          expected_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+          status: 'confirmed',
+          notes: 'Livraison prévue la semaine prochaine'
+        },
+        {
+          id: 'exp2',
+          product: { name: 'Écouteurs Sans Fil', category: 'Electronics' },
+          quantity: 100,
+          expected_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+          status: 'pending',
+          notes: 'En attente de confirmation du fournisseur'
+        },
+        {
+          id: 'exp3',
+          product: { name: 'Bureau Ergonomique', category: 'Office' },
+          quantity: 25,
+          expected_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
+          status: 'delayed',
+          notes: 'Retard dû aux problèmes de transport'
+        }
+      ],
+      error: null
+    };
+  },
+
   getSuppliers: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
