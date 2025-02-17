@@ -154,13 +154,34 @@ export function AppSidebar() {
                         <>
                           <SidebarMenuButton
                             className={cn(
-                              "flex items-center gap-3 px-4 py-2 rounded-md transition-colors w-full",
+                              "flex items-center justify-between px-4 py-2 rounded-md transition-colors w-full",
                               "text-sm font-medium",
                               "hover:bg-accent hover:text-accent-foreground",
+                              "group",
+                              (location.pathname === "/invoices" || location.pathname === "/supplier-invoices") && 
+                              "bg-accent/50 text-accent-foreground"
                             )}
                           >
-                            <Receipt className="h-4 w-4" />
-                            <span>{item.title}</span>
+                            <div className="flex items-center gap-3">
+                              <Receipt className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </div>
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 12 12"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="transform transition-transform duration-200 group-data-[state=open]:rotate-180"
+                            >
+                              <path
+                                d="M2 4L6 8L10 4"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
                           </SidebarMenuButton>
                           <SidebarMenuSub>
                             {item.subItems.map((subItem) => (
@@ -169,7 +190,13 @@ export function AppSidebar() {
                                   asChild
                                   isActive={location.pathname === subItem.path}
                                 >
-                                  <Link to={subItem.path}>{subItem.title}</Link>
+                                  <Link 
+                                    to={subItem.path}
+                                    className="flex items-center gap-2 py-1"
+                                  >
+                                    <span className="h-1 w-1 rounded-full bg-current opacity-40"></span>
+                                    {subItem.title}
+                                  </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
                             ))}
