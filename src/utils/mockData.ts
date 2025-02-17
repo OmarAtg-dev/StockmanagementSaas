@@ -112,6 +112,26 @@ let mockSupplierInvoices = [
   }
 ];
 
+// Add mock products storage
+let mockProducts = [
+  { 
+    id: '101', 
+    name: 'Product X', 
+    price: 25,
+    category: 'Electronics',
+    stock: 100,
+    status: 'En stock'
+  },
+  { 
+    id: '102', 
+    name: 'Product Y', 
+    price: 50,
+    category: 'Office',
+    stock: 75,
+    status: 'En stock'
+  }
+];
+
 export const mockAuthContext = {
   session: {
     access_token: "mock_access_token",
@@ -271,24 +291,7 @@ export const mockDataFunctions = {
   getProducts: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
-      data: [
-        { 
-          id: '101', 
-          name: 'Product X', 
-          price: 25,
-          category: 'Electronics',
-          stock: 100,
-          status: 'En stock'
-        },
-        { 
-          id: '102', 
-          name: 'Product Y', 
-          price: 50,
-          category: 'Office',
-          stock: 75,
-          status: 'En stock'
-        }
-      ],
+      data: mockProducts,
       error: null
     };
   },
@@ -302,11 +305,13 @@ export const mockDataFunctions = {
     status: string;
   }, "id">) => {
     await new Promise(resolve => setTimeout(resolve, 300));
+    const newProduct = {
+      id: `PROD${Date.now()}`,
+      ...data
+    };
+    mockProducts.push(newProduct);
     return {
-      data: {
-        id: `PROD${Date.now()}`,
-        ...data
-      },
+      data: newProduct,
       error: null
     };
   },
@@ -320,6 +325,10 @@ export const mockDataFunctions = {
     status: string;
   }) => {
     await new Promise(resolve => setTimeout(resolve, 300));
+    const index = mockProducts.findIndex(p => p.id === data.id);
+    if (index !== -1) {
+      mockProducts[index] = data;
+    }
     return {
       data,
       error: null
@@ -328,6 +337,7 @@ export const mockDataFunctions = {
 
   deleteProduct: async (id: string) => {
     await new Promise(resolve => setTimeout(resolve, 300));
+    mockProducts = mockProducts.filter(p => p.id !== id);
     return {
       error: null
     };
