@@ -96,21 +96,35 @@ const Companies = () => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const navigate = useNavigate();
 
-  // Fetch companies
   const { data: companies, isLoading } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("companies_with_users")
+      const { data: companiesData, error: companiesError } = await supabase
+        .from("companies")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as Company[];
+      if (companiesError) throw companiesError;
+
+      const { data: userCounts, error: userCountsError } = await supabase
+        .from("company_users_with_roles")
+        .select("company_id, count")
+        .select("company_id")
+        .count();
+
+      if (userCountsError) throw userCountsError;
+
+      const userCountMap = new Map(
+        userCounts.map(({ company_id, count }) => [company_id, count])
+      );
+
+      return companiesData.map(company => ({
+        ...company,
+        user_count: userCountMap.get(company.id) || 0
+      })) as Company[];
     },
   });
 
-  // Create company mutation
   const createCompany = useMutation({
     mutationFn: async (newCompany: { name: string; subscription_status: string }) => {
       const { data, error } = await supabase
@@ -128,6 +142,7 @@ const Companies = () => {
         title: "Entreprise créée",
         description: "L'entreprise a été créée avec succès",
       });
+      setIsCreateOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -138,7 +153,6 @@ const Companies = () => {
     },
   });
 
-  // Update company mutation
   const updateCompany = useMutation({
     mutationFn: async ({
       id,
@@ -164,6 +178,7 @@ const Companies = () => {
         title: "Entreprise mise à jour",
         description: "L'entreprise a été mise à jour avec succès",
       });
+      setEditingCompany(null);
     },
     onError: (error: Error) => {
       toast({
@@ -174,7 +189,6 @@ const Companies = () => {
     },
   });
 
-  // Delete company mutation
   const deleteCompany = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("companies").delete().eq("id", id);
