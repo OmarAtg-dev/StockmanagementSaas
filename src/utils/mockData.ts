@@ -299,16 +299,51 @@ export const mockDataFunctions = {
       data: [
         {
           id: '1',
-          product: { name: 'Product X', category: 'Electronics' },
-          quantity: 100,
-          location: 'Warehouse A',
+          product: { name: 'Ordinateur Portable', category: 'Électronique' },
+          quantity: 3,
+          location: 'Entrepôt A',
           last_updated: new Date().toISOString()
         },
         {
           id: '2',
-          product: { name: 'Product Y', category: 'Office' },
-          quantity: 75,
-          location: 'Warehouse B',
+          product: { name: 'Souris Sans Fil', category: 'Accessoires' },
+          quantity: 15,
+          location: 'Entrepôt B',
+          last_updated: new Date().toISOString()
+        },
+        {
+          id: '3',
+          product: { name: 'Écran 27"', category: 'Électronique' },
+          quantity: 4,
+          location: 'Entrepôt A',
+          last_updated: new Date().toISOString()
+        },
+        {
+          id: '4',
+          product: { name: 'Clavier Mécanique', category: 'Accessoires' },
+          quantity: 2,
+          location: 'Entrepôt B',
+          last_updated: new Date().toISOString()
+        },
+        {
+          id: '5',
+          product: { name: 'Casque Audio', category: 'Audio' },
+          quantity: 8,
+          location: 'Entrepôt C',
+          last_updated: new Date().toISOString()
+        },
+        {
+          id: '6',
+          product: { name: 'Webcam HD', category: 'Accessoires' },
+          quantity: 5,
+          location: 'Entrepôt A',
+          last_updated: new Date().toISOString()
+        },
+        {
+          id: '7',
+          product: { name: 'Disque SSD 1TB', category: 'Stockage' },
+          quantity: 1,
+          location: 'Entrepôt B',
           last_updated: new Date().toISOString()
         }
       ],
