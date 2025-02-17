@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserForm } from "@/components/company-users/UserForm";
 import { mockDataFunctions, mockProfiles } from "@/utils/mockData";
+import { UserRole } from "@/types/auth";
 
 const Team = () => {
   const { toast } = useToast();
@@ -69,6 +70,20 @@ const Team = () => {
       if (result.error) {
         throw result.error;
       }
+
+      // After signup, add the user to mockProfiles with the correct role
+      const newUser = {
+        id: String(mockProfiles.length + 1),
+        user_id: String(mockProfiles.length + 1),
+        company_id: profile.company_id,
+        username: data.email,
+        full_name: data.full_name,
+        role: data.role as UserRole,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      mockProfiles.push(newUser);
+
       return result.data;
     },
     onSuccess: () => {
@@ -102,14 +117,13 @@ const Team = () => {
       role: string;
     }) => {
       console.log("Updating user with data:", { id, email, full_name, role });
-      // Find and update the user in mockProfiles
       const userIndex = mockProfiles.findIndex(user => user.id === id);
       if (userIndex !== -1) {
         mockProfiles[userIndex] = {
           ...mockProfiles[userIndex],
           username: email,
           full_name,
-          role,
+          role: role as UserRole,
           updated_at: new Date().toISOString()
         };
       }
