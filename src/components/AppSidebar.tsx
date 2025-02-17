@@ -111,8 +111,10 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="px-4">
-            <div className="flex items-center gap-2 py-6 border-b">
-              <span className="text-2xl font-bold text-primary">StockSy</span>
+            <div className="flex items-center gap-2 py-4 border-b border-border/40">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                StockSy
+              </span>
             </div>
           </SidebarGroupLabel>
           <SidebarGroupContent className="py-4">
@@ -122,10 +124,10 @@ export function AppSidebar() {
                   <Link 
                     to="/" 
                     className={cn(
-                      "flex items-center gap-3 px-4 py-2 rounded-md transition-colors",
+                      "flex items-center gap-3 px-4 py-2.5 rounded-md transition-all duration-200",
                       "text-sm font-medium",
-                      "hover:bg-accent hover:text-accent-foreground",
-                      location.pathname === "/" && "bg-accent text-accent-foreground"
+                      "hover:bg-accent/70 hover:text-accent-foreground hover:translate-x-1",
+                      location.pathname === "/" && "bg-accent text-accent-foreground translate-x-1 shadow-sm"
                     )}
                   >
                     <LayoutDashboard className="h-4 w-4" />
@@ -138,10 +140,10 @@ export function AppSidebar() {
                   <Link 
                     to="/enterprise" 
                     className={cn(
-                      "flex items-center gap-3 px-4 py-2 rounded-md transition-colors",
+                      "flex items-center gap-3 px-4 py-2.5 rounded-md transition-all duration-200",
                       "text-sm font-medium",
-                      "hover:bg-accent hover:text-accent-foreground",
-                      location.pathname === "/enterprise" && "bg-accent text-accent-foreground"
+                      "hover:bg-accent/70 hover:text-accent-foreground hover:translate-x-1",
+                      location.pathname === "/enterprise" && "bg-accent text-accent-foreground translate-x-1 shadow-sm"
                     )}
                   >
                     <Building2 className="h-4 w-4" />
@@ -152,7 +154,7 @@ export function AppSidebar() {
             </SidebarMenu>
 
             {sidebarSections.map((section, index) => (
-              <div key={section.label} className="mt-6">
+              <div key={section.label} className="mt-8">
                 <div className="px-4 py-2">
                   <h2 className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
                     {section.label}
@@ -167,12 +169,12 @@ export function AppSidebar() {
                             onClick={() => toggleItem(item.title)}
                             data-state={openItems.includes(item.title) ? 'open' : 'closed'}
                             className={cn(
-                              "flex items-center justify-between px-4 py-2 rounded-md transition-colors w-full",
+                              "flex items-center justify-between px-4 py-2.5 rounded-md transition-all duration-200 w-full",
                               "text-sm font-medium",
-                              "hover:bg-accent hover:text-accent-foreground",
+                              "hover:bg-accent/70 hover:text-accent-foreground",
                               "group",
                               (location.pathname === "/invoices" || location.pathname === "/supplier-invoices") && 
-                              "bg-accent/50 text-accent-foreground"
+                              "bg-accent text-accent-foreground shadow-sm"
                             )}
                           >
                             <div className="flex items-center gap-3">
@@ -185,7 +187,10 @@ export function AppSidebar() {
                               viewBox="0 0 12 12"
                               fill="none"
                               xmlns="http://www.w3.org/2000/svg"
-                              className="transform transition-transform duration-200 group-data-[state=open]:rotate-180"
+                              className={cn(
+                                "transform transition-transform duration-300",
+                                openItems.includes(item.title) ? "rotate-180" : ""
+                              )}
                             >
                               <path
                                 d="M2 4L6 8L10 4"
@@ -204,16 +209,16 @@ export function AppSidebar() {
                                     <Link 
                                       to={subItem.path}
                                       className={cn(
-                                        "flex items-center gap-2 py-1.5 pl-11 w-full transition-colors",
-                                        "hover:bg-accent/50 hover:text-accent-foreground rounded-md",
+                                        "flex items-center gap-2 py-2 pl-11 w-full transition-all duration-200",
+                                        "hover:bg-accent/40 hover:text-accent-foreground rounded-md hover:translate-x-1",
                                         location.pathname === subItem.path && 
-                                        "bg-accent text-accent-foreground font-medium"
+                                        "bg-accent/60 text-accent-foreground font-medium translate-x-1 shadow-sm"
                                       )}
                                     >
                                       <span className={cn(
-                                        "h-1 w-1 rounded-full",
+                                        "h-1.5 w-1.5 rounded-full transition-all duration-200",
                                         location.pathname === subItem.path 
-                                          ? "bg-current"
+                                          ? "bg-current scale-110"
                                           : "bg-current opacity-40"
                                       )}/>
                                       {subItem.title}
@@ -229,10 +234,10 @@ export function AppSidebar() {
                           <Link 
                             to={item.path} 
                             className={cn(
-                              "flex items-center gap-3 px-4 py-2 rounded-md transition-colors",
+                              "flex items-center gap-3 px-4 py-2.5 rounded-md transition-all duration-200",
                               "text-sm font-medium",
-                              "hover:bg-accent hover:text-accent-foreground",
-                              location.pathname === item.path && "bg-accent text-accent-foreground"
+                              "hover:bg-accent/70 hover:text-accent-foreground hover:translate-x-1",
+                              location.pathname === item.path && "bg-accent text-accent-foreground translate-x-1 shadow-sm"
                             )}
                           >
                             <item.icon className="h-4 w-4" />
@@ -246,7 +251,7 @@ export function AppSidebar() {
               </div>
             ))}
             
-            <div className="mt-6">
+            <div className="mt-8">
               <div className="px-4 py-2">
                 <h2 className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
                   Compte
@@ -257,8 +262,9 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     onClick={handleSignOut}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-2 w-full rounded-md transition-colors",
-                      "text-sm font-medium text-destructive hover:bg-destructive/10"
+                      "flex items-center gap-3 px-4 py-2.5 w-full rounded-md transition-all duration-200",
+                      "text-sm font-medium text-destructive",
+                      "hover:bg-destructive/10 hover:translate-x-1"
                     )}
                   >
                     <LogOut className="h-4 w-4" />
