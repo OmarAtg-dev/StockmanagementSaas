@@ -6,16 +6,13 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
-  Area,
-  AreaChart,
-  Line,
-  LineChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  RadialBarChart,
+  RadialBar,
+  Legend,
   ResponsiveContainer,
-  XAxis,
-  YAxis,
 } from "recharts";
 import {
   Select,
@@ -27,99 +24,82 @@ import {
 import { useState } from "react";
 
 const salesData = [
-  { month: "Jan", sales: 4000 },
-  { month: "Fév", sales: 3000 },
-  { month: "Mar", sales: 5000 },
-  { month: "Avr", sales: 4600 },
-  { month: "Mai", sales: 6800 },
-  { month: "Juin", sales: 7000 },
+  { name: "Électronique", value: 4000 },
+  { name: "Mode", value: 3000 },
+  { name: "Maison", value: 2000 },
+  { name: "Sport", value: 1500 },
+  { name: "Autres", value: 1000 },
 ];
 
-const stockData = [
-  { category: "Électronique", stock: 145 },
-  { category: "Accessoires", stock: 235 },
-  { category: "Gadgets", stock: 187 },
-  { category: "Téléphones", stock: 156 },
-  { category: "Ordinateurs", stock: 112 },
+const performanceData = [
+  { name: "Ventes", value: 85, fill: "#2DD4BF" },
+  { name: "Objectifs", value: 75, fill: "#FB923C" },
+  { name: "Croissance", value: 65, fill: "#A78BFA" },
+  { name: "Satisfaction", value: 90, fill: "#34D399" },
 ];
 
-type ChartType = "area" | "line" | "bar";
+const COLORS = ["#2DD4BF", "#FB923C", "#A78BFA", "#34D399", "#F472B6"];
 
 export function DashboardCharts() {
-  const [salesChartType, setSalesChartType] = useState<ChartType>("area");
-  const [stockChartType, setStockChartType] = useState<ChartType>("bar");
+  const [chartType, setChartType] = useState<"pie" | "radial">("pie");
 
-  const renderChart = (
-    data: typeof salesData | typeof stockData,
-    chartType: ChartType,
-    dataKey: string,
-    name: string,
-    color: string,
-    xAxisKey: string
-  ) => {
-    const ChartComponent = {
-      area: AreaChart,
-      line: LineChart,
-      bar: BarChart,
-    }[chartType];
+  const renderPieChart = () => (
+    <PieChart>
+      <Pie
+        data={salesData}
+        cx="50%"
+        cy="50%"
+        innerRadius={60}
+        outerRadius={100}
+        paddingAngle={5}
+        dataKey="value"
+      >
+        {salesData.map((entry, index) => (
+          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        ))}
+      </Pie>
+      <ChartTooltip content={<ChartTooltipContent />} />
+      <Legend />
+    </PieChart>
+  );
 
-    const DataComponent = {
-      area: (
-        <Area
-          type="monotone"
-          dataKey={dataKey}
-          name={name}
-          stroke={color}
-          fill={color}
-          fillOpacity={0.2}
-        />
-      ),
-      line: (
-        <Line
-          type="monotone"
-          dataKey={dataKey}
-          name={name}
-          stroke={color}
-          strokeWidth={2}
-        />
-      ),
-      bar: (
-        <Bar
-          dataKey={dataKey}
-          name={name}
-          fill={color}
-          radius={[4, 4, 0, 0]}
-        />
-      ),
-    }[chartType];
-
-    return (
-      <ChartComponent data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey={xAxisKey} />
-        <YAxis />
-        <ChartTooltip content={<ChartTooltipContent />} />
-        {DataComponent}
-      </ChartComponent>
-    );
-  };
+  const renderRadialChart = () => (
+    <RadialBarChart
+      innerRadius={20}
+      outerRadius={140}
+      barSize={20}
+      data={performanceData}
+    >
+      <RadialBar
+        background
+        dataKey="value"
+        label={{ position: "insideStart", fill: "#fff" }}
+      />
+      <ChartTooltip content={<ChartTooltipContent />} />
+      <Legend
+        iconSize={10}
+        layout="vertical"
+        verticalAlign="middle"
+        align="right"
+      />
+    </RadialBarChart>
+  );
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold">Tendance des Ventes</h3>
+          <h3 className="font-semibold">Distribution des Ventes</h3>
           <Select
-            defaultValue="area"
-            onValueChange={(value) => setSalesChartType(value as ChartType)}
+            defaultValue="pie"
+            onValueChange={(value) => setChartType(value as "pie" | "radial")}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Type de graphique" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="area">Graphique en aire</SelectItem>
-              <SelectItem value="line">Graphique en ligne</SelectItem>
-              <SelectItem value="bar">Graphique en barres</SelectItem>
+              <SelectItem value="pie">Graphique circulaire</SelectItem>
+              <SelectItem value="radial">Graphique radial</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -134,32 +114,21 @@ export function DashboardCharts() {
               },
             }}
           >
-            {renderChart(salesData, salesChartType, "sales", "ventes", "#2DD4BF", "month")}
+            <ResponsiveContainer>
+              {chartType === "pie" ? renderPieChart() : renderRadialChart()}
+            </ResponsiveContainer>
           </ChartContainer>
         </div>
       </Card>
 
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold">Distribution des Stocks</h3>
-          <Select
-            defaultValue="bar"
-            onValueChange={(value) => setStockChartType(value as ChartType)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Type de graphique" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="area">Graphique en aire</SelectItem>
-              <SelectItem value="line">Graphique en ligne</SelectItem>
-              <SelectItem value="bar">Graphique en barres</SelectItem>
-            </SelectContent>
-          </Select>
+          <h3 className="font-semibold">Indicateurs de Performance</h3>
         </div>
         <div className="h-[300px]">
           <ChartContainer
             config={{
-              stock: {
+              performance: {
                 theme: {
                   light: "#FB923C",
                   dark: "#FB923C",
@@ -167,7 +136,27 @@ export function DashboardCharts() {
               },
             }}
           >
-            {renderChart(stockData, stockChartType, "stock", "stock", "#FB923C", "category")}
+            <ResponsiveContainer>
+              <RadialBarChart
+                innerRadius={20}
+                outerRadius={140}
+                barSize={20}
+                data={performanceData}
+              >
+                <RadialBar
+                  background
+                  dataKey="value"
+                  label={{ position: "insideStart", fill: "#fff" }}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Legend
+                  iconSize={10}
+                  layout="vertical"
+                  verticalAlign="middle"
+                  align="right"
+                />
+              </RadialBarChart>
+            </ResponsiveContainer>
           </ChartContainer>
         </div>
       </Card>
