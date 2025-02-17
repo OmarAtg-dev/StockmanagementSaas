@@ -49,11 +49,11 @@ const Index = () => {
 
         <div className="grid gap-6 md:grid-cols-2">
           <DashboardCharts />
-          <ClientRevenue />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <RecentActivity />
+          <ClientRevenue />
         </div>
       </div>
     </DashboardLayout>
