@@ -47,7 +47,7 @@ const Index = () => {
           />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div>
           <DashboardCharts />
         </div>
 
