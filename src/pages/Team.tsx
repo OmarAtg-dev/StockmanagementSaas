@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -24,7 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UserForm } from "@/components/company-users/UserForm";
-import { mockDataFunctions } from "@/utils/mockData";
+import { mockDataFunctions, mockProfiles } from "@/utils/mockData";
 
 const Team = () => {
   const { toast } = useToast();
@@ -51,7 +50,7 @@ const Team = () => {
       if (result.error) {
         throw result.error;
       }
-      return mockDataFunctions.mockProfiles as CompanyUser[];
+      return mockProfiles as CompanyUser[];
     },
     enabled: !!profile.company_id
   });
@@ -302,4 +301,3 @@ const Team = () => {
 };
 
 export default Team;
-
