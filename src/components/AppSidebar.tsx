@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const getSidebarSections = () => [
@@ -76,6 +76,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [openItems, setOpenItems] = React.useState<string[]>([]);
 
   const sidebarSections = getSidebarSections();
@@ -199,15 +200,22 @@ export function AppSidebar() {
                             <SidebarMenuSub>
                               {item.subItems.map((subItem) => (
                                 <SidebarMenuSubItem key={subItem.title}>
-                                  <SidebarMenuSubButton
-                                    asChild
-                                    isActive={location.pathname === subItem.path}
-                                  >
+                                  <SidebarMenuSubButton asChild>
                                     <Link 
                                       to={subItem.path}
-                                      className="flex items-center gap-2 py-1"
+                                      className={cn(
+                                        "flex items-center gap-2 py-1.5 pl-11 w-full transition-colors",
+                                        "hover:bg-accent/50 hover:text-accent-foreground rounded-md",
+                                        location.pathname === subItem.path && 
+                                        "bg-accent text-accent-foreground font-medium"
+                                      )}
                                     >
-                                      <span className="h-1 w-1 rounded-full bg-current opacity-40"></span>
+                                      <span className={cn(
+                                        "h-1 w-1 rounded-full",
+                                        location.pathname === subItem.path 
+                                          ? "bg-current"
+                                          : "bg-current opacity-40"
+                                      )}/>
                                       {subItem.title}
                                     </Link>
                                   </SidebarMenuSubButton>
