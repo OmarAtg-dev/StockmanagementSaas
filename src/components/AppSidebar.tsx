@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import {
   Sidebar,
@@ -131,9 +132,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="px-4">
             <div className="flex items-center gap-2 py-4 border-b border-border/40">
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                StockSy
-              </span>
+              <img 
+                src="/lovable-uploads/4da8a0ef-8e85-426d-bee1-03483f555554.png" 
+                alt="GWA Tech Logo" 
+                className="h-8 w-auto"
+              />
             </div>
           </SidebarGroupLabel>
           <SidebarGroupContent className="py-4">
