@@ -200,7 +200,7 @@ export function AppSidebar() {
                             )}
                           >
                             <div className="flex items-center gap-3">
-                              <Receipt className="h-4 w-4" />
+                              <item.icon className="h-4 w-4" />
                               <span>{item.title}</span>
                             </div>
                             <svg
