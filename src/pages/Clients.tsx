@@ -19,6 +19,7 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InvoiceDialog } from "@/components/invoices/InvoiceDialog";
+import { mockDataFunctions } from "@/utils/mockData";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -52,11 +53,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Client {
   id: string;
-  company_id: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -74,7 +73,7 @@ interface ClientInvoice {
   client: {
     id: string;
     name: string;
-    email: string | null;
+    email: string;
   };
   items: Array<{
     id: string;
@@ -120,67 +119,24 @@ const Clients = () => {
   const { data: clients, isLoading, error } = useQuery({
     queryKey: ['clients', profile?.company_id],
     queryFn: async () => {
-      if (!profile?.company_id) throw new Error("No company ID found");
-      
-      console.log('Fetching clients for company:', profile.company_id); // Debug log
-      
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('company_id', profile.company_id);
-      
-      if (error) {
-        console.error('Error fetching clients:', error); // Debug log
-        throw error;
-      }
-      
-      console.log('Fetched clients:', data); // Debug log
-      return data as Client[];
+      const { data, error } = await mockDataFunctions.getClients();
+      if (error) throw error;
+      return data;
     },
-    enabled: !!profile?.company_id,
   });
 
   const { data: clientInvoices, isLoading: isLoadingInvoices } = useQuery({
     queryKey: ['invoices', expandedClient],
     queryFn: async () => {
-      if (!expandedClient || !profile?.company_id) return [];
-      
-      console.log('Fetching invoices for client:', expandedClient); // Debug log
-      
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          id,
-          number,
-          date,
-          due_date,
-          total_amount,
-          status,
-          client:clients (
-            id,
-            name,
-            email
-          ),
-          items:invoice_items (
-            id,
-            description,
-            quantity,
-            unit_price,
-            amount
-          )
-        `)
-        .eq('client_id', expandedClient)
-        .eq('company_id', profile.company_id);
-
-      if (error) {
-        console.error('Error fetching invoices:', error); // Debug log
-        throw error;
-      }
-      
+      if (!expandedClient) return [];
+      const { data, error } = await mockDataFunctions.getInvoices();
+      if (error) throw error;
       console.log('Fetched invoices:', data); // Debug log
-      return data as ClientInvoice[];
+      return data.filter((invoice: ClientInvoice) => 
+        invoice.client?.id === expandedClient
+      );
     },
-    enabled: !!expandedClient && !!profile?.company_id,
+    enabled: !!expandedClient,
   });
 
   const createClientMutation = useMutation({
@@ -189,22 +145,14 @@ const Clients = () => {
         throw new Error("No company ID found");
       }
       
-      console.log('Creating client with data:', { ...data, company_id: profile.company_id }); // Debug log
-      
-      const { data: newClient, error } = await supabase
-        .from('clients')
-        .insert([{
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          address: data.address,
-          company_id: profile.company_id
-        }])
-        .select()
-        .single();
-      
+      const { error } = await mockDataFunctions.createClient({
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        company_id: profile.company_id
+      });
       if (error) throw error;
-      return newClient;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -213,7 +161,6 @@ const Clients = () => {
       form.reset();
     },
     onError: (error) => {
-      console.error('Error creating client:', error); // Debug log
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -224,21 +171,12 @@ const Clients = () => {
 
   const updateClientMutation = useMutation({
     mutationFn: async (data: ClientFormData & { id: string }) => {
-      if (!profile?.company_id) {
-        throw new Error("No company ID found");
-      }
-
-      const { error } = await supabase
-        .from('clients')
-        .update({
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          address: data.address
-        })
-        .eq('id', data.id)
-        .eq('company_id', profile.company_id);
-
+      const { error } = await mockDataFunctions.updateClient(data.id, {
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -258,16 +196,7 @@ const Clients = () => {
 
   const deleteClientMutation = useMutation({
     mutationFn: async (id: string) => {
-      if (!profile?.company_id) {
-        throw new Error("No company ID found");
-      }
-
-      const { error } = await supabase
-        .from('clients')
-        .delete()
-        .eq('id', id)
-        .eq('company_id', profile.company_id);
-
+      const { error } = await mockDataFunctions.deleteClient(id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -437,7 +366,10 @@ const Clients = () => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => handleCreateInvoice(client.id)}
+                          onClick={() => {
+                            setSelectedClientId(client.id);
+                            setIsInvoiceDialogOpen(true);
+                          }}
                         >
                           <Receipt className="h-4 w-4" />
                         </Button>

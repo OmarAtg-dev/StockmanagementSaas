@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,12 +31,17 @@ const CompanyUsers = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ["company-users", companyId],
     queryFn: async () => {
+      console.log("Fetching users for company:", companyId);
       const { data, error } = await supabase
         .from("company_users_with_roles")
         .select("*")
         .eq("company_id", companyId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+      }
+      console.log("Fetched users:", data);
       return data as CompanyUser[];
     },
     enabled: !!companyId,
@@ -47,14 +53,12 @@ const CompanyUsers = () => {
         throw new Error("Password is required when creating a new user");
       }
 
-      const { data, error } = await supabase.functions.invoke('create-company-user', {
-        body: {
-          email: formData.email,
-          password: formData.password,
-          full_name: formData.full_name,
-          company_id: companyId,
-          role: formData.role as UserRole,
-        }
+      const { data, error } = await supabase.rpc('create_company_user', {
+        p_email: formData.email,
+        p_password: formData.password,
+        p_full_name: formData.full_name,
+        p_company_id: companyId,
+        p_role: formData.role as UserRole,
       });
 
       if (error) throw error;
@@ -78,35 +82,74 @@ const CompanyUsers = () => {
   });
 
   const updateUser = useMutation({
-    mutationFn: async ({ id, ...formData }: UserFormData & { id: string }) => {
-      // First update the profile
+    mutationFn: async ({
+      id,
+      ...formData
+    }: UserFormData & { id: string }) => {
+      console.log("Starting user update for ID:", id);
+
+      // First, get the user data to ensure we have the correct user_id
+      const { data: userData, error: userError } = await supabase
+        .from("company_users_with_roles")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (userError || !userData?.user_id) {
+        console.error("Error fetching user data:", userError);
+        throw new Error("Failed to get user data");
+      }
+
+      console.log("Updating profile for user_id:", userData.user_id);
+
+      // Update the profile
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
+        .update({ 
           username: formData.email,
           full_name: formData.full_name,
           role: formData.role as UserRole,
         })
+        .eq("id", userData.user_id);
+
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        throw profileError;
+      }
+
+      // Update the role
+      const { error: roleError } = await supabase
+        .from("company_user_roles")
+        .update({ role: formData.role })
         .eq("id", id);
 
-      if (profileError) throw profileError;
+      if (roleError) {
+        console.error("Role update error:", roleError);
+        throw roleError;
+      }
 
       // Update password if provided
       if (formData.password) {
-        const { error: passwordError } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: id, password: formData.password }
+        const { error: authError } = await supabase.functions.invoke('update-user-password', {
+          body: { userId: userData.user_id, password: formData.password }
         });
-        if (passwordError) throw passwordError;
+        if (authError) {
+          console.error("Password update error:", authError);
+          throw authError;
+        }
       }
 
-      // Get updated user data
+      // Fetch and return the updated user
       const { data: updatedUser, error: fetchError } = await supabase
         .from("company_users_with_roles")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        throw fetchError;
+      }
+
       return updatedUser;
     },
     onSuccess: () => {
@@ -118,6 +161,7 @@ const CompanyUsers = () => {
       setEditingUser(null);
     },
     onError: (error: Error) => {
+      console.error("Update error:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -129,9 +173,9 @@ const CompanyUsers = () => {
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("profiles")
+        .from('company_user_roles')
         .delete()
-        .eq("id", id);
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -142,6 +186,7 @@ const CompanyUsers = () => {
       });
     },
     onError: (error: Error) => {
+      console.error("Error deleting user:", error);
       toast({
         variant: "destructive",
         title: "Erreur",

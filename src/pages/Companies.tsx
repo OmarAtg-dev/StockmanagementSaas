@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -97,46 +96,21 @@ const Companies = () => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const navigate = useNavigate();
 
+  // Fetch companies
   const { data: companies, isLoading } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
-      // Get all companies
-      const { data: companiesData, error: companiesError } = await supabase
-        .from("companies")
+      const { data, error } = await supabase
+        .from("companies_with_users")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (companiesError) throw companiesError;
-
-      // Get user counts using a separate query
-      const { count: userCountsData, error: userCountsError } = await supabase
-        .from("company_users_with_roles")
-        .select("*", { count: "exact", head: true });
-
-      // Create a map to store company user counts
-      const userCountMap = new Map<string, number>();
-
-      // If we have companies, get count for each company
-      if (companiesData && companiesData.length > 0) {
-        await Promise.all(
-          companiesData.map(async (company) => {
-            const { count } = await supabase
-              .from("company_users_with_roles")
-              .select("*", { count: "exact", head: true })
-              .eq("company_id", company.id);
-            userCountMap.set(company.id, count || 0);
-          })
-        );
-      }
-
-      // Combine the data
-      return companiesData.map(company => ({
-        ...company,
-        user_count: userCountMap.get(company.id) || 0
-      })) as Company[];
+      if (error) throw error;
+      return data as Company[];
     },
   });
 
+  // Create company mutation
   const createCompany = useMutation({
     mutationFn: async (newCompany: { name: string; subscription_status: string }) => {
       const { data, error } = await supabase
@@ -154,7 +128,6 @@ const Companies = () => {
         title: "Entreprise créée",
         description: "L'entreprise a été créée avec succès",
       });
-      setIsCreateOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -165,6 +138,7 @@ const Companies = () => {
     },
   });
 
+  // Update company mutation
   const updateCompany = useMutation({
     mutationFn: async ({
       id,
@@ -190,7 +164,6 @@ const Companies = () => {
         title: "Entreprise mise à jour",
         description: "L'entreprise a été mise à jour avec succès",
       });
-      setEditingCompany(null);
     },
     onError: (error: Error) => {
       toast({
@@ -201,6 +174,7 @@ const Companies = () => {
     },
   });
 
+  // Delete company mutation
   const deleteCompany = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("companies").delete().eq("id", id);
