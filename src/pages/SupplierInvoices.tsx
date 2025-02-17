@@ -12,17 +12,16 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, CalendarIcon, MoreHorizontal } from "lucide-react";
+import { Search, Plus, CalendarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSearchParams } from "react-router-dom";
 import { mockDataFunctions } from "@/utils/mockData";
 import { ViewSupplierInvoiceDialog } from "@/components/suppliers/ViewSupplierInvoiceDialog";
 import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Select,
   SelectContent,
@@ -30,27 +29,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface SupplierInvoice {
   id: string;
@@ -62,32 +45,17 @@ interface SupplierInvoice {
   supplier: {
     id: string;
     name: string;
-    email?: string;
   } | null;
-  items: Array<{
-    id: string;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    amount: number;
-  }>;
 }
 
 const SupplierInvoices = () => {
-  const { toast } = useToast();
   const { profile } = useAuth();
-  const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedSupplier, setSelectedSupplier] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedDueDate, setSelectedDueDate] = useState<Date>();
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [invoiceToEdit, setInvoiceToEdit] = useState<SupplierInvoice | null>(null);
-  const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
 
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers'],
@@ -107,71 +75,28 @@ const SupplierInvoices = () => {
     },
   });
 
-  const deleteInvoice = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await mockDataFunctions.deleteSupplierInvoice(id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
-      toast({
-        title: "Devis supprimé",
-        description: "Le devis a été supprimé avec succès.",
-      });
-      setIsDeleteDialogOpen(false);
-      setInvoiceToDelete(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: error.message,
-      });
-    },
-  });
+  const filteredInvoices = invoices?.filter(invoice => {
+    const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesSupplier = selectedSupplier === "all" || invoice.supplier?.name === selectedSupplier;
+
+    const matchesDate = !selectedDate || 
+      format(new Date(invoice.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+
+    const matchesDueDate = !selectedDueDate || 
+      format(new Date(invoice.due_date), 'yyyy-MM-dd') === format(selectedDueDate, 'yyyy-MM-dd');
+
+    return matchesSearch && matchesSupplier && matchesDate && matchesDueDate;
+  }) ?? [];
 
   const handleCreateInvoice = () => {
     const selectedSupplierData = suppliers?.find(s => s.name === selectedSupplier);
     
     if (selectedSupplier === "all" || !selectedSupplierData) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Veuillez sélectionner un fournisseur avant de créer un devis.",
-      });
       return;
     }
     setIsCreateDialogOpen(true);
-  };
-
-  const handleEditInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setInvoiceToEdit(invoice);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleViewInvoice = (invoice: SupplierInvoice) => {
-    setSelectedInvoice(invoice);
-  };
-
-  const handleDeleteInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setInvoiceToDelete(invoice);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (invoiceToDelete) {
-      deleteInvoice.mutate(invoiceToDelete.id);
-    }
-  };
-
-  const handleUpdateSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
-    setSelectedInvoice(null);
-    setInvoiceToEdit(null);
-    setIsEditDialogOpen(false);
-    setIsCreateDialogOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -196,32 +121,17 @@ const SupplierInvoices = () => {
     );
   };
 
-  const filteredInvoices = invoices?.filter(invoice => {
-    const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (invoice.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesSupplier = selectedSupplier === "all" || invoice.supplier?.name === selectedSupplier;
-
-    const matchesDate = !selectedDate || 
-      format(new Date(invoice.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-
-    const matchesDueDate = !selectedDueDate || 
-      format(new Date(invoice.due_date), 'yyyy-MM-dd') === format(selectedDueDate, 'yyyy-MM-dd');
-
-    return matchesSearch && matchesSupplier && matchesDate && matchesDueDate;
-  }) ?? [];
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Devis fournisseurs</h1>
             <p className="text-muted-foreground">
-              Consultez et gérez vos devis fournisseurs
+              Gérez vos devis fournisseurs
             </p>
           </div>
-          <Button className="gap-2" onClick={handleCreateInvoice}>
+          <Button onClick={handleCreateInvoice} className="gap-2">
             <Plus className="h-5 w-5" />
             Créer un devis
           </Button>
@@ -235,10 +145,7 @@ const SupplierInvoices = () => {
                 <Input
                   placeholder="Rechercher un devis..."
                   value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setSearchParams(e.target.value ? { search: e.target.value } : {});
-                  }}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
                 />
               </div>
@@ -269,7 +176,7 @@ const SupplierInvoices = () => {
                     {selectedDate ? (
                       format(selectedDate, "P", { locale: fr })
                     ) : (
-                      "Date de facturation"
+                      "Date du devis"
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -333,19 +240,18 @@ const SupplierInvoices = () => {
                 <TableHead>Échéance</TableHead>
                 <TableHead>Montant</TableHead>
                 <TableHead>Statut</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     Chargement...
                   </TableCell>
                 </TableRow>
               ) : !filteredInvoices?.length ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     Aucun devis trouvé
                   </TableCell>
                 </TableRow>
@@ -354,7 +260,7 @@ const SupplierInvoices = () => {
                   <TableRow 
                     key={invoice.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleViewInvoice(invoice)}
+                    onClick={() => setSelectedInvoice(invoice)}
                   >
                     <TableCell className="font-medium">
                       {invoice.number}
@@ -377,30 +283,6 @@ const SupplierInvoices = () => {
                     <TableCell>
                       {getStatusBadge(invoice.status)}
                     </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => handleViewInvoice(invoice)}>
-                            Voir les détails
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleEditInvoice(invoice, e)}>
-                            Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={(e) => handleDeleteInvoice(invoice, e)}
-                            className="text-destructive"
-                          >
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -409,29 +291,15 @@ const SupplierInvoices = () => {
         </Card>
 
         {profile?.company_id && (
-          <>
-            <SupplierInvoiceDialog
-              open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
-              companyId={profile.company_id}
-              onSuccess={handleUpdateSuccess}
-              supplierId={selectedSupplier !== "all" ? suppliers?.find(s => s.name === selectedSupplier)?.id : undefined}
-            />
-
-            {invoiceToEdit && (
-              <SupplierInvoiceDialog
-                open={isEditDialogOpen}
-                onOpenChange={(open) => {
-                  setIsEditDialogOpen(open);
-                  if (!open) setInvoiceToEdit(null);
-                }}
-                companyId={profile.company_id}
-                invoice={invoiceToEdit}
-                onSuccess={handleUpdateSuccess}
-                supplierId={invoiceToEdit.supplier?.id}
-              />
-            )}
-          </>
+          <SupplierInvoiceDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            companyId={profile.company_id}
+            supplierId={selectedSupplier !== "all" ? suppliers?.find(s => s.name === selectedSupplier)?.id : undefined}
+            onSuccess={() => {
+              setIsCreateDialogOpen(false);
+            }}
+          />
         )}
 
         <ViewSupplierInvoiceDialog
@@ -439,32 +307,6 @@ const SupplierInvoices = () => {
           onOpenChange={(open) => !open && setSelectedInvoice(null)}
           invoice={selectedInvoice}
         />
-
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est irréversible. Elle supprimera définitivement le devis
-                {invoiceToDelete && ` n°${invoiceToDelete.number}`} et toutes les données associées.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteDialogOpen(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={confirmDelete}
-              >
-                Supprimer
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </DashboardLayout>
   );
