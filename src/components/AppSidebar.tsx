@@ -75,6 +75,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [openItems, setOpenItems] = React.useState<string[]>([]);
 
   const sidebarSections = getSidebarSections();
 
@@ -93,6 +94,14 @@ export function AppSidebar() {
         description: error.message,
       });
     }
+  };
+
+  const toggleItem = (title: string) => {
+    setOpenItems(current => 
+      current.includes(title) 
+        ? current.filter(item => item !== title)
+        : [...current, title]
+    );
   };
 
   return (
@@ -153,6 +162,8 @@ export function AppSidebar() {
                       {'subItems' in item ? (
                         <>
                           <SidebarMenuButton
+                            onClick={() => toggleItem(item.title)}
+                            data-state={openItems.includes(item.title) ? 'open' : 'closed'}
                             className={cn(
                               "flex items-center justify-between px-4 py-2 rounded-md transition-colors w-full",
                               "text-sm font-medium",
@@ -183,24 +194,26 @@ export function AppSidebar() {
                               />
                             </svg>
                           </SidebarMenuButton>
-                          <SidebarMenuSub>
-                            {item.subItems.map((subItem) => (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={location.pathname === subItem.path}
-                                >
-                                  <Link 
-                                    to={subItem.path}
-                                    className="flex items-center gap-2 py-1"
+                          {openItems.includes(item.title) && (
+                            <SidebarMenuSub>
+                              {item.subItems.map((subItem) => (
+                                <SidebarMenuSubItem key={subItem.title}>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={location.pathname === subItem.path}
                                   >
-                                    <span className="h-1 w-1 rounded-full bg-current opacity-40"></span>
-                                    {subItem.title}
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
+                                    <Link 
+                                      to={subItem.path}
+                                      className="flex items-center gap-2 py-1"
+                                    >
+                                      <span className="h-1 w-1 rounded-full bg-current opacity-40"></span>
+                                      {subItem.title}
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          )}
                         </>
                       ) : (
                         <SidebarMenuButton asChild>
