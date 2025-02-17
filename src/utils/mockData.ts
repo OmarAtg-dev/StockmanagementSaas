@@ -293,6 +293,46 @@ export const mockDataFunctions = {
     };
   },
 
+  createProduct: async (data: Omit<{
+    id: string;
+    name: string;
+    category: string;
+    price: number;
+    stock: number;
+    status: string;
+  }, "id">) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: {
+        id: `PROD${Date.now()}`,
+        ...data
+      },
+      error: null
+    };
+  },
+
+  updateProduct: async (data: {
+    id: string;
+    name: string;
+    category: string;
+    price: number;
+    stock: number;
+    status: string;
+  }) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data,
+      error: null
+    };
+  },
+
+  deleteProduct: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      error: null
+    };
+  },
+
   getInventory: async () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {

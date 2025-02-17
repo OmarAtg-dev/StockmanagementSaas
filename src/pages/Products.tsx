@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import {
@@ -118,7 +117,13 @@ const Products = () => {
   });
 
   const createProduct = useMutation({
-    mutationFn: (data: Omit<Product, "id">) => mockDataFunctions.createProduct(data),
+    mutationFn: (data: z.infer<typeof formSchema>) => mockDataFunctions.createProduct({
+      name: data.name,
+      category: data.category,
+      price: data.price,
+      stock: data.stock,
+      status: data.status
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
@@ -176,12 +181,25 @@ const Products = () => {
   });
 
   const handleCreate = (data: z.infer<typeof formSchema>) => {
-    createProduct.mutate(data);
+    createProduct.mutate({
+      name: data.name,
+      category: data.category,
+      price: data.price,
+      stock: data.stock,
+      status: data.status
+    });
   };
 
   const handleEdit = (data: z.infer<typeof formSchema>) => {
     if (selectedProduct) {
-      updateProduct.mutate({ ...data, id: selectedProduct.id });
+      updateProduct.mutate({
+        id: selectedProduct.id,
+        name: data.name,
+        category: data.category,
+        price: data.price,
+        stock: data.stock,
+        status: data.status
+      });
     }
   };
 
