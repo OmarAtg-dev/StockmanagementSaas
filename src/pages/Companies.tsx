@@ -94,7 +94,7 @@ const Companies = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingCompany, setEditingUser] = useState<Company | null>(null);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const navigate = useNavigate();
 
   const { data: companies, isLoading } = useQuery({
@@ -108,18 +108,26 @@ const Companies = () => {
 
       if (companiesError) throw companiesError;
 
-      // Get user counts using a separate count query
-      const { data: userCounts, error: userCountsError } = await supabase
+      // Get user counts using a separate query
+      const { count: userCountsData, error: userCountsError } = await supabase
         .from("company_users_with_roles")
-        .select("company_id, count", { count: "exact", head: false })
-        .groupBy("company_id");
+        .select("*", { count: "exact", head: true });
 
-      if (userCountsError) throw userCountsError;
+      // Create a map to store company user counts
+      const userCountMap = new Map<string, number>();
 
-      // Create a map of company_id to user count
-      const userCountMap = new Map(
-        userCounts.map((item: any) => [item.company_id, parseInt(item.count)])
-      );
+      // If we have companies, get count for each company
+      if (companiesData && companiesData.length > 0) {
+        await Promise.all(
+          companiesData.map(async (company) => {
+            const { count } = await supabase
+              .from("company_users_with_roles")
+              .select("*", { count: "exact", head: true })
+              .eq("company_id", company.id);
+            userCountMap.set(company.id, count || 0);
+          })
+        );
+      }
 
       // Combine the data
       return companiesData.map(company => ({
@@ -182,7 +190,7 @@ const Companies = () => {
         title: "Entreprise mise à jour",
         description: "L'entreprise a été mise à jour avec succès",
       });
-      setEditingUser(null);
+      setEditingCompany(null);
     },
     onError: (error: Error) => {
       toast({
@@ -297,9 +305,9 @@ const Companies = () => {
                         <Users className="h-4 w-4" />
                       </Button>
                       <Dialog
-                        open={editingUser?.id === company.id}
+                        open={editingCompany?.id === company.id}
                         onOpenChange={(open) =>
-                          setEditingUser(open ? company : null)
+                          setEditingCompany(open ? company : null)
                         }
                       >
                         <DialogTrigger asChild>
@@ -320,7 +328,7 @@ const Companies = () => {
                             onSubmit={(data) =>
                               updateCompany.mutate({ id: company.id, ...data })
                             }
-                            onClose={() => setEditingUser(null)}
+                            onClose={() => setEditingCompany(null)}
                           />
                         </DialogContent>
                       </Dialog>
