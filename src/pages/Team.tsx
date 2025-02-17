@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -23,7 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UserForm } from "@/components/company-users/UserForm";
-import { mockProfiles } from "@/utils/mockData";
+import { mockDataFunctions } from "@/utils/mockData";
 
 const Team = () => {
   const { toast } = useToast();
@@ -46,24 +47,29 @@ const Team = () => {
     queryKey: ['team-members'],
     queryFn: async () => {
       console.log("Fetching team members with company_id:", profile.company_id);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Return mock profiles directly
-      return mockProfiles as CompanyUser[];
+      const result = await mockDataFunctions.getSession();
+      if (result.error) {
+        throw result.error;
+      }
+      return mockDataFunctions.mockProfiles as CompanyUser[];
     },
     enabled: !!profile.company_id
   });
 
   const addUser = useMutation({
     mutationFn: async (data: UserFormData) => {
-      console.log("Adding user with company_id:", profile.company_id);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log("Mock adding user:", data);
-      
-      return { success: true };
+      console.log("Form submitted with data:", data);
+      const result = await mockDataFunctions.signUp({
+        email: data.email,
+        password: data.password || 'default123',
+        username: data.email,
+        fullName: data.full_name,
+        companyName: 'Mock Company'
+      });
+      if (result.error) {
+        throw result.error;
+      }
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
@@ -95,9 +101,12 @@ const Team = () => {
       full_name: string;
       role: string;
     }) => {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log("Mock updating user:", { id, email, full_name, role });
-      
+      await mockDataFunctions.updateProfile({
+        id,
+        username: email,
+        full_name,
+        role
+      });
       return { success: true };
     },
     onSuccess: () => {
@@ -119,10 +128,12 @@ const Team = () => {
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log("Mock deleting user:", userId);
-      
-      return { success: true };
+      const mockResult = await new Promise<{ success: boolean }>((resolve) => {
+        setTimeout(() => {
+          resolve({ success: true });
+        }, 500);
+      });
+      return mockResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
@@ -275,7 +286,9 @@ const Team = () => {
                 onSubmit={(data) =>
                   updateUser.mutate({
                     id: editingUser.id,
-                    ...data,
+                    email: data.email,
+                    full_name: data.full_name,
+                    role: data.role,
                   })
                 }
                 onClose={() => setEditingUser(null)}
@@ -289,3 +302,4 @@ const Team = () => {
 };
 
 export default Team;
+
