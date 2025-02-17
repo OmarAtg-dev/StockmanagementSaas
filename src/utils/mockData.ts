@@ -198,26 +198,19 @@ export const mockDataFunctions = {
       };
     }
 
-    const newUser = {
-      id: String(mockProfiles.length + 1),
-      user_id: String(mockProfiles.length + 1),
-      username: data.email,
-      full_name: data.fullName,
-      company_id: "1",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      role: 'admin' as UserRole
-    };
-
-    mockProfiles.push(newUser);
-
     return {
       data: {
         session: {
           access_token: "mock_token",
-          user: { id: newUser.id, email: newUser.username }
+          user: { 
+            id: String(mockProfiles.length + 1), 
+            email: data.email 
+          }
         },
-        user: newUser
+        user: {
+          id: String(mockProfiles.length + 1),
+          email: data.email
+        }
       },
       error: null
     };
