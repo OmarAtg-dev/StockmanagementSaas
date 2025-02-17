@@ -19,7 +19,6 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InvoiceDialog } from "@/components/invoices/InvoiceDialog";
-import { mockDataFunctions } from "@/utils/mockData";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +52,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Client {
   id: string;
@@ -119,7 +119,13 @@ const Clients = () => {
   const { data: clients, isLoading, error } = useQuery({
     queryKey: ['clients', profile?.company_id],
     queryFn: async () => {
-      const { data, error } = await mockDataFunctions.getClients();
+      if (!profile?.company_id) throw new Error("No company ID found");
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('company_id', profile.company_id);
+      
       if (error) throw error;
       return data;
     },
@@ -128,15 +134,38 @@ const Clients = () => {
   const { data: clientInvoices, isLoading: isLoadingInvoices } = useQuery({
     queryKey: ['invoices', expandedClient],
     queryFn: async () => {
-      if (!expandedClient) return [];
-      const { data, error } = await mockDataFunctions.getInvoices();
+      if (!expandedClient || !profile?.company_id) return [];
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          id,
+          number,
+          date,
+          due_date,
+          total_amount,
+          status,
+          client:clients (
+            id,
+            name,
+            email
+          ),
+          items:invoice_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            amount
+          )
+        `)
+        .eq('client_id', expandedClient)
+        .eq('company_id', profile.company_id);
+
       if (error) throw error;
-      console.log('Fetched invoices:', data); // Debug log
-      return data.filter((invoice: ClientInvoice) => 
-        invoice.client?.id === expandedClient
-      );
+      console.log('Fetched invoices:', data);
+      return data;
     },
-    enabled: !!expandedClient,
+    enabled: !!expandedClient && !!profile?.company_id,
   });
 
   const createClientMutation = useMutation({
@@ -145,14 +174,20 @@ const Clients = () => {
         throw new Error("No company ID found");
       }
       
-      const { error } = await mockDataFunctions.createClient({
-        name: data.name,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address || null,
-        company_id: profile.company_id
-      });
+      const { data: newClient, error } = await supabase
+        .from('clients')
+        .insert([{
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          company_id: profile.company_id
+        }])
+        .select()
+        .single();
+      
       if (error) throw error;
+      return newClient;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -171,12 +206,21 @@ const Clients = () => {
 
   const updateClientMutation = useMutation({
     mutationFn: async (data: ClientFormData & { id: string }) => {
-      const { error } = await mockDataFunctions.updateClient(data.id, {
-        name: data.name,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address || null
-      });
+      if (!profile?.company_id) {
+        throw new Error("No company ID found");
+      }
+
+      const { error } = await supabase
+        .from('clients')
+        .update({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address
+        })
+        .eq('id', data.id)
+        .eq('company_id', profile.company_id);
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -196,7 +240,16 @@ const Clients = () => {
 
   const deleteClientMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await mockDataFunctions.deleteClient(id);
+      if (!profile?.company_id) {
+        throw new Error("No company ID found");
+      }
+
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id)
+        .eq('company_id', profile.company_id);
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -366,10 +419,7 @@ const Clients = () => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => {
-                            setSelectedClientId(client.id);
-                            setIsInvoiceDialogOpen(true);
-                          }}
+                          onClick={() => handleCreateInvoice(client.id)}
                         >
                           <Receipt className="h-4 w-4" />
                         </Button>
