@@ -237,6 +237,7 @@ export function AppSidebar() {
                                         "transition-all duration-200",
                                         "hover:bg-accent/40 hover:text-accent-foreground",
                                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                        "whitespace-nowrap",
                                         location.pathname === subItem.path && [
                                           "bg-accent/10",
                                           "text-primary",
