@@ -1,7 +1,7 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
+import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { TrendingUp, Package, ShoppingCart, DollarSign, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,7 @@ const Analytics = () => {
                   </Button>
                 </div>
                 <div className="h-[400px]">
-                  <DashboardCharts />
+                  <AnalyticsCharts />
                 </div>
               </div>
             </Card>
