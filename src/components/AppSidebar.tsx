@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -80,6 +80,27 @@ export function AppSidebar() {
   const [openItems, setOpenItems] = React.useState<string[]>([]);
 
   const sidebarSections = getSidebarSections();
+
+  // Set initial open state based on current route
+  useEffect(() => {
+    const currentSection = sidebarSections.find(section =>
+      section.items.some(item =>
+        'subItems' in item &&
+        item.subItems.some(subItem => subItem.path === location.pathname)
+      )
+    );
+
+    if (currentSection) {
+      const item = currentSection.items.find(item =>
+        'subItems' in item &&
+        item.subItems.some(subItem => subItem.path === location.pathname)
+      );
+      
+      if (item && !openItems.includes(item.title)) {
+        setOpenItems(prev => [...prev, item.title]);
+      }
+    }
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     try {
