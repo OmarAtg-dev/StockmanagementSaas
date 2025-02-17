@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Edit, Trash, Eye } from "lucide-react";
+import { Search, Plus, Edit, Trash, Eye, History } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
@@ -62,6 +62,16 @@ interface Product {
   status: string;
 }
 
+interface Transaction {
+  id: string;
+  date: string;
+  type: 'client' | 'supplier';
+  invoiceNumber: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
 const formSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   category: z.string().min(1, "La catégorie est requise"),
@@ -77,6 +87,8 @@ const Products = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { toast } = useToast();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
@@ -229,6 +241,32 @@ const Products = () => {
     setIsViewDialogOpen(true);
   };
 
+  const openHistoryDialog = async (product: Product) => {
+    setSelectedProduct(product);
+    const mockTransactions: Transaction[] = [
+      {
+        id: '1',
+        date: new Date(2024, 2, 1).toISOString(),
+        type: 'client',
+        invoiceNumber: 'INV001',
+        quantity: 2,
+        unitPrice: product.price,
+        total: product.price * 2,
+      },
+      {
+        id: '2',
+        date: new Date(2024, 1, 15).toISOString(),
+        type: 'supplier',
+        invoiceNumber: 'SUPINV-001',
+        quantity: 10,
+        unitPrice: product.price * 0.7,
+        total: product.price * 0.7 * 10,
+      },
+    ];
+    setTransactions(mockTransactions);
+    setIsHistoryDialogOpen(true);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -326,6 +364,13 @@ const Products = () => {
                           onClick={() => openDeleteDialog(product)}
                         >
                           <Trash className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openHistoryDialog(product)}
+                        >
+                          <History className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -515,6 +560,75 @@ const Products = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* History Dialog */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Historique des transactions</DialogTitle>
+            {selectedProduct && (
+              <DialogDescription>
+                Historique des transactions pour {selectedProduct.name}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="mt-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>N° Facture</TableHead>
+                  <TableHead>Quantité</TableHead>
+                  <TableHead>Prix unitaire</TableHead>
+                  <TableHead>Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell>
+                      {new Date(transaction.date).toLocaleDateString('fr-FR')}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          transaction.type === 'client'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-purple-100 text-purple-800'
+                        }`}
+                      >
+                        {transaction.type === 'client' ? 'Vente' : 'Achat'}
+                      </span>
+                    </TableCell>
+                    <TableCell>{transaction.invoiceNumber}</TableCell>
+                    <TableCell>{transaction.quantity}</TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('fr-FR', {
+                        style: 'currency',
+                        currency: 'MAD'
+                      }).format(transaction.unitPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('fr-FR', {
+                        style: 'currency',
+                        currency: 'MAD'
+                      }).format(transaction.total)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {transactions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-4">
+                      Aucune transaction trouvée
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
