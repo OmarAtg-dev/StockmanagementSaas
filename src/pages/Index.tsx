@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
+import { ClientRevenue } from "@/components/dashboard/ClientRevenue";
 import { Package, AlertTriangle, TrendingUp, DollarSign } from "lucide-react";
 
 const Index = () => {
@@ -46,7 +47,10 @@ const Index = () => {
           />
         </div>
 
-        <DashboardCharts />
+        <div className="grid gap-6 md:grid-cols-2">
+          <DashboardCharts />
+          <ClientRevenue />
+        </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <RecentActivity />
