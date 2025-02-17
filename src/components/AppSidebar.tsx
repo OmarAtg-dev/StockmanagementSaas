@@ -233,11 +233,10 @@ export function AppSidebar() {
                                       className={cn(
                                         "flex items-center gap-3",
                                         "w-full px-4 py-2.5 pl-8",
-                                        "rounded-md text-sm",
+                                        "rounded-md text-sm whitespace-nowrap",
                                         "transition-all duration-200",
                                         "hover:bg-accent/40 hover:text-accent-foreground",
                                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                                        "whitespace-nowrap",
                                         location.pathname === subItem.path && [
                                           "bg-accent/10",
                                           "text-primary",
@@ -268,10 +267,17 @@ export function AppSidebar() {
                               "flex items-center gap-3 px-4 py-2.5 rounded-md transition-all duration-200",
                               "text-sm font-medium",
                               "hover:bg-accent/70 hover:text-accent-foreground hover:translate-x-1",
+                              "pl-8",
                               location.pathname === item.path && "text-primary font-medium translate-x-1"
                             )}
                           >
-                            <item.icon className="h-4 w-4" />
+                            <span className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              "transition-all duration-200",
+                              location.pathname === item.path 
+                                ? "bg-primary scale-110"
+                                : "bg-muted-foreground/40"
+                            )}/>
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
