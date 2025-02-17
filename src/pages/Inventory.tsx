@@ -20,6 +20,16 @@ import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { mockDataFunctions } from "@/utils/mockData";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 
 interface InventoryItem {
   id: string;
@@ -44,12 +54,23 @@ interface ExpectedInventoryItem {
   notes: string | null;
 }
 
+interface SecurityThresholdForm {
+  threshold: number;
+}
+
 const SECURITY_STOCK_THRESHOLD = 5;
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const { profile } = useAuth();
+  const [securityThreshold, setSecurityThreshold] = useState(5);
+
+  const form = useForm<SecurityThresholdForm>({
+    defaultValues: {
+      threshold: securityThreshold,
+    },
+  });
 
   const { data: inventory, isLoading: isLoadingInventory } = useQuery({
     queryKey: ['inventory'],
@@ -108,7 +129,7 @@ const Inventory = () => {
     item.product.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) ?? [];
 
-  const lowStockItems = inventory?.filter(item => item.quantity <= SECURITY_STOCK_THRESHOLD) ?? [];
+  const lowStockItems = inventory?.filter(item => item.quantity <= securityThreshold) ?? [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -126,7 +147,7 @@ const Inventory = () => {
   };
 
   const renderStockCell = (quantity: number) => {
-    if (quantity <= SECURITY_STOCK_THRESHOLD) {
+    if (quantity <= securityThreshold) {
       return (
         <div className="flex items-center gap-2 text-destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -135,6 +156,14 @@ const Inventory = () => {
       );
     }
     return quantity;
+  };
+
+  const onSubmitThreshold = (data: SecurityThresholdForm) => {
+    setSecurityThreshold(data.threshold);
+    toast({
+      title: "Seuil de sécurité mis à jour",
+      description: `Le nouveau seuil est de ${data.threshold} unités`,
+    });
   };
 
   return (
@@ -147,17 +176,44 @@ const Inventory = () => {
               Gérez votre inventaire de produits
             </p>
           </div>
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
-            <Plus className="h-5 w-5" />
-            Ajouter un article
-          </button>
+          <div className="flex items-center gap-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmitThreshold)} className="flex items-end gap-2">
+                <FormField
+                  control={form.control}
+                  name="threshold"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seuil de sécurité</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          {...field}
+                          onChange={e => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Quantité minimale avant alerte
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit">Mettre à jour</Button>
+              </form>
+            </Form>
+            <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+              <Plus className="h-5 w-5" />
+              Ajouter un article
+            </button>
+          </div>
         </div>
 
         {lowStockItems.length > 0 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {lowStockItems.length} article(s) sont en stock de sécurité (≤ {SECURITY_STOCK_THRESHOLD} unités)
+              {lowStockItems.length} article(s) sont en stock de sécurité (≤ {securityThreshold} unités)
             </AlertDescription>
           </Alert>
         )}
