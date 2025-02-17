@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -93,12 +94,13 @@ const Companies = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editingCompany, setEditingUser] = useState<Company | null>(null);
   const navigate = useNavigate();
 
   const { data: companies, isLoading } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
+      // Get all companies
       const { data: companiesData, error: companiesError } = await supabase
         .from("companies")
         .select("*")
@@ -106,18 +108,20 @@ const Companies = () => {
 
       if (companiesError) throw companiesError;
 
+      // Get user counts using a separate count query
       const { data: userCounts, error: userCountsError } = await supabase
         .from("company_users_with_roles")
-        .select("company_id, count")
-        .select("company_id")
-        .count();
+        .select("company_id, count", { count: "exact", head: false })
+        .groupBy("company_id");
 
       if (userCountsError) throw userCountsError;
 
+      // Create a map of company_id to user count
       const userCountMap = new Map(
-        userCounts.map(({ company_id, count }) => [company_id, count])
+        userCounts.map((item: any) => [item.company_id, parseInt(item.count)])
       );
 
+      // Combine the data
       return companiesData.map(company => ({
         ...company,
         user_count: userCountMap.get(company.id) || 0
@@ -178,7 +182,7 @@ const Companies = () => {
         title: "Entreprise mise à jour",
         description: "L'entreprise a été mise à jour avec succès",
       });
-      setEditingCompany(null);
+      setEditingUser(null);
     },
     onError: (error: Error) => {
       toast({
@@ -293,9 +297,9 @@ const Companies = () => {
                         <Users className="h-4 w-4" />
                       </Button>
                       <Dialog
-                        open={editingCompany?.id === company.id}
+                        open={editingUser?.id === company.id}
                         onOpenChange={(open) =>
-                          setEditingCompany(open ? company : null)
+                          setEditingUser(open ? company : null)
                         }
                       >
                         <DialogTrigger asChild>
@@ -316,7 +320,7 @@ const Companies = () => {
                             onSubmit={(data) =>
                               updateCompany.mutate({ id: company.id, ...data })
                             }
-                            onClose={() => setEditingCompany(null)}
+                            onClose={() => setEditingUser(null)}
                           />
                         </DialogContent>
                       </Dialog>
