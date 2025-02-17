@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,6 +57,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Client {
   id: string;
+  company_id: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -73,7 +75,7 @@ interface ClientInvoice {
   client: {
     id: string;
     name: string;
-    email: string;
+    email: string | null;
   };
   items: Array<{
     id: string;
