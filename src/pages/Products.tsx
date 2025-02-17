@@ -70,6 +70,7 @@ interface Transaction {
   quantity: number;
   unitPrice: number;
   total: number;
+  partnerName: string;
 }
 
 const formSchema = z.object({
@@ -252,6 +253,7 @@ const Products = () => {
         quantity: 2,
         unitPrice: product.price,
         total: product.price * 2,
+        partnerName: 'Client SARL'
       },
       {
         id: '2',
@@ -261,6 +263,7 @@ const Products = () => {
         quantity: 10,
         unitPrice: product.price * 0.7,
         total: product.price * 0.7 * 10,
+        partnerName: 'Fournisseur XYZ'
       },
     ];
     setTransactions(mockTransactions);
@@ -578,6 +581,7 @@ const Products = () => {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Client/Fournisseur</TableHead>
                   <TableHead>N° Facture</TableHead>
                   <TableHead>Quantité</TableHead>
                   <TableHead>Prix unitaire</TableHead>
@@ -601,6 +605,7 @@ const Products = () => {
                         {transaction.type === 'client' ? 'Vente' : 'Achat'}
                       </span>
                     </TableCell>
+                    <TableCell>{transaction.partnerName}</TableCell>
                     <TableCell>{transaction.invoiceNumber}</TableCell>
                     <TableCell>{transaction.quantity}</TableCell>
                     <TableCell>
@@ -619,7 +624,7 @@ const Products = () => {
                 ))}
                 {transactions.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
+                    <TableCell colSpan={7} className="text-center py-4">
                       Aucune transaction trouvée
                     </TableCell>
                   </TableRow>
