@@ -190,12 +190,15 @@ export function AppSidebar() {
                             onClick={() => toggleItem(item.title)}
                             data-state={openItems.includes(item.title) ? 'open' : 'closed'}
                             className={cn(
-                              "flex items-center justify-between px-4 py-2.5 rounded-md transition-all duration-200 w-full",
+                              "flex items-center justify-between w-full",
+                              "px-4 py-2.5 rounded-md",
+                              "transition-all duration-200",
                               "text-sm font-medium",
                               "hover:bg-accent/70 hover:text-accent-foreground",
-                              "group",
+                              "group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                              openItems.includes(item.title) && "bg-accent/40",
                               (location.pathname === "/invoices" || location.pathname === "/supplier-invoices") && 
-                              "bg-accent text-accent-foreground shadow-sm"
+                              "text-primary"
                             )}
                           >
                             <div className="flex items-center gap-3">
@@ -209,7 +212,7 @@ export function AppSidebar() {
                               fill="none"
                               xmlns="http://www.w3.org/2000/svg"
                               className={cn(
-                                "transform transition-transform duration-300",
+                                "transform transition-transform duration-200",
                                 openItems.includes(item.title) ? "rotate-180" : ""
                               )}
                             >
@@ -230,17 +233,26 @@ export function AppSidebar() {
                                     <Link 
                                       to={subItem.path}
                                       className={cn(
-                                        "flex items-center gap-2 py-2 pl-11 w-full transition-all duration-200",
-                                        "hover:bg-accent/40 hover:text-accent-foreground rounded-md hover:translate-x-1",
-                                        location.pathname === subItem.path && 
-                                        "bg-accent/60 text-accent-foreground font-medium translate-x-1 shadow-sm"
+                                        "flex items-center gap-3",
+                                        "w-full px-4 py-2.5 pl-11",
+                                        "rounded-md text-sm",
+                                        "transition-all duration-200",
+                                        "hover:bg-accent/40 hover:text-accent-foreground",
+                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                        location.pathname === subItem.path && [
+                                          "bg-accent/60",
+                                          "text-primary",
+                                          "font-medium",
+                                          "shadow-sm"
+                                        ]
                                       )}
                                     >
                                       <span className={cn(
-                                        "h-1.5 w-1.5 rounded-full transition-all duration-200",
+                                        "h-1.5 w-1.5 rounded-full",
+                                        "transition-all duration-200",
                                         location.pathname === subItem.path 
-                                          ? "bg-current scale-110"
-                                          : "bg-current opacity-40"
+                                          ? "bg-primary scale-110"
+                                          : "bg-muted-foreground/40"
                                       )}/>
                                       {subItem.title}
                                     </Link>
