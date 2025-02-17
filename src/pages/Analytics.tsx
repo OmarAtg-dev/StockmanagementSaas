@@ -84,27 +84,9 @@ const Analytics = () => {
                     Voir les détails
                   </Button>
                 </div>
-                <div className="h-[400px]"> {/* Increased height for better visualization */}
+                <div className="h-[400px]">
                   <DashboardCharts />
                 </div>
-              </div>
-            </Card>
-          </div>
-        </AnalyticsSection>
-
-        {/* Detailed Analysis Section */}
-        <AnalyticsSection title="Analyse détaillée" defaultExpanded={false}>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="p-6">
-              <h3 className="mb-4 font-semibold">Distribution des ventes par catégorie</h3>
-              <div className="h-[300px]">
-                <DashboardCharts />
-              </div>
-            </Card>
-            <Card className="p-6">
-              <h3 className="mb-4 font-semibold">Performance par région</h3>
-              <div className="h-[300px]">
-                <DashboardCharts />
               </div>
             </Card>
           </div>
