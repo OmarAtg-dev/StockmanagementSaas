@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, AlertTriangle } from "lucide-react";
+import { Search, Plus, AlertTriangle, Shield } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
@@ -30,6 +30,14 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface InventoryItem {
   id: string;
@@ -65,6 +73,7 @@ const Inventory = () => {
   const { toast } = useToast();
   const { profile } = useAuth();
   const [securityThreshold, setSecurityThreshold] = useState(5);
+  const [isThresholdDialogOpen, setIsThresholdDialogOpen] = useState(false);
 
   const form = useForm<SecurityThresholdForm>({
     defaultValues: {
@@ -160,6 +169,7 @@ const Inventory = () => {
 
   const onSubmitThreshold = (data: SecurityThresholdForm) => {
     setSecurityThreshold(data.threshold);
+    setIsThresholdDialogOpen(false);
     toast({
       title: "Seuil de sécurité mis à jour",
       description: `Le nouveau seuil est de ${data.threshold} unités`,
@@ -177,8 +187,34 @@ const Inventory = () => {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsThresholdDialogOpen(true)}
+              className="relative"
+            >
+              <Shield className="h-4 w-4" />
+              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {securityThreshold}
+              </span>
+            </Button>
+            <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+              <Plus className="h-5 w-5" />
+              Ajouter un article
+            </button>
+          </div>
+        </div>
+
+        <Dialog open={isThresholdDialogOpen} onOpenChange={setIsThresholdDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Seuil de sécurité du stock</DialogTitle>
+              <DialogDescription>
+                Définissez la quantité minimale avant qu'une alerte ne soit déclenchée
+              </DialogDescription>
+            </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmitThreshold)} className="flex items-end gap-2">
+              <form onSubmit={form.handleSubmit(onSubmitThreshold)} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="threshold"
@@ -199,15 +235,16 @@ const Inventory = () => {
                     </FormItem>
                   )}
                 />
-                <Button type="submit">Mettre à jour</Button>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsThresholdDialogOpen(false)}>
+                    Annuler
+                  </Button>
+                  <Button type="submit">Mettre à jour</Button>
+                </DialogFooter>
               </form>
             </Form>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
-              <Plus className="h-5 w-5" />
-              Ajouter un article
-            </button>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
 
         {lowStockItems.length > 0 && (
           <Alert variant="destructive">
