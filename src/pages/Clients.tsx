@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -123,20 +122,30 @@ const Clients = () => {
     queryFn: async () => {
       if (!profile?.company_id) throw new Error("No company ID found");
       
+      console.log('Fetching clients for company:', profile.company_id); // Debug log
+      
       const { data, error } = await supabase
         .from('clients')
         .select('*')
         .eq('company_id', profile.company_id);
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching clients:', error); // Debug log
+        throw error;
+      }
+      
+      console.log('Fetched clients:', data); // Debug log
+      return data as Client[];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: clientInvoices, isLoading: isLoadingInvoices } = useQuery({
     queryKey: ['invoices', expandedClient],
     queryFn: async () => {
       if (!expandedClient || !profile?.company_id) return [];
+      
+      console.log('Fetching invoices for client:', expandedClient); // Debug log
       
       const { data, error } = await supabase
         .from('invoices')
@@ -163,9 +172,13 @@ const Clients = () => {
         .eq('client_id', expandedClient)
         .eq('company_id', profile.company_id);
 
-      if (error) throw error;
-      console.log('Fetched invoices:', data);
-      return data;
+      if (error) {
+        console.error('Error fetching invoices:', error); // Debug log
+        throw error;
+      }
+      
+      console.log('Fetched invoices:', data); // Debug log
+      return data as ClientInvoice[];
     },
     enabled: !!expandedClient && !!profile?.company_id,
   });
@@ -175,6 +188,8 @@ const Clients = () => {
       if (!profile?.company_id) {
         throw new Error("No company ID found");
       }
+      
+      console.log('Creating client with data:', { ...data, company_id: profile.company_id }); // Debug log
       
       const { data: newClient, error } = await supabase
         .from('clients')
@@ -198,6 +213,7 @@ const Clients = () => {
       form.reset();
     },
     onError: (error) => {
+      console.error('Error creating client:', error); // Debug log
       toast({
         variant: "destructive",
         title: "Erreur",
