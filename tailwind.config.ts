@@ -34,7 +34,7 @@ export default {
           foreground: "#FFFFFF",
         },
         accent: {
-          DEFAULT: "#FB923C",
+          DEFAULT: "#22C55E", // Changed from orange to green
           foreground: "#FFFFFF",
         },
         destructive: {
@@ -84,3 +84,4 @@ export default {
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
+
