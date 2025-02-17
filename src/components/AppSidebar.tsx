@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import {
   Sidebar,
@@ -81,7 +80,6 @@ export function AppSidebar() {
 
   const sidebarSections = getSidebarSections();
 
-  // Set initial open state based on current route
   useEffect(() => {
     const currentSection = sidebarSections.find(section =>
       section.items.some(item =>
@@ -148,7 +146,7 @@ export function AppSidebar() {
                       "flex items-center gap-3 px-4 py-2.5 rounded-md transition-all duration-200",
                       "text-sm font-medium",
                       "hover:bg-accent/70 hover:text-accent-foreground hover:translate-x-1",
-                      location.pathname === "/" && "bg-accent text-accent-foreground translate-x-1 shadow-sm"
+                      location.pathname === "/" && "text-primary font-medium translate-x-1"
                     )}
                   >
                     <LayoutDashboard className="h-4 w-4" />
@@ -164,7 +162,7 @@ export function AppSidebar() {
                       "flex items-center gap-3 px-4 py-2.5 rounded-md transition-all duration-200",
                       "text-sm font-medium",
                       "hover:bg-accent/70 hover:text-accent-foreground hover:translate-x-1",
-                      location.pathname === "/enterprise" && "bg-accent text-accent-foreground translate-x-1 shadow-sm"
+                      location.pathname === "/enterprise" && "text-primary font-medium translate-x-1"
                     )}
                   >
                     <Building2 className="h-4 w-4" />
@@ -196,7 +194,7 @@ export function AppSidebar() {
                               "text-sm font-medium",
                               "hover:bg-accent/70 hover:text-accent-foreground",
                               "group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                              openItems.includes(item.title) && "bg-accent/40",
+                              openItems.includes(item.title) && "bg-accent/10",
                               (location.pathname === "/invoices" || location.pathname === "/supplier-invoices") && 
                               "text-primary"
                             )}
@@ -240,10 +238,9 @@ export function AppSidebar() {
                                         "hover:bg-accent/40 hover:text-accent-foreground",
                                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                                         location.pathname === subItem.path && [
-                                          "bg-accent/60",
+                                          "bg-accent/10",
                                           "text-primary",
-                                          "font-medium",
-                                          "shadow-sm"
+                                          "font-medium"
                                         ]
                                       )}
                                     >
@@ -270,7 +267,7 @@ export function AppSidebar() {
                               "flex items-center gap-3 px-4 py-2.5 rounded-md transition-all duration-200",
                               "text-sm font-medium",
                               "hover:bg-accent/70 hover:text-accent-foreground hover:translate-x-1",
-                              location.pathname === item.path && "bg-accent text-accent-foreground translate-x-1 shadow-sm"
+                              location.pathname === item.path && "text-primary font-medium translate-x-1"
                             )}
                           >
                             <item.icon className="h-4 w-4" />
