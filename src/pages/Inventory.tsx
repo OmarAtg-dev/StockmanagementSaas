@@ -80,9 +80,7 @@ const Inventory = () => {
         return [];
       }
 
-      // For now, we'll return an empty array as we don't have mock data for expected inventory
       return [];
-
     },
     enabled: !!profile?.company_id
   });
@@ -138,11 +136,75 @@ const Inventory = () => {
             />
           </div>
 
-          <Tabs defaultValue="current" className="space-y-4">
+          <Tabs defaultValue="all" className="space-y-4">
             <TabsList>
+              <TabsTrigger value="all">Tout</TabsTrigger>
               <TabsTrigger value="current">Stock actuel</TabsTrigger>
               <TabsTrigger value="expected">Stock attendu</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="all">
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Nom du produit</TableHead>
+                      <TableHead>Catégorie</TableHead>
+                      <TableHead>Quantité</TableHead>
+                      <TableHead>Emplacement/Statut</TableHead>
+                      <TableHead>Dernière mise à jour/Date prévue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoadingInventory || isLoadingExpected ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          Chargement...
+                        </TableCell>
+                      </TableRow>
+                    ) : [...filteredInventory, ...filteredExpectedInventory].length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          Aucun article trouvé
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {filteredInventory.map((item) => (
+                          <TableRow key={`current-${item.id}`}>
+                            <TableCell>
+                              <Badge variant="secondary">Stock actuel</Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">{item.product.name}</TableCell>
+                            <TableCell>{item.product.category}</TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>{item.location || '-'}</TableCell>
+                            <TableCell>
+                              {format(new Date(item.last_updated), "dd/MM/yyyy", { locale: fr })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredExpectedInventory.map((item) => (
+                          <TableRow key={`expected-${item.id}`}>
+                            <TableCell>
+                              <Badge>Stock attendu</Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">{item.product.name}</TableCell>
+                            <TableCell>{item.product.category}</TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>{getStatusBadge(item.status)}</TableCell>
+                            <TableCell>
+                              {format(new Date(item.expected_date), "dd/MM/yyyy", { locale: fr })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="current">
               <Card>
