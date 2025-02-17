@@ -238,14 +238,14 @@ const SupplierInvoices = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Factures fournisseurs</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Devis fournisseurs</h1>
             <p className="text-muted-foreground">
-              Consultez et gérez vos factures fournisseurs
+              Consultez et gérez vos devis fournisseurs
             </p>
           </div>
           <Button className="gap-2" onClick={handleCreateInvoice}>
             <Plus className="h-5 w-5" />
-            Créer une facture
+            Créer un devis
           </Button>
         </div>
 
@@ -255,7 +255,7 @@ const SupplierInvoices = () => {
               <div className="relative w-full max-w-sm">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher une facture..."
+                  placeholder="Rechercher un devis..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -471,7 +471,7 @@ const SupplierInvoices = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Cette action est irréversible. Elle supprimera définitivement la facture
+                Cette action est irréversible. Elle supprimera définitivement le devis
                 {invoiceToDelete && ` n°${invoiceToDelete.number}`} et toutes les données associées.
               </AlertDialogDescription>
             </AlertDialogHeader>
