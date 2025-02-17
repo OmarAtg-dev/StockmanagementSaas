@@ -3,7 +3,10 @@ import { createContext, useContext, useState } from "react";
 import { mockAuthContext, mockDataFunctions } from "@/utils/mockData";
 import { Database } from "@/integrations/supabase/types";
 
-type Profile = Database["public"]["Tables"]["profiles"]["Row"] & { user_id: string };
+type Profile = Database["public"]["Tables"]["profiles"]["Row"] & { 
+  user_id: string;
+  company_id: string; // Ensure this is a UUID string
+};
 
 interface AuthContextType {
   session: typeof mockAuthContext.session | null;
@@ -26,10 +29,19 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Initialize with null values instead of mock data
+  // Initialize with proper UUID format for company_id
   const [session, setSession] = useState<typeof mockAuthContext.session | null>(null);
   const [user, setUser] = useState<typeof mockAuthContext.user | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>({
+    id: "00000000-0000-0000-0000-000000000000", // Example UUID
+    user_id: "00000000-0000-0000-0000-000000000000",
+    company_id: "00000000-0000-0000-0000-000000000000",
+    username: null,
+    full_name: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    role: "admin"
+  });
 
   const signOut = async () => {
     try {
