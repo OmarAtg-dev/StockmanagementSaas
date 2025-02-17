@@ -79,7 +79,7 @@ const Analytics = () => {
             <Card className="p-6">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Évolution des ventes</h3>
+                  <h3 className="font-semibold">Performance Globale</h3>
                   <Button variant="outline" size="sm">
                     Voir les détails
                   </Button>
