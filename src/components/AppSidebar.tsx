@@ -134,7 +134,7 @@ export function AppSidebar() {
             <div className="flex items-center gap-2 py-4 border-b border-border/40">
               <img 
                 src="/lovable-uploads/4da8a0ef-8e85-426d-bee1-03483f555554.png" 
-                alt="GWA Tech Logo" 
+                alt="Global Watech Logo" 
                 className="h-8 w-auto"
               />
             </div>
