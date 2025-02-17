@@ -1,6 +1,7 @@
+
+import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -10,21 +11,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, CalendarIcon, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "react-router-dom";
 import { mockDataFunctions } from "@/utils/mockData";
 import { ViewSupplierInvoiceDialog } from "@/components/suppliers/ViewSupplierInvoiceDialog";
 import { SupplierInvoiceDialog } from "@/components/suppliers/SupplierInvoiceDialog";
-import { useSearchParams } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
 import {
   Select,
   SelectContent,
@@ -64,6 +62,7 @@ interface SupplierInvoice {
   supplier: {
     id: string;
     name: string;
+    email?: string;
   } | null;
   items: Array<{
     id: string;
@@ -75,82 +74,20 @@ interface SupplierInvoice {
 }
 
 const SupplierInvoices = () => {
+  const { toast } = useToast();
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [selectedSupplier, setSelectedSupplier] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedDueDate, setSelectedDueDate] = useState<Date>();
-  const { profile } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState<SupplierInvoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<SupplierInvoice | null>(null);
-
-  const handleCreateInvoice = () => {
-    const selectedSupplierData = suppliers?.find(s => s.name === selectedSupplier);
-    
-    if (selectedSupplier === "all" || !selectedSupplierData) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Veuillez sélectionner un fournisseur avant de créer une facture.",
-      });
-      return;
-    }
-    setIsCreateDialogOpen(true);
-  };
-
-  const handleEditInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click event
-    setInvoiceToEdit(invoice);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleViewInvoice = (invoice: SupplierInvoice) => {
-    setSelectedInvoice(invoice);
-  };
-
-  const handleDeleteInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click event
-    setInvoiceToDelete(invoice);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleUpdateSuccess = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
-    // Reset all relevant state
-    setSelectedInvoice(null);
-    setInvoiceToEdit(null);
-    setIsEditDialogOpen(false);
-    setIsCreateDialogOpen(false);
-  };
-
-  const confirmDelete = async () => {
-    if (!invoiceToDelete) return;
-
-    try {
-      const { error } = await mockDataFunctions.deleteSupplierInvoice(invoiceToDelete.id);
-      if (error) throw error;
-
-      await queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
-      toast({
-        title: "Facture supprimée",
-        description: "La facture a été supprimée avec succès.",
-      });
-      setIsDeleteDialogOpen(false);
-      setInvoiceToDelete(null);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la suppression de la facture.",
-      });
-    }
-  };
 
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers'],
@@ -161,39 +98,81 @@ const SupplierInvoices = () => {
     },
   });
 
-  const { data: invoices, isLoading, error } = useQuery({
-    queryKey: ['supplier-invoices', profile?.company_id],
+  const { data: invoices, isLoading } = useQuery({
+    queryKey: ['supplier-invoices'],
     queryFn: async () => {
-      if (!profile?.company_id && profile?.role !== 'super_admin') {
-        throw new Error("Aucune entreprise associée à cet utilisateur");
-      }
-
       const { data, error } = await mockDataFunctions.getSupplierInvoices();
-
-      if (error) {
-        console.error("Error fetching supplier invoices:", error);
-        throw error;
-      }
-
-      return data as SupplierInvoice[];
+      if (error) throw error;
+      return data;
     },
-    enabled: !!(profile?.company_id || profile?.role === 'super_admin'),
   });
 
-  const filteredInvoices = invoices?.filter(invoice => {
-    const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (invoice.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+  const deleteInvoice = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await mockDataFunctions.deleteSupplierInvoice(id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+      toast({
+        title: "Devis supprimé",
+        description: "Le devis a été supprimé avec succès.",
+      });
+      setIsDeleteDialogOpen(false);
+      setInvoiceToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message,
+      });
+    },
+  });
 
-    const matchesSupplier = selectedSupplier === "all" || invoice.supplier?.name === selectedSupplier;
+  const handleCreateInvoice = () => {
+    const selectedSupplierData = suppliers?.find(s => s.name === selectedSupplier);
+    
+    if (selectedSupplier === "all" || !selectedSupplierData) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner un fournisseur avant de créer un devis.",
+      });
+      return;
+    }
+    setIsCreateDialogOpen(true);
+  };
 
-    const matchesDate = !selectedDate || 
-      format(new Date(invoice.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+  const handleEditInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInvoiceToEdit(invoice);
+    setIsEditDialogOpen(true);
+  };
 
-    const matchesDueDate = !selectedDueDate || 
-      format(new Date(invoice.due_date), 'yyyy-MM-dd') === format(selectedDueDate, 'yyyy-MM-dd');
+  const handleViewInvoice = (invoice: SupplierInvoice) => {
+    setSelectedInvoice(invoice);
+  };
 
-    return matchesSearch && matchesSupplier && matchesDate && matchesDueDate;
-  }) ?? [];
+  const handleDeleteInvoice = (invoice: SupplierInvoice, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInvoiceToDelete(invoice);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (invoiceToDelete) {
+      deleteInvoice.mutate(invoiceToDelete.id);
+    }
+  };
+
+  const handleUpdateSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] });
+    setSelectedInvoice(null);
+    setInvoiceToEdit(null);
+    setIsEditDialogOpen(false);
+    setIsCreateDialogOpen(false);
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -217,21 +196,20 @@ const SupplierInvoices = () => {
     );
   };
 
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">Factures fournisseurs</h1>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error instanceof Error ? error.message : "Une erreur est survenue"}
-            </AlertDescription>
-          </Alert>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const filteredInvoices = invoices?.filter(invoice => {
+    const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesSupplier = selectedSupplier === "all" || invoice.supplier?.name === selectedSupplier;
+
+    const matchesDate = !selectedDate || 
+      format(new Date(invoice.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+
+    const matchesDueDate = !selectedDueDate || 
+      format(new Date(invoice.due_date), 'yyyy-MM-dd') === format(selectedDueDate, 'yyyy-MM-dd');
+
+    return matchesSearch && matchesSupplier && matchesDate && matchesDueDate;
+  }) ?? [];
 
   return (
     <DashboardLayout>
@@ -361,18 +339,14 @@ const SupplierInvoices = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7}>
-                    <div className="space-y-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Skeleton key={i} className="h-8 w-full" />
-                      ))}
-                    </div>
+                  <TableCell colSpan={7} className="text-center py-4">
+                    Chargement...
                   </TableCell>
                 </TableRow>
               ) : !filteredInvoices?.length ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-4">
-                    Aucune facture trouvée
+                    Aucun devis trouvé
                   </TableCell>
                 </TableRow>
               ) : (
@@ -434,12 +408,6 @@ const SupplierInvoices = () => {
           </Table>
         </Card>
 
-        <ViewSupplierInvoiceDialog 
-          open={!!selectedInvoice}
-          onOpenChange={(open) => !open && setSelectedInvoice(null)}
-          invoice={selectedInvoice}
-        />
-
         {profile?.company_id && (
           <>
             <SupplierInvoiceDialog
@@ -465,6 +433,12 @@ const SupplierInvoices = () => {
             )}
           </>
         )}
+
+        <ViewSupplierInvoiceDialog
+          open={!!selectedInvoice}
+          onOpenChange={(open) => !open && setSelectedInvoice(null)}
+          invoice={selectedInvoice}
+        />
 
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>

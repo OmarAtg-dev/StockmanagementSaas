@@ -96,8 +96,26 @@ let mockSupplierInvoices = [
     total_amount: 1500,
     status: 'paid',
     supplier: {
-      name: 'Supplier A'
-    }
+      id: '1',
+      name: 'Supplier A',
+      email: 'suppliera@example.com'
+    },
+    items: [
+      {
+        id: 'SITEM001',
+        description: 'Item 1',
+        quantity: 2,
+        unit_price: 500,
+        amount: 1000
+      },
+      {
+        id: 'SITEM002',
+        description: 'Item 2',
+        quantity: 1,
+        unit_price: 500,
+        amount: 500
+      }
+    ]
   },
   {
     id: 'SINV002',
@@ -107,8 +125,19 @@ let mockSupplierInvoices = [
     total_amount: 2000,
     status: 'pending',
     supplier: {
-      name: 'Supplier B'
-    }
+      id: '2',
+      name: 'Supplier B',
+      email: 'supplierb@example.com'
+    },
+    items: [
+      {
+        id: 'SITEM003',
+        description: 'Item 3',
+        quantity: 4,
+        unit_price: 500,
+        amount: 2000
+      }
+    ]
   }
 ];
 
@@ -663,9 +692,9 @@ export const mockDataFunctions = {
       id: `SINV${Date.now()}`,
       number: `SUPINV-${Date.now()}`,
       ...data,
+      status: data.status || 'draft',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      status: data.status || 'pending'
+      updated_at: new Date().toISOString()
     };
     mockSupplierInvoices.push(newInvoice);
     return {
@@ -680,11 +709,13 @@ export const mockDataFunctions = {
     if (index === -1) {
       return { data: null, error: new Error('Invoice not found') };
     }
+
     mockSupplierInvoices[index] = {
       ...mockSupplierInvoices[index],
       ...data,
       updated_at: new Date().toISOString()
     };
+
     return {
       data: mockSupplierInvoices[index],
       error: null
