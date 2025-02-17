@@ -184,10 +184,7 @@ export function AppSidebar() {
                               viewBox="0 0 12 12"
                               fill="none"
                               xmlns="http://www.w3.org/2000/svg"
-                              className={cn(
-                                "transform transition-transform duration-200",
-                                openItems.includes(item.title) ? "rotate-180" : ""
-                              )}
+                              className="transform transition-transform duration-200 group-data-[state=open]:rotate-180"
                             >
                               <path
                                 d="M2 4L6 8L10 4"
@@ -198,27 +195,17 @@ export function AppSidebar() {
                               />
                             </svg>
                           </SidebarMenuButton>
-                          <div
-                            className={cn(
-                              "overflow-hidden transition-all duration-300 ease-in-out",
-                              openItems.includes(item.title) 
-                                ? "max-h-40 opacity-100" 
-                                : "max-h-0 opacity-0"
-                            )}
-                          >
+                          {openItems.includes(item.title) && (
                             <SidebarMenuSub>
                               {item.subItems.map((subItem) => (
-                                <SidebarMenuSubItem 
-                                  key={subItem.title}
-                                  className="animate-fade-in"
-                                >
+                                <SidebarMenuSubItem key={subItem.title}>
                                   <SidebarMenuSubButton
                                     asChild
                                     isActive={location.pathname === subItem.path}
                                   >
                                     <Link 
                                       to={subItem.path}
-                                      className="flex items-center gap-2 py-1 pl-11"
+                                      className="flex items-center gap-2 py-1"
                                     >
                                       <span className="h-1 w-1 rounded-full bg-current opacity-40"></span>
                                       {subItem.title}
@@ -227,7 +214,7 @@ export function AppSidebar() {
                                 </SidebarMenuSubItem>
                               ))}
                             </SidebarMenuSub>
-                          </div>
+                          )}
                         </>
                       ) : (
                         <SidebarMenuButton asChild>
