@@ -122,10 +122,10 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md">
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Connexion</TabsTrigger>
-            <TabsTrigger value="signup">Inscription</TabsTrigger>
-          </TabsList>
+          {/* <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="signin">Connexion</TabsTrigger> */}
+            {/* <TabsTrigger value="signup">Inscription</TabsTrigger> */}
+          {/* </TabsList> */}
 
           <TabsContent value="signin">
             <Card>
@@ -170,7 +170,7 @@ const Auth = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="signup">
+          {/* <TabsContent value="signup">
             <Card>
               <CardHeader>
                 <CardTitle>Inscription</CardTitle>
@@ -247,7 +247,7 @@ const Auth = () => {
                 </CardFooter>
               </form>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </div>
     </div>

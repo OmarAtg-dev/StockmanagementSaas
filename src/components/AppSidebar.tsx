@@ -38,6 +38,7 @@ const getSidebarSections = () => [
     label: "Commercial",
     items: [
       { title: "Clients", icon: UserCircle, path: "/clients" },
+      { title: "Fournisseurs", icon: Truck, path: "/suppliers" },
       {
         title: "Devis",
         icon: Receipt,
@@ -46,7 +47,7 @@ const getSidebarSections = () => [
           { title: "Devis fournisseurs", path: "/supplier-invoices" }
         ]
       },
-      { title: "Fournisseurs", icon: Truck, path: "/suppliers" },
+    
     ]
   },
   {
@@ -133,7 +134,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="px-4">
             <div className="flex items-center gap-2 py-4 border-b border-border/40">
               <img 
-                src="/lovable-uploads/4da8a0ef-8e85-426d-bee1-03483f555554.png" 
+                src="/imgUploads/4da8a0ef-8e85-426d-bee1-03483f555554.png" 
                 alt="Global Watech Logo" 
                 className="h-8 w-auto"
               />

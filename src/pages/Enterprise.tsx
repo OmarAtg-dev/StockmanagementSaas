@@ -49,7 +49,7 @@ interface Enterprise {
 // Mock data for enterprise info (replace with actual API call later)
 const mockEnterpriseInfo: Enterprise = {
   id: "1",
-  name: "Acme Corporation",
+  name: "Global Watech",
   subscription_status: "active",
   created_at: "2024-01-01T00:00:00.000Z",
   user_count: 25,
