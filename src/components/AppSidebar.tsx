@@ -43,7 +43,7 @@ const getSidebarSections = () => [
         title: "Devis",
         icon: Receipt,
         subItems: [
-          { title: "Devis", path: "/invoices" },
+          { title: "Devis clients", path: "/invoices" },
           { title: "Devis fournisseurs", path: "/supplier-invoices" }
         ]
       },
