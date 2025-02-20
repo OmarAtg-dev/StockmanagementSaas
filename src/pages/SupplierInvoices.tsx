@@ -131,10 +131,10 @@ const SupplierInvoices = () => {
               Gérez vos devis fournisseurs
             </p>
           </div>
-          <Button onClick={handleCreateInvoice} className="gap-2">
+          {/* <Button onClick={handleCreateInvoice} className="gap-2">
             <Plus className="h-5 w-5" />
             Créer un devis
-          </Button>
+          </Button> */}
         </div>
 
         <Card>
