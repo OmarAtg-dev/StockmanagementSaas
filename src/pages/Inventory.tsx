@@ -198,10 +198,10 @@ const Inventory = () => {
                 {securityThreshold}
               </span>
             </Button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+            {/* <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
               <Plus className="h-5 w-5" />
               Ajouter un article
-            </button>
+            </button> */}
           </div>
         </div>
 
